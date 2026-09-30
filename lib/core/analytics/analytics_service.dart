@@ -104,8 +104,7 @@ class AnalyticsService {
     await _backend.setConsent(AnalyticsConsentSignals.denied);
     _initialized = true;
     await _applyConsentToBackend();
-    final userId = _userId;
-    if (userId != null) await _backend.setUserId(userId);
+    if (_userId != null) await _applyUserIdToBackend();
     await _flushIfAllowed();
   }
 
@@ -121,6 +120,7 @@ class AnalyticsService {
     }
     if (!_initialized) return;
     await _applyConsentToBackend();
+    await _applyUserIdToBackend();
     await _flushIfAllowed();
   }
 
@@ -144,11 +144,19 @@ class AnalyticsService {
     }
   }
 
-  /// `analytics_uid` (HMAC of user_id from the server), never the raw id.
+  /// `analytics_uid` (HMAC of user_id from the server), never the raw id;
+  /// null clears it (logout, account deletion). The SDK gets it only while
+  /// analytics consent is granted (S8.6); otherwise its user id is cleared.
   Future<void> setUserId(String? analyticsUid) async {
     _userId = analyticsUid;
-    if (_initialized) await _backend.setUserId(analyticsUid);
+    if (_initialized) await _applyUserIdToBackend();
   }
+
+  /// The id the SDK currently should have.
+  String? get userId => _userId;
+
+  Future<void> _applyUserIdToBackend() =>
+      _backend.setUserId(_consent == AnalyticsConsent.granted ? _userId : null);
 
   Future<void> setUserProperty(String name, String? value) async {
     _checkName(name, kind: 'user property', maxLength: 24);

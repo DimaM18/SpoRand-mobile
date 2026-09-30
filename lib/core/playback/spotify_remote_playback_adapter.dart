@@ -117,6 +117,11 @@ final class SpotifyRemotePlaybackAdapter implements PlaybackAdapter {
 
   SpotifyRoundClip? _clip;
   Timer? _snippetEnd;
+  bool _playing = false;
+
+  /// From the first qualifying player state until a successful pause.
+  @override
+  bool get isPlaying => _playing;
 
   @override
   MusicProviderId get provider => MusicProviderId.spotifyAppRemote;
@@ -184,6 +189,7 @@ final class SpotifyRemotePlaybackAdapter implements PlaybackAdapter {
         onTimeout: () =>
             throw const PlaybackFailure(PlaybackFailure.startTimeout),
       );
+      _playing = true;
       _scheduleSnippetEnd(audioStart, clip.snippetDurationMs);
       return PlaybackStarted(
         audioStartMonoUs: audioStart,
@@ -218,6 +224,7 @@ final class SpotifyRemotePlaybackAdapter implements PlaybackAdapter {
     } on PlaybackFailure {
       // Not connected: nothing is playing.
     }
+    _playing = false;
   }
 
   @override

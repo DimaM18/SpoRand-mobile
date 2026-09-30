@@ -78,6 +78,11 @@ abstract interface class PlaybackAdapter {
   /// completes once audio has started. Throws [PlaybackFailure].
   Future<PlaybackStarted> playAt(int startAtMonoUs);
 
+  /// True from a successful [playAt] until [stop] (or the snippet's end)
+  /// silenced the player. Ads are never shown while it is true (brief §6:
+  /// ads never over audio).
+  bool get isPlaying;
+
   Future<void> stop();
 
   /// Releases the player and purges cached clips.
@@ -85,7 +90,7 @@ abstract interface class PlaybackAdapter {
 }
 
 /// `external_player` (BYOP) and `none` (text rounds): the app plays nothing
-/// (docs/LEGAL_PLAYBACK.md). For external_player the DJ starts the song in
+/// (docs/DEVELOPMENT.md §7). For external_player the DJ starts the song in
 /// their own music app and reports it with `dj_tap` from the round screen,
 /// so this adapter only fails loudly if something asks it to play.
 /// [новое имя — согласовать]
@@ -120,6 +125,9 @@ final class NoAudioPlaybackAdapter implements PlaybackAdapter {
       throw const PlaybackFailure(PlaybackFailure.noAudio);
 
   @override
+  bool get isPlaying => false;
+
+  @override
   Future<void> stop() async {}
 
   @override
@@ -145,6 +153,12 @@ final class FakePlaybackAdapter implements PlaybackAdapter {
 
   bool prepareOk;
   String? playFailure;
+
+  /// False simulates a player that keeps playing after [stop].
+  bool stopSilences = true;
+
+  @override
+  bool isPlaying = false;
   OutputRoute outputRoute;
   int outputLatencyMs;
 
@@ -179,6 +193,7 @@ final class FakePlaybackAdapter implements PlaybackAdapter {
     final failure = playFailure;
     if (failure != null) throw PlaybackFailure(failure);
     playedAt.add(startAtMonoUs);
+    isPlaying = true;
     return PlaybackStarted(
       audioStartMonoUs: startAtMonoUs,
       outputLatencyMs: outputLatencyMs,
@@ -190,8 +205,14 @@ final class FakePlaybackAdapter implements PlaybackAdapter {
   }
 
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() async {
+    stops++;
+    if (stopSilences) isPlaying = false;
+  }
 
   @override
-  Future<void> dispose() async => disposed = true;
+  Future<void> dispose() async {
+    disposed = true;
+    isPlaying = false;
+  }
 }

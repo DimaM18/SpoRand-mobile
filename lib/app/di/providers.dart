@@ -13,6 +13,7 @@ import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/core/ads/admob_ads_service.dart';
 import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
+import 'package:sporand/core/analytics/analytics_identity.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/analytics/firebase_analytics_backend.dart';
 import 'package:sporand/core/auth/age_band_sync.dart';
@@ -20,6 +21,7 @@ import 'package:sporand/core/auth/auth_api.dart';
 import 'package:sporand/core/auth/auth_service.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/consent/consent_sync.dart';
 import 'package:sporand/core/consent/ump_consent_service.dart';
 import 'package:sporand/core/crash/crash_reporter.dart';
 import 'package:sporand/core/crash/firebase_crash_reporter.dart';
@@ -27,6 +29,8 @@ import 'package:sporand/core/firebase/firebase_core_gate.dart';
 import 'package:sporand/core/links/external_link_launcher.dart';
 import 'package:sporand/core/net/api_client.dart';
 import 'package:sporand/core/net/app_signals.dart';
+import 'package:sporand/core/net/protocol/json_read.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/realtime_client.dart';
 import 'package:sporand/core/net/ws_connection.dart';
 import 'package:sporand/core/platform/app_info.dart';
@@ -234,6 +238,43 @@ final ageBandSyncProvider = Provider<AgeBandSync>(
   ),
 );
 
+/// `PUT /v1/me/consent`; records only without a backend.
+final consentApiProvider = Provider<ConsentApi>((ref) {
+  final client = ref.watch(apiClientProvider);
+  return client == null ? FakeConsentApi() : HttpConsentApi(client);
+});
+
+/// Debounced consent sync after onboarding, settings and UMP changes.
+final consentSyncProvider = Provider<ConsentSync>((ref) {
+  final sync = ConsentSync(api: ref.watch(consentApiProvider));
+  ref.onDispose(sync.dispose);
+  return sync;
+});
+
+/// The GA4 user id follows the session's `analytics_uid` (S8.6).
+final analyticsIdentityProvider = Provider<AnalyticsIdentity>((ref) {
+  final client = ref.watch(apiClientProvider);
+  final crash = ref.watch(crashGateProvider);
+  final identity = AnalyticsIdentity(
+    analytics: ref.watch(analyticsProvider),
+    sessions: ref.watch(sessionRepositoryProvider),
+    fetchAnalyticsUid: client == null
+        ? null
+        : () async {
+            try {
+              return MeResponse.fromJson(await client.get('/v1/me'))
+                  .user
+                  .analyticsUid;
+            } on ProtocolFormatException {
+              return null;
+            }
+          },
+    onUserId: crash.setUserId,
+  );
+  ref.onDispose(identity.dispose);
+  return identity;
+});
+
 final entitlementSyncProvider = Provider<EntitlementSyncApi>((ref) {
   final client = ref.watch(apiClientProvider);
   return client == null
@@ -336,6 +377,7 @@ final bootDependenciesProvider = Provider<BootDependencies>(
     consent: ref.watch(consentServiceProvider),
     appCheck: ref.watch(appCheckProvider),
     auth: ref.watch(authServiceProvider),
+    analyticsIdentity: ref.watch(analyticsIdentityProvider),
     purchases: ref.watch(purchasesServiceProvider),
     ads: ref.watch(adsServiceProvider),
     playback: ref.watch(playbackAdapterProvider),

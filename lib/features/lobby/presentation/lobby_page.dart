@@ -9,6 +9,7 @@ import 'package:sporand/app/widgets/qr_code_view.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
+import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/lobby/presentation/lobby_controller.dart';
@@ -18,7 +19,21 @@ import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 String gameModeLabel(AppLocalizations l10n, GameMode mode) => switch (mode) {
   GameMode.whoseSong => l10n.modeWhoseSong,
   GameMode.guessTrack => l10n.modeGuessTrack,
+  GameMode.emojiQuiz => l10n.modeEmojiQuiz,
 };
+
+String emojiMarketLabel(AppLocalizations l10n, EmojiMarket market) =>
+    switch (market) {
+      EmojiMarket.intl => l10n.lobbyEmojiMarketIntl,
+      EmojiMarket.pl => l10n.lobbyEmojiMarketPl,
+    };
+
+String emojiDifficultyLabel(AppLocalizations l10n, int difficulty) =>
+    switch (difficulty) {
+      1 => l10n.lobbyEmojiDifficultyEasy,
+      2 => l10n.lobbyEmojiDifficultyMedium,
+      _ => l10n.lobbyEmojiDifficultyHard,
+    };
 
 class LobbyPage extends ConsumerWidget {
   const LobbyPage({super.key, required this.roomId});
@@ -164,6 +179,10 @@ class _LobbyBody extends ConsumerWidget {
         ],
         const SizedBox(height: Spacing.lg),
         _SettingsCard(view: view),
+        if (view.showsDj) ...[
+          const SizedBox(height: Spacing.md),
+          _CanDjTile(view: view),
+        ],
         if (view.collectsPools) ...[
           const SizedBox(height: Spacing.lg),
           _MySongsCard(view: view),
@@ -175,7 +194,11 @@ class _LobbyBody extends ConsumerWidget {
         ),
         const SizedBox(height: Spacing.xs),
         for (final player in view.players)
-          _PlayerTile(player: player, viewerIsHost: view.isHost),
+          _PlayerTile(
+            player: player,
+            viewerIsHost: view.isHost,
+            showsDj: view.showsDj,
+          ),
         if (view.contributorsNeeded > 0) ...[
           const SizedBox(height: Spacing.sm),
           Text(
@@ -455,20 +478,74 @@ class _SettingsCard extends ConsumerWidget {
           children: [
             Text(l10n.lobbySettingsTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: Spacing.md),
-            SegmentedButton<GameMode>(
-              segments: [
+            // Chips wrap on narrow phones; three segments would not fit.
+            Wrap(
+              spacing: Spacing.xs,
+              runSpacing: Spacing.xs,
+              children: [
                 for (final mode in GameMode.values)
-                  ButtonSegment(
-                    value: mode,
+                  ChoiceChip(
+                    key: ValueKey('lobby-mode-${mode.wire}'),
                     label: Text(gameModeLabel(l10n, mode)),
+                    selected: view.mode == mode,
+                    onSelected: view.isHost
+                        ? (_) => controller.setMode(mode)
+                        : null,
                   ),
               ],
-              selected: {view.mode},
-              showSelectedIcon: false,
-              onSelectionChanged: view.isHost
-                  ? (selection) => controller.setMode(selection.first)
-                  : null,
             ),
+            if (view.isEmojiQuiz) ...[
+              const SizedBox(height: Spacing.xs),
+              Text(
+                l10n.lobbyEmojiHint,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: Spacing.md),
+              Text(l10n.lobbyEmojiMarkets, style: theme.textTheme.labelLarge),
+              const SizedBox(height: Spacing.xs),
+              Wrap(
+                spacing: Spacing.xs,
+                runSpacing: Spacing.xs,
+                children: [
+                  for (final market in EmojiMarket.values)
+                    FilterChip(
+                      key: ValueKey('lobby-emoji-market-${market.wire}'),
+                      label: Text(emojiMarketLabel(l10n, market)),
+                      selected: view.emojiMarkets.contains(market),
+                      onSelected: view.isHost
+                          ? (_) => controller.toggleEmojiMarket(market)
+                          : null,
+                    ),
+                ],
+              ),
+              const SizedBox(height: Spacing.md),
+              Text(
+                l10n.lobbyEmojiDifficulty,
+                style: theme.textTheme.labelLarge,
+              ),
+              const SizedBox(height: Spacing.xs),
+              Wrap(
+                spacing: Spacing.xs,
+                runSpacing: Spacing.xs,
+                children: [
+                  for (
+                    var difficulty = EmojiDifficulty.min;
+                    difficulty <= EmojiDifficulty.max;
+                    difficulty++
+                  )
+                    ChoiceChip(
+                      key: ValueKey('lobby-emoji-difficulty-$difficulty'),
+                      label: Text(emojiDifficultyLabel(l10n, difficulty)),
+                      selected: view.emojiMaxDifficulty == difficulty,
+                      onSelected: view.isHost
+                          ? (_) => controller.setEmojiMaxDifficulty(difficulty)
+                          : null,
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: Spacing.md),
             Text(l10n.lobbyRoundsLabel, style: theme.textTheme.labelLarge),
             const SizedBox(height: Spacing.xs),
@@ -507,11 +584,40 @@ class _SettingsCard extends ConsumerWidget {
   }
 }
 
+/// «Могу включать музыку» (BYOP): opt in to the DJ role, `lobby.set_can_dj`.
+class _CanDjTile extends ConsumerWidget {
+  const _CanDjTile({required this.view});
+
+  final LobbyView view;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    return Card(
+      child: SwitchListTile(
+        key: const ValueKey('lobby-can-dj'),
+        value: view.meCanDj,
+        onChanged: ref.read(lobbyControllerProvider.notifier).setCanDj,
+        secondary: const Icon(Icons.speaker_rounded),
+        title: Text(l10n.lobbyCanDj),
+        subtitle: Text(l10n.lobbyCanDjHint),
+      ),
+    );
+  }
+}
+
 class _PlayerTile extends ConsumerWidget {
-  const _PlayerTile({required this.player, required this.viewerIsHost});
+  const _PlayerTile({
+    required this.player,
+    required this.viewerIsHost,
+    this.showsDj = false,
+  });
 
   final LobbyPlayer player;
   final bool viewerIsHost;
+
+  /// BYOP: players who opted in to the DJ role get a DJ badge.
+  final bool showsDj;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -521,6 +627,7 @@ class _PlayerTile extends ConsumerWidget {
     final badges = [
       if (player.isHost) l10n.lobbyHostBadge,
       if (player.isMe) l10n.lobbyYouBadge,
+      if (showsDj && player.canDj) l10n.lobbyDjBadge,
     ];
     return ListTile(
       contentPadding: EdgeInsets.zero,

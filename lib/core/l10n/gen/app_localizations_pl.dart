@@ -923,4 +923,78 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get mySongsLegacyHint =>
       'Piosenki ze starego katalogu trzeba zastąpić nowymi';
+
+  @override
+  String get modeEmojiQuiz => 'Emoji quiz';
+
+  @override
+  String get modeEmojiQuizHint =>
+      'Zgadnijcie piosenkę z emoji — muzyka niepotrzebna';
+
+  @override
+  String get gamePromptEmoji => 'Jaka to piosenka?';
+
+  @override
+  String get gameEmojiHidden => 'Emoji pojawią się na starcie';
+
+  @override
+  String gameEmojiSemantics(String emoji) {
+    return 'Emoji: $emoji';
+  }
+
+  @override
+  String revealYear(String year) {
+    return 'Rok: $year';
+  }
+
+  @override
+  String gameDjStartingNamed(String name) {
+    return '$name włącza piosenkę…';
+  }
+
+  @override
+  String get gameDjRoundNoAnswer =>
+      'Jesteś DJ-em tej rundy — odpowiadają pozostali';
+
+  @override
+  String gameVoidedNotice(String reason) {
+    return 'Runda pominięta: $reason';
+  }
+
+  @override
+  String get gameVoidedNoticeNoReason => 'Runda pominięta';
+
+  @override
+  String get lobbyCanDj => 'Mogę włączać muzykę';
+
+  @override
+  String get lobbyCanDjHint =>
+      'Czasem to ty będziesz DJ-em: włączysz piosenkę w swojej aplikacji muzycznej';
+
+  @override
+  String get lobbyDjBadge => 'DJ';
+
+  @override
+  String get lobbyEmojiMarkets => 'Piosenki';
+
+  @override
+  String get lobbyEmojiMarketIntl => 'Międzynarodowe';
+
+  @override
+  String get lobbyEmojiMarketPl => 'Polskie';
+
+  @override
+  String get lobbyEmojiDifficulty => 'Trudność';
+
+  @override
+  String get lobbyEmojiDifficultyEasy => 'Łatwe';
+
+  @override
+  String get lobbyEmojiDifficultyMedium => 'Do średnich';
+
+  @override
+  String get lobbyEmojiDifficultyHard => 'Wszystkie, też trudne';
+
+  @override
+  String get lobbyEmojiHint => 'Bez muzyki: wystarczą telefony';
 }

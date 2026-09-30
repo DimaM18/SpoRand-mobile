@@ -33,6 +33,13 @@ abstract interface class AuthApi {
   /// Rotates the refresh token. A reused token revokes the whole family;
   /// the server then answers 401 and the client starts a new guest session.
   Future<AuthSession> refresh(String refreshToken);
+
+  /// `POST /v1/auth/logout` (Bearer [accessToken]): revokes the token
+  /// family of [refreshToken].
+  Future<void> logout({
+    required String accessToken,
+    required String refreshToken,
+  });
 }
 
 final class HttpAuthApi implements AuthApi {
@@ -72,6 +79,18 @@ final class HttpAuthApi implements AuthApi {
     return _parse(json);
   }
 
+  @override
+  Future<void> logout({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await _client.post(
+      '/v1/auth/logout',
+      body: RefreshTokenRequest(refreshToken).toJson(),
+      bearer: accessToken,
+    );
+  }
+
   static AuthSession _parse(Map<String, Object?> json) {
     final AuthTokensResponse tokens;
     try {
@@ -88,8 +107,8 @@ final class HttpAuthApi implements AuthApi {
         : expiresIn is int
         ? clock.now().add(Duration(seconds: expiresIn))
         : _jwtExpiry(access) ?? clock.now().add(_defaultAccessTtl);
-    // `/v1/auth/refresh` returns only the token pair; the user id then
-    // comes from the JWT `sub`.
+    // An older server's `/v1/auth/refresh` returns only the token pair; the
+    // user id then comes from the JWT `sub`.
     final resolvedUserId = tokens.user?.userId ?? _jwtSubject(access);
     if (resolvedUserId == null) {
       throw const ApiError(code: ApiError.invalidResponse);
@@ -137,6 +156,7 @@ final class FakeAuthApi implements AuthApi {
   Object? refreshFailWith;
   int guestCreated = 0;
   int refreshed = 0;
+  final List<String> loggedOut = [];
   GuestRegistration? lastRegistration;
 
   /// Completes refreshes only when set (to test single-flight refresh).
@@ -160,6 +180,16 @@ final class FakeAuthApi implements AuthApi {
     refreshed++;
     final userId = refreshToken.split(':').first.replaceFirst('refresh-', '');
     return _session(userId, refreshed + 1);
+  }
+
+  @override
+  Future<void> logout({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    final error = failWith;
+    if (error != null) throw error;
+    loggedOut.add(refreshToken);
   }
 
   static AuthSession _session(String userId, int generation) => AuthSession(

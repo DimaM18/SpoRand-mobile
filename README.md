@@ -1,7 +1,7 @@
 # Mobile app (Flutter)
 
 Party music game client. Internal code name `sporand`; the public brand,
-bundle ids and domain are still placeholders (brief Q3).
+bundle ids and domain are still placeholders (owner question Q3, `docs/DEVELOPMENT.md` §12).
 
 ## Run
 
@@ -50,7 +50,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   backoff with jitter, close codes 4401–4503, `server.draining`, a 15 s
   heartbeat watchdog, and `clock.pong` sent before any other processing.
 - **Protocol DTOs** (`lib/core/net/protocol/`): hand-written, one class per
-  §4.3 message (`ws_messages.dart`) and per REST body the app uses
+  WS message (`ws_messages.dart`) and per REST body the app uses
   (`rest_models.dart`). Client-to-server payloads and request bodies parse
   strictly (unknown fields, nulls and negative `*_mono_us` are errors), so
   the in-memory test server catches a bad frame the app sends.
@@ -61,7 +61,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   with the reason the app does not consume it. They are replaced by
   `lib/contracts/` once codegen lands.
 - **Clocks** (`lib/core/clock/`): `InputClock` holds the **process anchor**
-  (brief §5): every `*_mono_us` on the wire is OS input-clock time minus
+  (`docs/DEVELOPMENT.md` §5): every `*_mono_us` on the wire is OS input-clock time minus
   `anchor_us`, read once in `bootstrap()`, so raw uptime never leaves the
   device (Apple required-reason 35F9.1). Pointer and frame timestamps go
   through `InputClock.fromOs` (`tapMonoUsFromPointer`, `currentFrameMonoUs`),
@@ -69,8 +69,8 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   through `toOsUs`. The raw source is `InputClockSource` (Pigeon
   `InputClockApi`). Also: the unlock/tap sanity rules in `MonoTimestamps`
   and `ClockCalibrationRecorder`. The calibration screen (`/debug/clock`,
-  Settings -> "Калибровка часов" in non-prod builds) is the device test from
-  brief §5/§9: tap it a few times on a real iPhone and Android phone and
+  Settings -> "Калибровка часов" in non-prod builds) is the device calibration test
+  (`docs/DEVELOPMENT.md` §12): tap it a few times on a real iPhone and Android phone and
   copy the report.
 - **Game** (`lib/features/game/`): `GameController` (sealed `GameUiState`)
   unlocks scheduled and text rounds at `start_at_server_ms` converted with
@@ -81,16 +81,35 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   (bonus offer with rewarded SSV, ad break, buffered results). The host's
   clip playback is driven by `HostPlaybackCoordinator`.
 - **BYOP / `external_player`** (addendum A2.2): the app never plays the
-  song. The DJ (the host, the device that gets `round.prepare.cue`) sees
-  «Включи эту песню в своём музыкальном приложении», can hand the song to
-  their music app (`MusicAppLauncher`: Android play-from-search intent, iOS
-  the cue's `hint_url`), and taps «Музыка играет!»: its pointer-down time is
+  song. The round's DJ is whoever `round.prepare.you_are_dj` names (the
+  host, or with `byop_dj_rotation` any player who opted in with «Могу
+  включать музыку» / `lobby.set_can_dj`; never derived from
+  `is_playback_device`). The DJ sees «Включи эту песню в своём музыкальном
+  приложении», can hand the song to their music app (`MusicAppLauncher`:
+  Android play-from-search intent, iOS the cue's `hint_url`), and taps
+  «Музыка играет!»: its pointer-down time is
   `round.playback_started{source: dj_tap}` (checked like an answer tap: a
   pointer time outside [cue arrival, now] falls back to the input clock).
-  Guests see «Ведущий включает
-  песню…» until `round.start`. In guess_track the DJ gets no answer buttons
-  unless `guess_track_dj_can_answer`. Text rounds (provider `none`) show the
-  question and options without audio UI. Nothing shows artwork or logos.
+  Everyone else sees «<имя DJ> включает песню…» (`dj_player_id`) until
+  `round.start`. The DJ gets no answer buttons unless the mode's key allows
+  it (`whose_song_dj_can_answer`, `guess_track_dj_can_answer`, both false by
+  default): «Ты DJ этого раунда — отвечают остальные». The lobby shows the
+  toggle and a DJ badge per opted-in player. Text rounds (provider `none`)
+  show the question and options without audio UI. Nothing shows artwork or
+  logos.
+- **Emoji quiz** (`emoji_quiz`, wave 3) [новое имя — согласовать]: no audio
+  at all. `round.prepare` carries `emoji_prompt` (2–6 emoji, re-checked by
+  `core/net/protocol/emoji_text.dart`); the emoji stay behind «?» tiles until
+  the round opens at `start_at` for everyone, then pop in (`EmojiPuzzle`;
+  instant with reduced motion). Answers use the same `Listener` timing path
+  as every round; the host answers too (no DJ, no owner). The reveal shows
+  title, artist and `year`. The lobby host picks the catalogue markets
+  (Международные / Польские; there is no Russian/CIS market) and the max
+  difficulty; emoji rooms need 2 players and no pools. The catalogue itself
+  never reaches the app.
+- **Voided rounds**: «Раунд пропущен: <причина>» stays over the spare round
+  until `void_notice_ms` (room config) after `round.voided`; it ignores
+  pointers and does not delay the spare.
 - **«Мои песни»** (`lib/features/my_songs/`, route `/my-songs`, A2.3):
   debounced `GET /v1/songs/search`, 5–10 picks saved with `PUT /v1/me/picks`,
   and «Что увидят друзья». In the lobby, «Добавить мои песни» sends the pool
@@ -102,6 +121,18 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   `external_player` / `none`; `SpotifyRemotePlaybackAdapter` (spotifyProto,
   frozen, native bridge still TODO) with the pure
   `computeAudioStartFromPlayerState`.
+- **Ads**: the interstitial follows the server's per-player
+  `game.ad_break.show_interstitial` (the server leaves out, e.g., the BYOP
+  DJ whose music app may still play) and is never shown while this device's
+  own `PlaybackAdapter.isPlaying`.
+- **Consent and analytics identity**: `ConsentSync` sends
+  `PUT /v1/me/consent` after the onboarding consent (`source: onboarding`),
+  every Settings toggle (`settings`) and UMP changes (`ump`): debounced,
+  retried once, never blocking the UI. `AnalyticsIdentity` sets the GA4 user
+  id to the session's `analytics_uid` (auth responses; `GET /v1/me` for a
+  session stored without one), only while analytics consent is granted, and
+  clears it when the session is cleared (`AuthService.signOut`: logout or
+  the local half of an account deletion).
 - **Purchases**: before a purchase or restore, `ensurePurchasesUser` logs
   RevenueCat in as our `user_id` if the boot `purchases` step could not.
 
@@ -196,7 +227,7 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
   git-ignored.
 - AdMob: real app ids (`-PadmobAppId=` for Android, `GADApplicationIdentifier`
   in `ios/Runner/Info.plist`) and ad unit ids.
-- RevenueCat public SDK keys; products per brief §4.7.
+- RevenueCat public SDK keys; products per `docs/DEVELOPMENT.md` §8.
 - Join links: `-PlinkHost=<domain>`, `assetlinks.json`, the iOS Associated
   Domains entitlement and `apple-app-site-association`.
 - Brand name, bundle/application ids, store URLs, Terms and Privacy URLs.
@@ -204,6 +235,9 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
   (not verifiable offline).
 - Run the clock calibration screen on one iPhone and one Android phone
   (including after the device slept) and keep the reports.
+- Settings has no «Выйти» / «Удалить аккаунт» entry yet: `AuthService.signOut`
+  exists (it clears the analytics id), but `DELETE /v1/me` and its UI do not.
+- Check the emoji line with the device emoji fonts (no custom font ships).
 
 ## CI
 

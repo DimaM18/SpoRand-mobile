@@ -26,6 +26,7 @@ final class LobbyPlayer {
     required this.connection,
     required this.isContributor,
     required this.poolTrackCount,
+    this.canDj = false,
   });
 
   final String playerId;
@@ -36,6 +37,9 @@ final class LobbyPlayer {
   final PlayerConnection connection;
   final bool isContributor;
   final int poolTrackCount;
+
+  /// Opted in to the DJ role (`PlayerSnapshot.can_dj`).
+  final bool canDj;
 }
 
 /// A rounds choice; premium ones are locked for a free host (paywall
@@ -121,6 +125,10 @@ final class LobbyView {
     this.myPoolTrackCount = 0,
     this.poolMinTracks = 5,
     this.isDjHost = false,
+    this.showsDj = false,
+    this.meCanDj = false,
+    this.emojiMarkets = EmojiMarket.values,
+    this.emojiMaxDifficulty = EmojiDifficulty.defaultMax,
   });
 
   final String roomCode;
@@ -150,8 +158,25 @@ final class LobbyView {
   /// `pool_min_tracks_per_contributor`.
   final int poolMinTracks;
 
-  /// The host of an external_player room is the DJ (A2.2).
+  /// The host of an external_player room is the DJ of every round (A2.2,
+  /// no `byop_dj_rotation`).
   final bool isDjHost;
+
+  /// A BYOP room that plays songs: the «Могу включать музыку» toggle and
+  /// the DJ badges are shown.
+  final bool showsDj;
+
+  /// This player's `can_dj`.
+  final bool meCanDj;
+
+  /// emoji_quiz: the markets the room draws from (the server's effective
+  /// choice; both when it sent none).
+  final List<EmojiMarket> emojiMarkets;
+
+  /// emoji_quiz: `emoji_max_difficulty` (1-3).
+  final int emojiMaxDifficulty;
+
+  bool get isEmojiQuiz => mode == GameMode.emojiQuiz;
 
   bool get canStart => isHost && startBlocker == null;
 
@@ -229,20 +254,24 @@ class LobbyController extends Notifier<LobbyUiState> {
           connection: p.connection,
           isContributor: p.isContributor,
           poolTrackCount: p.poolTrackCount,
+          canDj: p.canDj,
         ),
     ]..sort((a, b) => a.isHost == b.isHost ? 0 : (a.isHost ? -1 : 1));
     final present = players
         .where((p) => p.connection != PlayerConnection.left)
         .toList();
     // Brief §2: guess_track needs 2 players; whose_song needs 3
-    // contributors. A client hint only: the server checks the pools.
+    // contributors; emoji_quiz needs 2 players and no pools. A client hint
+    // only: the server checks the pools and the catalogue.
+    final mode = room.settings.mode;
     final minPlayers = room.mode == GameMode.whoseSong
         ? config.whoseSongMinContributors
         : 2;
     final poolMin = config.poolMinTracksPerContributor;
-    final collectsPools = room.settings.poolSources.contains(
-      PoolSource.catalogPicks,
-    );
+    final collectsPools =
+        mode.usesPools &&
+        room.settings.poolSources.contains(PoolSource.catalogPicks);
+    final byop = room.capabilities.isExternalApp && mode.usesPools;
     final contributors = present
         .where((p) => p.poolTrackCount >= poolMin)
         .length;
@@ -289,7 +318,12 @@ class LobbyController extends Notifier<LobbyUiState> {
         collectsPools: collectsPools,
         myPoolTrackCount: room.player(me)?.poolTrackCount ?? 0,
         poolMinTracks: poolMin,
-        isDjHost: session.isHost && room.capabilities.isExternalApp,
+        isDjHost: session.isHost && byop && !config.byopDjRotation,
+        showsDj: byop,
+        meCanDj: room.player(me)?.canDj ?? session.isHost,
+        emojiMarkets: room.settings.emojiMarkets ?? EmojiMarket.values,
+        emojiMaxDifficulty:
+            room.settings.emojiMaxDifficulty ?? EmojiDifficulty.defaultMax,
       ),
     );
   }
@@ -330,20 +364,64 @@ class LobbyController extends Notifier<LobbyUiState> {
     return true;
   }
 
+  /// emoji_quiz: turns [market] on or off; the last market stays on.
+  void toggleEmojiMarket(EmojiMarket market) {
+    final view = _view;
+    final room = _session?.room;
+    if (view == null || room == null || !view.isHost) return;
+    final current = view.emojiMarkets;
+    final next = current.contains(market)
+        ? [
+            for (final m in current)
+              if (m != market) m,
+          ]
+        : [...current, market];
+    if (next.isEmpty) return;
+    _sendSettings(room.settings, emojiMarkets: next);
+  }
+
+  /// emoji_quiz: the hardest puzzles to play (1-3).
+  void setEmojiMaxDifficulty(int difficulty) {
+    final view = _view;
+    final room = _session?.room;
+    if (view == null || room == null || !view.isHost) return;
+    if (difficulty < EmojiDifficulty.min || difficulty > EmojiDifficulty.max) {
+      return;
+    }
+    _sendSettings(room.settings, emojiMaxDifficulty: difficulty);
+  }
+
+  /// «Могу включать музыку» (`lobby.set_can_dj`); the server echoes it in
+  /// `room.player_updated`.
+  void setCanDj(bool canDj) {
+    if (_view == null) return;
+    _session?.send(LobbySetCanDj(canDj: canDj));
+  }
+
   void _sendSettings(
     RoomSettings current, {
     GameMode? mode,
     int? roundsTotal,
     List<PoolSource>? poolSources,
+    List<EmojiMarket>? emojiMarkets,
+    int? emojiMaxDifficulty,
   }) {
+    final nextMode = mode ?? current.mode;
+    // The emoji settings only mean something in emoji_quiz; there they are
+    // kept unless changed (omitted = the server's locale default).
+    final emoji = nextMode == GameMode.emojiQuiz;
     _session?.send(
       LobbyUpdateSettings(
-        mode: mode ?? current.mode,
+        mode: nextMode,
         roundsTotal: roundsTotal ?? current.roundsTotal,
         shuffleStrategy: current.shuffleStrategy,
         explicitFilter: current.explicitFilter,
         poolSources: poolSources ?? current.poolSources,
         packId: current.packId,
+        emojiMarkets: emoji ? emojiMarkets ?? current.emojiMarkets : null,
+        emojiMaxDifficulty: emoji
+            ? emojiMaxDifficulty ?? current.emojiMaxDifficulty
+            : null,
       ),
     );
   }

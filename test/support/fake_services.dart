@@ -9,6 +9,7 @@ import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/auth/auth_api.dart';
 import 'package:sporand/core/auth/auth_service.dart';
 import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/consent/consent_sync.dart';
 import 'package:sporand/core/crash/crash_reporter.dart';
 import 'package:sporand/core/net/realtime_client.dart';
 import 'package:sporand/core/platform/app_info.dart';
@@ -61,6 +62,7 @@ class FakeServices {
     backend: analyticsBackend,
   );
   final FakeConsentService consent = FakeConsentService();
+  final FakeConsentApi consentApi = FakeConsentApi();
   final FakeAppCheckService appCheck = FakeAppCheckService();
   final FakeAuthApi authApi = FakeAuthApi();
   late final FakeAppInfoSource appInfo = FakeAppInfoSource(

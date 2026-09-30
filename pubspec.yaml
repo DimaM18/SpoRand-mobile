@@ -43,6 +43,8 @@ dependencies:
     path: packages/sporand_native
 
   # Pure Dart helpers.
+  # Grapheme clusters of emoji prompts (already in the lockfile via Flutter).
+  characters: 1.4.1
   clock: ^1.1.3
   http: ^1.6.0
   intl: any

@@ -96,6 +96,7 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
               subtitle: switch (mode) {
                 GameMode.whoseSong => l10n.modeWhoseSongHint,
                 GameMode.guessTrack => l10n.modeGuessTrackHint,
+                GameMode.emojiQuiz => l10n.modeEmojiQuizHint,
               },
               selected: _mode == mode,
               onTap: _busy ? null : () => setState(() => _mode = mode),

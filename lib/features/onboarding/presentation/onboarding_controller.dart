@@ -11,6 +11,7 @@ import 'package:sporand/core/ads/ads_policy.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/consent/consent_policy.dart';
 import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/privacy/age_band.dart';
 import 'package:sporand/features/onboarding/domain/age_gate.dart';
 
@@ -120,6 +121,14 @@ class OnboardingController extends Notifier<OnboardingState> {
       ),
       adsPersonalized: adsPersonalized,
     );
+    // The server stores the same choice (debounced, never blocking).
+    ref
+        .read(consentSyncProvider)
+        .schedule(
+          analytics: analyticsChoice,
+          adsPersonalized: adsPersonalized,
+          source: ConsentSource.onboarding,
+        );
     await _initAdsIfAllowed(band, info);
     await prefs.markOnboardingCompleted();
 

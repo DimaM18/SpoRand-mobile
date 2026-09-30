@@ -60,7 +60,9 @@ final class E2ePhone {
     AdsService? ads,
   }) : clock = PhoneClock(uptimeAtZeroUs: uptimeAtZeroUs, anchorUs: anchorUs),
        wire = WireTap(name),
-       rest = RestTap(name) {
+       rest = RestTap(name),
+       analyticsBackend = InMemoryAnalyticsBackend() {
+    analytics = AnalyticsService(backend: analyticsBackend);
     container = ProviderContainer(
       overrides: [
         // The app's own ApiClient wiring, over a recording http.Client.
@@ -120,9 +122,7 @@ final class E2ePhone {
               FakeAdsService(interstitialLoaded: false, rewardedLoaded: false),
         ),
         purchasesServiceProvider.overrideWithValue(FakePurchasesService()),
-        analyticsProvider.overrideWithValue(
-          AnalyticsService(backend: InMemoryAnalyticsBackend()),
-        ),
+        analyticsProvider.overrideWithValue(analytics),
         remoteConfigProvider.overrideWithValue(
           RemoteConfigService(backend: InMemoryRemoteConfigBackend()),
         ),
@@ -161,6 +161,10 @@ final class E2ePhone {
   final RestTap rest;
   final FakeMusicAppLauncher musicApp = FakeMusicAppLauncher();
 
+  /// The app's GA4 wrapper over an in-memory backend (what GA4 would get).
+  final InMemoryAnalyticsBackend analyticsBackend;
+  late final AnalyticsService analytics;
+
   /// App lifecycle and connectivity changes (`app.state`).
   final FakeAppSignalSource signals = FakeAppSignalSource();
   late final ProviderContainer container;
@@ -191,6 +195,9 @@ final class E2ePhone {
   Future<void> signIn() async {
     userId = (await container.read(authServiceProvider).ensureSession()).userId;
   }
+
+  /// «Могу включать музыку» in the lobby (`lobby.set_can_dj`).
+  void setCanDj(bool canDj) => lobby.setCanDj(canDj);
 
   Future<List<Song>> searchSongs(String query, {int limit = 25}) =>
       container.read(mySongsApiProvider).search(query, limit: limit);
@@ -301,8 +308,8 @@ final class E2ePhone {
   }, timeout: timeout);
 
   /// Like [waitGame], but also matches states the controller has already
-  /// left: some last only for one event-loop turn (`round.voided` is
-  /// followed at once by the spare's `round.prepare`).
+  /// left: some last only briefly (`round.voided` is followed by the
+  /// spare's `round.prepare` after `void_notice_ms`, which may be 0).
   Future<S> waitGameSeen<S extends GameUiState>(
     String what, {
     bool Function(S state)? where,

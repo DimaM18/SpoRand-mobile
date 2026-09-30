@@ -32,8 +32,9 @@ final class _RoundRuntime {
 
   String get roundId => prepare.roundId;
 
-  /// This device got the cue: it is the DJ of an external_player round.
-  bool get isDj => prepare.cue != null;
+  /// This player is the round's DJ (`you_are_dj`): it got the cue and
+  /// reports the start.
+  bool get isDj => prepare.youAreDj;
 
   /// Bumped by every (re)schedule of the unlock timer, so a slower earlier
   /// scheduling cannot overwrite a newer one.
@@ -80,7 +81,8 @@ final class _RoundRuntime {
 ///   playback start);
 /// - the DJ of an external_player round (A2.2) starts the song in their own
 ///   music app and reports `round.playback_started{source: dj_tap}` with the
-///   pointer-down time of «Музыка играет!»;
+///   pointer-down time of «Музыка играет!» (the DJ is whoever the server
+///   names with `you_are_dj`, not necessarily the playback device);
 /// - the first pointer down commits and sends `round.answer` with the OS
 ///   touch time as `tap_mono_us` and the unlock frame time as
 ///   `unlock_mono_us`;
@@ -93,6 +95,11 @@ class GameController extends Notifier<GameUiState> {
   HostPlaybackCoordinator? _host;
   Timer? _unlockTimer;
   Timer? _timeUpTimer;
+
+  /// The last `round.voided` reason while its notice is due
+  /// (`void_notice_ms`), and the timer that ends it.
+  RoundVoidReason? _voidNotice;
+  Timer? _voidNoticeTimer;
   String? _gameId;
   int _roundsTotal = 0;
 
@@ -374,6 +381,8 @@ class GameController extends Notifier<GameUiState> {
           : message.youAreOwner
           ? const RoundOwnerWatching()
           : const RoundLocked(),
+      // A spare round starts while the void notice may still be due.
+      voidNotice: _voidNotice,
     );
     _maybePreloadAds(message);
 
@@ -409,14 +418,18 @@ class GameController extends Notifier<GameUiState> {
       : _revealedRounds.length + 1;
 
   RoundView _viewOf(RoundPrepare message) {
-    final room = _session?.room;
+    final session = _session;
+    final room = session?.room;
+    final dj = message.djPlayerId;
     return RoundView.fromPrepare(
       message,
       position: _positionOf(message),
       roundsTotal: _roundsTotal,
       mode: room?.mode,
       externalAudio: room?.capabilities.isExternalApp ?? false,
-      guessTrackDjCanAnswer: _session?.config.guessTrackDjCanAnswer ?? false,
+      guessTrackDjCanAnswer: session?.config.guessTrackDjCanAnswer ?? false,
+      whoseSongDjCanAnswer: session?.config.whoseSongDjCanAnswer ?? false,
+      djName: dj == null ? null : session?.room?.player(dj)?.displayName,
     );
   }
 
@@ -606,10 +619,29 @@ class GameController extends Notifier<GameUiState> {
     final current = state;
     _round = null;
     unawaited(_host?.stop());
+    // The server waits `void_notice_ms` before the spare's round.prepare;
+    // the notice stays up that long even if the spare comes sooner, and
+    // never holds the spare back.
+    _voidNoticeTimer?.cancel();
+    _voidNotice = message.reason;
+    _voidNoticeTimer = Timer(
+      Duration(milliseconds: _session?.config.voidNoticeMs ?? 1500),
+      _endVoidNotice,
+    );
     state = GameVoidedState(
       reason: message.reason,
       round: current is GameRoundState ? current.round : null,
     );
+  }
+
+  void _endVoidNotice() {
+    _voidNoticeTimer?.cancel();
+    _voidNoticeTimer = null;
+    _voidNotice = null;
+    final current = state;
+    if (current is GameRoundState && current.voidNotice != null) {
+      state = current.copyWith(clearVoidNotice: true);
+    }
   }
 
   void _onReveal(RoundReveal message) {
@@ -745,18 +777,27 @@ class GameController extends Notifier<GameUiState> {
     _cancelTimers();
     _round = null;
     // Ads never play over audio (brief §6).
-    await _host?.stop();
+    try {
+      await _host?.stop();
+    } on Object {
+      // Checked below: a player that could not be stopped means no ad.
+    }
     if (_isStale(epoch)) return;
     final adsRemoved = ref
         .read(purchasesServiceProvider)
         .entitlements
         .adsRemoved;
+    // `show_interstitial` is the server's per-player decision (it already
+    // leaves out, e.g., the BYOP DJ whose music app may still play); on top
+    // of it this device never shows one while its own player is playing.
+    final localAudio = _host?.adapter.isPlaying ?? false;
     final interstitialAllowed =
         _monetizationAllowed &&
         _config.interstitialEnabled &&
         (_session?.config.interstitialEnabled ?? true) &&
         _ads.isInitialized &&
-        !adsRemoved;
+        !adsRemoved &&
+        !localAudio;
     final analytics = ref.read(analyticsProvider);
     if (message.showInterstitial && interstitialAllowed) {
       state = GameAdBreakState(
@@ -953,8 +994,15 @@ class GameController extends Notifier<GameUiState> {
     _timeUpTimer = null;
   }
 
+  void _cancelVoidNotice() {
+    _voidNoticeTimer?.cancel();
+    _voidNoticeTimer = null;
+    _voidNotice = null;
+  }
+
   void _reset() {
     _cancelTimers();
+    _cancelVoidNotice();
     _round = null;
     _gameId = null;
     _roundsTotal = 0;
@@ -972,6 +1020,7 @@ class GameController extends Notifier<GameUiState> {
     }
     _subs.clear();
     _cancelTimers();
+    _cancelVoidNotice();
     _round = null;
     _gameId = null;
     _roundsTotal = 0;

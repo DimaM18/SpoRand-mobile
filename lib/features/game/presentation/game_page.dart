@@ -3,7 +3,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
-import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/game/presentation/widgets/end_of_game_views.dart';
@@ -70,13 +69,7 @@ class GamePage extends ConsumerWidget {
       GameRevealState(:final reveal) => RevealScreen(reveal: reveal),
       GameVoidedState(:final reason) => StatusScreen(
         title: l10n.gameVoided,
-        subtitle: switch (reason) {
-          RoundVoidReason.playbackTimeout ||
-          RoundVoidReason.playbackFailed => l10n.gameVoidedPlayback,
-          RoundVoidReason.hostDisconnected => l10n.gameVoidedHost,
-          RoundVoidReason.serverRestart => l10n.gameVoidedServer,
-          RoundVoidReason.unknown => null,
-        },
+        subtitle: voidReasonText(l10n, reason),
         icon: Icons.replay_rounded,
       ),
       GamePausedState() => StatusScreen(

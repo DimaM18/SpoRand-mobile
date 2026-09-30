@@ -36,6 +36,18 @@ _restCodecs = [
   ),
   (
     method: 'GET',
+    path: RegExp(r'^/v1/me$'),
+    request: null,
+    response: (j) => MeResponse.fromJson(j).toJson(),
+  ),
+  (
+    method: 'PUT',
+    path: RegExp(r'^/v1/me/consent$'),
+    request: (j) => ConsentUpdateRequest.fromJson(j).toJson(),
+    response: (j) => ConsentState.fromJson(j).toJson(),
+  ),
+  (
+    method: 'GET',
     path: RegExp(r'^/v1/songs/search$'),
     request: null,
     response: (j) => SongSearchResponse.fromJson(j).toJson(),

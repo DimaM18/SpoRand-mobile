@@ -925,4 +925,76 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get mySongsLegacyHint =>
       'Песни из старого каталога нужно заменить новыми';
+
+  @override
+  String get modeEmojiQuiz => 'Эмодзи-квиз';
+
+  @override
+  String get modeEmojiQuizHint => 'Угадайте песню по эмодзи — музыка не нужна';
+
+  @override
+  String get gamePromptEmoji => 'Какая это песня?';
+
+  @override
+  String get gameEmojiHidden => 'Эмодзи появятся на старте';
+
+  @override
+  String gameEmojiSemantics(String emoji) {
+    return 'Эмодзи: $emoji';
+  }
+
+  @override
+  String revealYear(String year) {
+    return 'Год: $year';
+  }
+
+  @override
+  String gameDjStartingNamed(String name) {
+    return '$name включает песню…';
+  }
+
+  @override
+  String get gameDjRoundNoAnswer => 'Ты DJ этого раунда — отвечают остальные';
+
+  @override
+  String gameVoidedNotice(String reason) {
+    return 'Раунд пропущен: $reason';
+  }
+
+  @override
+  String get gameVoidedNoticeNoReason => 'Раунд пропущен';
+
+  @override
+  String get lobbyCanDj => 'Могу включать музыку';
+
+  @override
+  String get lobbyCanDjHint =>
+      'Иногда DJ будешь ты: включишь песню в своём музыкальном приложении';
+
+  @override
+  String get lobbyDjBadge => 'DJ';
+
+  @override
+  String get lobbyEmojiMarkets => 'Какие песни';
+
+  @override
+  String get lobbyEmojiMarketIntl => 'Международные';
+
+  @override
+  String get lobbyEmojiMarketPl => 'Польские';
+
+  @override
+  String get lobbyEmojiDifficulty => 'Сложность';
+
+  @override
+  String get lobbyEmojiDifficultyEasy => 'Лёгкие';
+
+  @override
+  String get lobbyEmojiDifficultyMedium => 'До средних';
+
+  @override
+  String get lobbyEmojiDifficultyHard => 'Все, включая сложные';
+
+  @override
+  String get lobbyEmojiHint => 'Без музыки: хватит телефонов';
 }

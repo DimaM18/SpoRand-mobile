@@ -904,4 +904,77 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mySongsLegacyHint =>
       'Songs from the old catalogue need to be replaced';
+
+  @override
+  String get modeEmojiQuiz => 'Emoji quiz';
+
+  @override
+  String get modeEmojiQuizHint => 'Guess the song from emoji — no music needed';
+
+  @override
+  String get gamePromptEmoji => 'Which song is it?';
+
+  @override
+  String get gameEmojiHidden => 'The emoji appear at the start';
+
+  @override
+  String gameEmojiSemantics(String emoji) {
+    return 'Emoji: $emoji';
+  }
+
+  @override
+  String revealYear(String year) {
+    return 'Year: $year';
+  }
+
+  @override
+  String gameDjStartingNamed(String name) {
+    return '$name is starting the song…';
+  }
+
+  @override
+  String get gameDjRoundNoAnswer =>
+      'You\'re this round\'s DJ — the others answer';
+
+  @override
+  String gameVoidedNotice(String reason) {
+    return 'Round skipped: $reason';
+  }
+
+  @override
+  String get gameVoidedNoticeNoReason => 'Round skipped';
+
+  @override
+  String get lobbyCanDj => 'I can play the music';
+
+  @override
+  String get lobbyCanDjHint =>
+      'Sometimes you\'ll be the DJ: play the song in your own music app';
+
+  @override
+  String get lobbyDjBadge => 'DJ';
+
+  @override
+  String get lobbyEmojiMarkets => 'Songs';
+
+  @override
+  String get lobbyEmojiMarketIntl => 'International';
+
+  @override
+  String get lobbyEmojiMarketPl => 'Polish';
+
+  @override
+  String get lobbyEmojiDifficulty => 'Difficulty';
+
+  @override
+  String get lobbyEmojiDifficultyEasy => 'Easy';
+
+  @override
+  String get lobbyEmojiDifficultyMedium => 'Up to medium';
+
+  @override
+  String get lobbyEmojiDifficultyHard => 'All, hard ones too';
+
+  @override
+  String get lobbyEmojiHint => 'No music: phones are enough';
 }

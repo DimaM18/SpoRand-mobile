@@ -520,6 +520,158 @@ void main() {
     });
   });
 
+  test('BYOP: «Могу включать музыку» sends lobby.set_can_dj; the echo moves '
+      'the toggle and the DJ badge', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(Samples.welcome(room: Samples.byopRoom(state: RoomState.lobby)));
+      var view = t.view;
+      expect(view.showsDj, isTrue);
+      expect(view.meCanDj, isFalse, reason: 'guests default to false');
+      expect(
+        {for (final p in view.players) p.playerId: p.canDj},
+        {Samples.hostId: true, Samples.guestId: false, Samples.thirdId: false},
+      );
+
+      t.lobby.setCanDj(true);
+      async.flushMicrotasks();
+      expect(t.server.current.sent<LobbySetCanDj>().single.canDj, isTrue);
+      expect(t.view.meCanDj, isFalse, reason: 'the server decides');
+
+      t.send(
+        RoomPlayerUpdated(
+          Samples.player(Samples.guestId, 'Bartek', canDj: true),
+        ),
+      );
+      view = t.view;
+      expect(view.meCanDj, isTrue);
+      expect(view.players.singleWhere((p) => p.isMe).canDj, isTrue);
+      t.container.dispose();
+    });
+  });
+
+  test('with byop_dj_rotation the host is not always the DJ', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.byopRoom(state: RoomState.lobby),
+          config: const {'byop_dj_rotation': true},
+        ),
+      );
+      expect(t.view.isDjHost, isFalse);
+      expect(t.view.showsDj, isTrue);
+      t.container.dispose();
+    });
+  });
+
+  test('emoji_quiz: 2 players and no pools; markets and difficulty go out '
+      'with the settings; the last market cannot be turned off', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.room(
+            mode: GameMode.emojiQuiz,
+            players: [
+              Samples.player(
+                Samples.hostId,
+                'Ania',
+                role: PlayerRole.host,
+                playbackDevice: true,
+                contributor: false,
+              ),
+            ],
+            emojiMarkets: const [EmojiMarket.pl, EmojiMarket.intl],
+            emojiMaxDifficulty: 2,
+          ),
+        ),
+      );
+      var view = t.view;
+      expect(view.isEmojiQuiz, isTrue);
+      expect(view.collectsPools, isFalse);
+      expect(view.showsDj, isFalse);
+      expect(view.emojiMarkets, [EmojiMarket.pl, EmojiMarket.intl]);
+      expect(view.emojiMaxDifficulty, 2);
+      expect(view.startBlocker, isA<NeedMorePlayers>());
+      t.send(
+        RoomPlayerJoined(
+          Samples.player(Samples.guestId, 'Bartek', contributor: false),
+        ),
+      );
+      view = t.view;
+      expect(view.startBlocker, isNull, reason: 'no pools needed');
+
+      t.lobby.toggleEmojiMarket(EmojiMarket.pl);
+      t.lobby.setEmojiMaxDifficulty(1);
+      t.lobby.setEmojiMaxDifficulty(7);
+      async.flushMicrotasks();
+      final sent = t.server.current.sent<LobbyUpdateSettings>();
+      expect(sent, hasLength(2), reason: 'difficulty 7 is not sent');
+      expect(sent.first.mode, GameMode.emojiQuiz);
+      expect(sent.first.emojiMarkets, [EmojiMarket.intl]);
+      expect(sent.first.emojiMaxDifficulty, 2);
+      expect(sent.last.emojiMarkets, [EmojiMarket.pl, EmojiMarket.intl]);
+      expect(sent.last.emojiMaxDifficulty, 1);
+      for (final settings in sent) {
+        // What the server would parse (strict, like packages/protocol).
+        expect(
+          LobbyUpdateSettings.fromJson(settings.toJson()).toJson(),
+          settings.toJson(),
+        );
+      }
+
+      t.send(
+        RoomStateMessage(
+          Samples.room(
+            mode: GameMode.emojiQuiz,
+            emojiMarkets: const [EmojiMarket.intl],
+          ),
+        ),
+      );
+      t.lobby.toggleEmojiMarket(EmojiMarket.intl);
+      async.flushMicrotasks();
+      expect(
+        t.server.current.sent<LobbyUpdateSettings>(),
+        hasLength(2),
+        reason: 'at least one market stays on',
+      );
+      t.container.dispose();
+    });
+  });
+
+  test('switching to emoji_quiz sends the mode; switching away drops the '
+      'emoji fields', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(Samples.welcome(me: Samples.hostId));
+      t.lobby.setMode(GameMode.emojiQuiz);
+      async.flushMicrotasks();
+      final toEmoji = t.server.current.sent<LobbyUpdateSettings>().single;
+      expect(toEmoji.mode, GameMode.emojiQuiz);
+      expect(toEmoji.emojiMarkets, isNull, reason: 'server locale default');
+
+      t.send(
+        RoomStateMessage(
+          Samples.room(
+            mode: GameMode.emojiQuiz,
+            emojiMarkets: const [EmojiMarket.pl],
+            emojiMaxDifficulty: 1,
+          ),
+        ),
+      );
+      t.lobby.setMode(GameMode.guessTrack);
+      async.flushMicrotasks();
+      final back = t.server.current.sent<LobbyUpdateSettings>().last;
+      expect(back.mode, GameMode.guessTrack);
+      expect(back.toJson().containsKey('emoji_markets'), isFalse);
+      expect(back.toJson().containsKey('emoji_max_difficulty'), isFalse);
+      t.container.dispose();
+    });
+  });
+
   group('DisplayName', () {
     test('strips invisible characters and checks the length', () {
       expect(DisplayName.validate('  Ania\u200B '), 'Ania');

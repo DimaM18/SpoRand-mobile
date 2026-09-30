@@ -18,6 +18,8 @@ const List<({int uptimeUs, int anchorUs})> _phoneClocks = [
   (uptimeUs: 7000000, anchorUs: 5000000),
   // Up for five weeks.
   (uptimeUs: 3024000000000, anchorUs: 12345),
+  // Up for three hours; the app started a second ago.
+  (uptimeUs: 10800000000, anchorUs: 10799000000),
 ];
 
 /// Queries a player might type into «Мои песни» (the seed song source).
@@ -42,7 +44,8 @@ final class Party {
   /// [provider], the others join by code, everyone picks
   /// [picksPerPlayer] songs through the song search and saves them, the
   /// sockets connect and sync their clocks, and everyone adds their songs to
-  /// the room. Returns once the host's lobby has no start blocker.
+  /// the room (both skipped when [pools] is false: emoji_quiz). Returns once
+  /// the host's lobby has no start blocker.
   static Future<Party> assemble({
     required Uri api,
     required List<String> names,
@@ -50,6 +53,7 @@ final class Party {
     required MusicProviderId provider,
     required ContractAudit audit,
     Map<int, AdsService> ads = const {},
+    bool pools = true,
   }) async {
     final phones = [
       for (final (index, name) in names.indexed)
@@ -74,7 +78,7 @@ final class Party {
     // «Мои песни»: distinct, non-explicit songs per player (a song two
     // players own would be excluded from whose_song).
     final taken = <String>{};
-    for (final phone in phones) {
+    for (final phone in pools ? phones : const <E2ePhone>[]) {
       final picks = <String>[];
       for (final query in _songQueries) {
         for (final song in await phone.searchSongs(query)) {
@@ -106,7 +110,8 @@ final class Party {
     }
     e2eLog('all sockets connected, clocks synced');
 
-    for (final phone in phones) {
+    // emoji_quiz plays from the curated catalogue: no pools ([pools] false).
+    for (final phone in pools ? phones : const <E2ePhone>[]) {
       await phone.addMySongsToRoom();
     }
     await party.host.waitFor('a startable lobby', () {

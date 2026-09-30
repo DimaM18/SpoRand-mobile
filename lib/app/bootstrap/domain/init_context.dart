@@ -3,6 +3,7 @@ import 'package:sporand/app/bootstrap/warmup/resource_warmer.dart';
 import 'package:sporand/app/flavors/app_env.dart';
 import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/core/ads/ads_service.dart';
+import 'package:sporand/core/analytics/analytics_identity.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/auth/auth_service.dart';
 import 'package:sporand/core/consent/consent_service.dart';
@@ -41,6 +42,7 @@ final class BootDependencies {
     required this.playback,
     required this.realtime,
     required this.linkParser,
+    this.analyticsIdentity,
   });
 
   final AppEnv env;
@@ -67,6 +69,10 @@ final class BootDependencies {
   final PlaybackAdapter playback;
   final RealtimeClient realtime;
   final DeepLinkParser linkParser;
+
+  /// Keeps the GA4 user id on the session's `analytics_uid`; without it the
+  /// `auth` step sets the boot session's id once.
+  final AnalyticsIdentity? analyticsIdentity;
 }
 
 /// Shared state of one boot: services plus what earlier steps found out.

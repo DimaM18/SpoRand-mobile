@@ -1605,6 +1605,132 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Песни из старого каталога нужно заменить новыми'**
   String get mySongsLegacyHint;
+
+  /// emoji_quiz game mode [новое имя — согласовать].
+  ///
+  /// In ru, this message translates to:
+  /// **'Эмодзи-квиз'**
+  String get modeEmojiQuiz;
+
+  /// No description provided for @modeEmojiQuizHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Угадайте песню по эмодзи — музыка не нужна'**
+  String get modeEmojiQuizHint;
+
+  /// Question of an emoji round.
+  ///
+  /// In ru, this message translates to:
+  /// **'Какая это песня?'**
+  String get gamePromptEmoji;
+
+  /// Screen reader label of the emoji line before the round opens.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эмодзи появятся на старте'**
+  String get gameEmojiHidden;
+
+  /// No description provided for @gameEmojiSemantics.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эмодзи: {emoji}'**
+  String gameEmojiSemantics(String emoji);
+
+  /// Release year in the reveal (a string, so it is not grouped as a number).
+  ///
+  /// In ru, this message translates to:
+  /// **'Год: {year}'**
+  String revealYear(String year);
+
+  /// Guests of a BYOP round wait for the round DJ.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} включает песню…'**
+  String gameDjStartingNamed(String name);
+
+  /// The round's DJ may not answer (dj_ineligible).
+  ///
+  /// In ru, this message translates to:
+  /// **'Ты DJ этого раунда — отвечают остальные'**
+  String get gameDjRoundNoAnswer;
+
+  /// Stays over the spare round for void_notice_ms.
+  ///
+  /// In ru, this message translates to:
+  /// **'Раунд пропущен: {reason}'**
+  String gameVoidedNotice(String reason);
+
+  /// No description provided for @gameVoidedNoticeNoReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Раунд пропущен'**
+  String get gameVoidedNoticeNoReason;
+
+  /// lobby.set_can_dj toggle (BYOP DJ rotation).
+  ///
+  /// In ru, this message translates to:
+  /// **'Могу включать музыку'**
+  String get lobbyCanDj;
+
+  /// No description provided for @lobbyCanDjHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Иногда DJ будешь ты: включишь песню в своём музыкальном приложении'**
+  String get lobbyCanDjHint;
+
+  /// A player who opted in to the DJ role.
+  ///
+  /// In ru, this message translates to:
+  /// **'DJ'**
+  String get lobbyDjBadge;
+
+  /// emoji_quiz catalogue markets.
+  ///
+  /// In ru, this message translates to:
+  /// **'Какие песни'**
+  String get lobbyEmojiMarkets;
+
+  /// No description provided for @lobbyEmojiMarketIntl.
+  ///
+  /// In ru, this message translates to:
+  /// **'Международные'**
+  String get lobbyEmojiMarketIntl;
+
+  /// No description provided for @lobbyEmojiMarketPl.
+  ///
+  /// In ru, this message translates to:
+  /// **'Польские'**
+  String get lobbyEmojiMarketPl;
+
+  /// emoji_quiz emoji_max_difficulty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сложность'**
+  String get lobbyEmojiDifficulty;
+
+  /// No description provided for @lobbyEmojiDifficultyEasy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лёгкие'**
+  String get lobbyEmojiDifficultyEasy;
+
+  /// No description provided for @lobbyEmojiDifficultyMedium.
+  ///
+  /// In ru, this message translates to:
+  /// **'До средних'**
+  String get lobbyEmojiDifficultyMedium;
+
+  /// No description provided for @lobbyEmojiDifficultyHard.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все, включая сложные'**
+  String get lobbyEmojiDifficultyHard;
+
+  /// No description provided for @lobbyEmojiHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без музыки: хватит телефонов'**
+  String get lobbyEmojiHint;
 }
 
 class _AppLocalizationsDelegate

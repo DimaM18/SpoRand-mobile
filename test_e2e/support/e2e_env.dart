@@ -49,3 +49,21 @@ void e2eLog(String line) {
   final ms = (e2eNowUs() / 1000).toStringAsFixed(1).padLeft(9);
   stderr.writeln('[e2e $ms ms] $line');
 }
+
+/// The server's log file (`E2E_SERVER_LOG`, set by `scripts/e2e.sh`). The
+/// server runs with `ANALYTICS_SINK=console`, so every server analytics
+/// event that passed validation and the consent gate is one
+/// `{"analytics": {...}}` line in it. Null when the suite runs against a
+/// server started some other way.
+File? e2eServerLog() {
+  final path = Platform.environment['E2E_SERVER_LOG'] ?? '';
+  return path.isEmpty ? null : File(path);
+}
+
+/// The emoji catalogue the server loaded (`E2E_EMOJI_CATALOG`, passed as
+/// `EMOJI_CATALOG_PATH` to the server by `scripts/e2e.sh`), else the seed
+/// file in the repository.
+File e2eEmojiCatalogFile() {
+  final path = Platform.environment['E2E_EMOJI_CATALOG'] ?? '';
+  return File(path.isNotEmpty ? path : '../server/data/emoji-songs.seed.json');
+}

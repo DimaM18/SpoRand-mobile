@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/router/deep_links.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/features/home/presentation/home_page.dart';
 
 import '../support/app_harness.dart';
@@ -29,6 +30,17 @@ void main() {
     expect(find.text('Чья это песня?'), findsOneWidget);
     expect(services.userPrefs.onboardingCompleted, isTrue);
     expect(services.ads.isInitialized, isTrue);
+
+    // The onboarding choice reaches the server after the debounce, without
+    // having held up the way home.
+    expect(services.consentApi.sent, isEmpty);
+    await tester.pump(const Duration(seconds: 1));
+    expect(services.consentApi.sent, hasLength(1));
+    final sent = services.consentApi.sent.single;
+    expect(sent.source, ConsentSource.onboarding);
+    expect(sent.consentAnalytics, isTrue);
+    // Outside the EEA (the fake UMP says not required) ads may personalize.
+    expect(sent.consentAdsPersonalized, isTrue);
   });
 
   testWidgets('returning user: a link queued during boot opens after it', (

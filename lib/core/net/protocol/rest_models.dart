@@ -110,9 +110,10 @@ final class UserProfile {
   final String? consentUpdatedAt;
   final int gamesCompleted;
 
-  /// HMAC of `user_id` for GA4 `setUserId` (brief §4.1 `User`). Contract
-  /// gap: packages/protocol `UserProfile` does not define it yet, so the
-  /// server may never send it; the app then simply sets no analytics user.
+  /// HMAC of `user_id` computed by the server (S8.6): the analytics user id
+  /// (GA4 `setUserId`, only with analytics consent), never the raw
+  /// `user_id`. Required by packages/protocol since wave 3; parsed leniently
+  /// so an older server still works (the app then sets no analytics user).
   final String? analyticsUid;
 
   JsonMap toJson() => {
@@ -131,8 +132,9 @@ final class UserProfile {
 }
 
 /// `POST /v1/auth/guest` (`GuestAuthResponse`) and `POST /v1/auth/refresh`
-/// (`TokenPair`) responses. Parsing is lenient where the app has fallbacks:
-/// the TTL may come from the JWT and the refresh response has no user.
+/// (`RefreshResponse`: the token pair plus the current profile) responses.
+/// Parsing is lenient where the app has fallbacks: the TTL may come from the
+/// JWT, and an older server's refresh response has no user.
 final class AuthTokensResponse {
   const AuthTokensResponse({
     required this.accessToken,
@@ -158,7 +160,8 @@ final class AuthTokensResponse {
   final int? accessTokenTtlMs;
   final String? installationId;
 
-  /// Guest creation only.
+  /// The current profile (with `analytics_uid`); absent only from an older
+  /// server's refresh response.
   final UserProfile? user;
 
   JsonMap toJson() => {
@@ -201,6 +204,103 @@ final class MePatchRequest {
     'display_name': ?displayName,
     'locale': ?locale,
     'age_band': ?ageBand?.wireName,
+  };
+}
+
+/// `ConsentUpdateRequest.source`: where the choice was made. `onboarding`
+/// is our onboarding consent screen (S7.11.2) [новое имя — согласовать].
+enum ConsentSource implements WireEnum {
+  ump('ump'),
+  settings('settings'),
+  onboarding('onboarding');
+
+  const ConsentSource(this.wire);
+
+  @override
+  final String wire;
+}
+
+/// `PUT /v1/me/consent` body (brief §4.2, §7; S7.11.2): the analytics choice
+/// from our own screens and the ads-personalization signal from UMP.
+final class ConsentUpdateRequest {
+  const ConsentUpdateRequest({
+    required this.consentAnalytics,
+    required this.consentAdsPersonalized,
+    required this.source,
+  });
+
+  factory ConsentUpdateRequest.fromJson(JsonMap json) => ConsentUpdateRequest(
+    consentAnalytics: (json..expectOnly(_keys)).boolean('consent_analytics'),
+    consentAdsPersonalized: json.boolean('consent_ads_personalized'),
+    source: json.wire('source', ConsentSource.values),
+  );
+
+  static const _keys = {
+    'consent_analytics',
+    'consent_ads_personalized',
+    'source',
+  };
+
+  final bool consentAnalytics;
+  final bool consentAdsPersonalized;
+  final ConsentSource source;
+
+  JsonMap toJson() => {
+    'consent_analytics': consentAnalytics,
+    'consent_ads_personalized': consentAdsPersonalized,
+    'source': source.wire,
+  };
+}
+
+/// `PUT /v1/me/consent` response: the stored flags.
+final class ConsentState {
+  const ConsentState({
+    required this.consentAnalytics,
+    required this.consentAdsPersonalized,
+    required this.consentUpdatedAt,
+  });
+
+  factory ConsentState.fromJson(JsonMap json) => ConsentState(
+    consentAnalytics: json.boolean('consent_analytics'),
+    consentAdsPersonalized: json.boolean('consent_ads_personalized'),
+    consentUpdatedAt: json.str('consent_updated_at'),
+  );
+
+  final bool consentAnalytics;
+  final bool consentAdsPersonalized;
+  final String consentUpdatedAt;
+
+  JsonMap toJson() => {
+    'consent_analytics': consentAnalytics,
+    'consent_ads_personalized': consentAdsPersonalized,
+    'consent_updated_at': consentUpdatedAt,
+  };
+}
+
+/// `GET /v1/me` response. The app reads only [user] (for `analytics_uid`);
+/// entitlements come from RevenueCat, so the other parts are kept as they
+/// arrived.
+final class MeResponse {
+  const MeResponse({
+    required this.user,
+    required this.entitlements,
+    required this.musicLinks,
+  });
+
+  factory MeResponse.fromJson(JsonMap json) => MeResponse(
+    user: UserProfile.fromJson(json.obj('user')),
+    entitlements: json.obj('entitlements'),
+    musicLinks: json.list('music_links', (item) => item),
+  );
+
+  final UserProfile user;
+  final JsonMap entitlements;
+  final List<Object?> musicLinks;
+
+  JsonMap toJson() => {
+    'user': user.toJson(),
+    'entitlements': entitlements,
+    'music_links': musicLinks,
   };
 }
 

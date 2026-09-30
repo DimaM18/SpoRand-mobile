@@ -590,5 +590,81 @@
   "mySongsLegacyHint": "Песни из старого каталога нужно заменить новыми",
   "@mySongsLegacyHint": {
     "description": "«Мои песни» still holds legacy catalogue picks (test_catalog); they cannot be saved as songs."
-  }
+  },
+  "modeEmojiQuiz": "Эмодзи-квиз",
+  "@modeEmojiQuiz": {
+    "description": "emoji_quiz game mode [новое имя — согласовать]."
+  },
+  "modeEmojiQuizHint": "Угадайте песню по эмодзи — музыка не нужна",
+  "gamePromptEmoji": "Какая это песня?",
+  "@gamePromptEmoji": {
+    "description": "Question of an emoji round."
+  },
+  "gameEmojiHidden": "Эмодзи появятся на старте",
+  "@gameEmojiHidden": {
+    "description": "Screen reader label of the emoji line before the round opens."
+  },
+  "gameEmojiSemantics": "Эмодзи: {emoji}",
+  "@gameEmojiSemantics": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
+  },
+  "revealYear": "Год: {year}",
+  "@revealYear": {
+    "description": "Release year in the reveal (a string, so it is not grouped as a number).",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "gameDjStartingNamed": "{name} включает песню…",
+  "@gameDjStartingNamed": {
+    "description": "Guests of a BYOP round wait for the round DJ.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameDjRoundNoAnswer": "Ты DJ этого раунда — отвечают остальные",
+  "@gameDjRoundNoAnswer": {
+    "description": "The round's DJ may not answer (dj_ineligible)."
+  },
+  "gameVoidedNotice": "Раунд пропущен: {reason}",
+  "@gameVoidedNotice": {
+    "description": "Stays over the spare round for void_notice_ms.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "gameVoidedNoticeNoReason": "Раунд пропущен",
+  "lobbyCanDj": "Могу включать музыку",
+  "@lobbyCanDj": {
+    "description": "lobby.set_can_dj toggle (BYOP DJ rotation)."
+  },
+  "lobbyCanDjHint": "Иногда DJ будешь ты: включишь песню в своём музыкальном приложении",
+  "lobbyDjBadge": "DJ",
+  "@lobbyDjBadge": {
+    "description": "A player who opted in to the DJ role."
+  },
+  "lobbyEmojiMarkets": "Какие песни",
+  "@lobbyEmojiMarkets": {
+    "description": "emoji_quiz catalogue markets."
+  },
+  "lobbyEmojiMarketIntl": "Международные",
+  "lobbyEmojiMarketPl": "Польские",
+  "lobbyEmojiDifficulty": "Сложность",
+  "@lobbyEmojiDifficulty": {
+    "description": "emoji_quiz emoji_max_difficulty."
+  },
+  "lobbyEmojiDifficultyEasy": "Лёгкие",
+  "lobbyEmojiDifficultyMedium": "До средних",
+  "lobbyEmojiDifficultyHard": "Все, включая сложные",
+  "lobbyEmojiHint": "Без музыки: хватит телефонов"
 }

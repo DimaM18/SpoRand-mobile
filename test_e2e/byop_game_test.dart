@@ -53,7 +53,10 @@ void main() {
     () async {
       final party = await Party.assemble(
         api: e2eApiBaseUrl()!,
-        names: const ['Ana', 'Borys', 'Celina'],
+        // Four players: the DJ (the host) never answers in whose_song
+        // (whose_song_dj_can_answer = false), and neither does the owner,
+        // so at least two players race in every round.
+        names: const ['Ana', 'Borys', 'Celina', 'Dawid'],
         mode: GameMode.whoseSong,
         provider: MusicProviderId.externalPlayer,
         audit: audit,
@@ -67,6 +70,7 @@ void main() {
       });
       final phones = party.phones;
       final dj = party.host;
+      expect(dj.session.config.whoseSongDjCanAnswer, isFalse);
 
       // The room as the app sees it (welcome.room).
       final room = dj.session.room!;
@@ -196,8 +200,9 @@ void main() {
 }
 
 /// One BYOP round: the DJ opens the cue in its music app and taps «Музыка
-/// играет!»; of the two players who may answer, the early one taps 220 ms
-/// before the late one but its answer reaches the server ~160 ms after it.
+/// играет!»; of the players who may answer (neither the owner nor the DJ),
+/// the early one taps 220 ms before the late one but its answer reaches the
+/// server ~160 ms after it; a third one, if any, answers later still.
 Future<RoundReveal> _playRound(Party party, int index) async {
   final phones = party.phones;
   final rounds = {
@@ -209,6 +214,7 @@ Future<RoundReveal> _playRound(Party party, int index) async {
   // Only the DJ (the host, the playback device) gets the cue; no clip ever.
   final dj = phones.singleWhere((p) => rounds[p]!.round.isDj);
   expect(dj, same(party.host));
+  expect(rounds[dj]!.round.djMayAnswer, isFalse);
   for (final phone in phones) {
     final round = rounds[phone]!;
     final frame = receivedFor(phone, 'round.prepare', roundId);
@@ -230,9 +236,9 @@ Future<RoundReveal> _playRound(Party party, int index) async {
   final owner = phones.singleWhere((p) => rounds[p]!.round.youAreOwner);
   final answerers = [
     for (final p in phones)
-      if (p != owner) p,
+      if (p != owner && p != dj) p,
   ];
-  expect(answerers, hasLength(2));
+  expect(answerers, hasLength(owner == dj ? 3 : 2));
 
   // The DJ starts the song in its own music app, comes back and taps.
   expect(await dj.game.openCueInMusicApp(), isTrue);
@@ -279,7 +285,14 @@ Future<RoundReveal> _playRound(Party party, int index) async {
   final lateTap = late.tapAnswer(roundId, correct);
   expect(earlyTap, isNotNull);
   expect(lateTap, isNotNull);
-  for (final phone in [early, late]) {
+  final slow = answerers.skip(2).toList();
+  await sleepUntil(djStartUs + (_lateTapAfterStartMs + 250) * 1000);
+  for (final phone in slow) {
+    expect(phone.tapAnswer(roundId, correct), isNotNull);
+  }
+  // The DJ has no buttons (it watches), so its controller commits nothing.
+  expect(dj.tapAnswer(roundId, correct), isNull);
+  for (final phone in [early, late, ...slow]) {
     final ack = await phone.waitMessage<RoundAnswerAck>(
       'round.answer_ack',
       where: (f) => f.payload['round_id'] == roundId,
@@ -350,6 +363,9 @@ Future<RoundReveal> _playRound(Party party, int index) async {
   final ownerResult = resultOf(reveal, owner);
   expect(ownerResult.optionId, isNull);
   expect(ownerResult.points, 0);
+  final djResult = resultOf(reveal, dj);
+  expect(djResult.optionId, isNull);
+  expect(djResult.points, 0);
   expect(reveal.ownerPlayerIds, [owner.playerId]);
   expect(reveal.correctOptionIds, [correct]);
   expect(reveal.track.title, cue.title);

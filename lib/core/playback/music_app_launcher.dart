@@ -7,7 +7,7 @@ import 'package:sporand_native/sporand_native.dart';
 
 /// Hands the DJ's cue (`round.prepare.cue`, addendum A2.2) to the DJ's own
 /// music app. The app itself never plays, streams or links audio: the DJ
-/// starts the song in their app on their speaker (docs/LEGAL_PLAYBACK.md).
+/// starts the song in their app on their speaker (docs/DEVELOPMENT.md §7).
 /// [новое имя — согласовать] `MusicAppLauncher`.
 abstract interface class MusicAppLauncher {
   /// Whether «Открыть в музыкальном приложении» can do anything for [cue].

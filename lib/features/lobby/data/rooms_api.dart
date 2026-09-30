@@ -179,6 +179,7 @@ final class FakeRoomsApi implements RoomsApi {
   /// Thrown by create/join (e.g. `ApiError(code: 'room_full')`).
   Object? failWith;
   int roomsCreated = 0;
+  GameMode? lastCreatedMode;
   int ticketsIssued = 0;
   final List<({String roomId, String playerId, ReportReason reason})> reports =
       [];
@@ -197,6 +198,7 @@ final class FakeRoomsApi implements RoomsApi {
     final error = failWith;
     if (error != null) throw error;
     roomsCreated++;
+    lastCreatedMode = mode;
     return CreatedRoom(
       roomId: 'room-$roomsCreated',
       roomCode: '7KQ2MX',

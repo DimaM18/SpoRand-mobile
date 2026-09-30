@@ -41,6 +41,10 @@ final class RoundView {
     this.mode,
     this.cue,
     this.textPrompt,
+    this.emojiPrompt,
+    this.youAreDj = false,
+    this.djPlayerId,
+    this.djName,
     this.externalAudio = false,
     this.djMayAnswer = true,
     this.position,
@@ -49,13 +53,16 @@ final class RoundView {
   /// [mode] is the room mode (the question of a text round); [externalAudio]
   /// is true when the room's audio comes from the DJ's own music app
   /// (`provider_capabilities.audio_source` = external_app);
-  /// [guessTrackDjCanAnswer] is the room config key.
+  /// [guessTrackDjCanAnswer] and [whoseSongDjCanAnswer] are the room config
+  /// keys; [djName] is the display name of `dj_player_id`.
   factory RoundView.fromPrepare(
     RoundPrepare m, {
     required int roundsTotal,
     GameMode? mode,
     bool externalAudio = false,
     bool guessTrackDjCanAnswer = false,
+    bool whoseSongDjCanAnswer = false,
+    String? djName,
     int? position,
   }) => RoundView(
     roundId: m.roundId,
@@ -70,10 +77,19 @@ final class RoundView {
     audioStartSource: m.audioStartSource,
     cue: m.cue,
     textPrompt: m.textPrompt,
+    emojiPrompt: m.emojiPrompt,
+    youAreDj: m.youAreDj,
+    djPlayerId: m.djPlayerId,
+    djName: djName,
     externalAudio: externalAudio,
-    // A2.2: in whose_song hearing the song tells the DJ nothing about whose
-    // it is; in guess_track the DJ knows the answer (dj_ineligible).
-    djMayAnswer: m.prompt != RoundPrompt.guessTrack || guessTrackDjCanAnswer,
+    // The DJ reads the cue before anyone hears the song and reports the
+    // start, so by default they do not answer (dj_ineligible) in either
+    // mode; each mode has its own key.
+    djMayAnswer: switch (m.prompt) {
+      RoundPrompt.guessTrack => guessTrackDjCanAnswer,
+      RoundPrompt.whoseSong => whoseSongDjCanAnswer,
+      RoundPrompt.textRound || RoundPrompt.emojiRound => true,
+    },
     position: position,
   );
 
@@ -98,6 +114,19 @@ final class RoundView {
   /// whose_song text round: the song everyone reads.
   final RoundTextPrompt? textPrompt;
 
+  /// emoji_quiz round: the emoji puzzle.
+  final RoundEmojiPrompt? emojiPrompt;
+
+  /// This player is the round's DJ (`round.prepare.you_are_dj`), whatever
+  /// the room's playback device is.
+  final bool youAreDj;
+
+  /// The round's DJ, when the round has one.
+  final String? djPlayerId;
+
+  /// [djPlayerId]'s display name, for «<имя> включает песню…».
+  final String? djName;
+
   /// The room's audio plays from the DJ's own music app.
   final bool externalAudio;
 
@@ -113,17 +142,20 @@ final class RoundView {
   int get number => position ?? roundIndex + 1;
   bool get isBonus => kind == RoundKind.bonus;
 
-  /// This device is the round's DJ (it got the cue, A2.2).
-  bool get isDj => cue != null;
+  /// This player is the round's DJ (`you_are_dj`; the DJ gets the cue).
+  bool get isDj => youAreDj;
 
   /// A round without audio (provider `none`).
   bool get isTextRound => prompt == RoundPrompt.textRound;
 
-  /// A guest of an external_player round: the DJ has not started the song.
+  /// An emoji_quiz round (no audio, emoji puzzle).
+  bool get isEmojiRound => prompt == RoundPrompt.emojiRound;
+
+  /// Everyone but the DJ of a round the DJ starts: waiting for the song.
   bool get waitsForDj =>
-      externalAudio &&
       !isDj &&
-      audioStartSource == AudioStartSource.hostReported;
+      audioStartSource == AudioStartSource.hostReported &&
+      (djPlayerId != null || externalAudio);
 }
 
 sealed class RoundPhase {
@@ -178,8 +210,9 @@ final class RoundDjCue extends RoundPhase {
   const RoundDjCue();
 }
 
-/// The DJ started the song but may not answer this round (guess_track with
-/// `guess_track_dj_can_answer` = false, `dj_ineligible`).
+/// The DJ started the song but may not answer this round
+/// (`guess_track_dj_can_answer` / `whose_song_dj_can_answer` = false,
+/// `dj_ineligible`): «Ты DJ этого раунда — отвечают остальные».
 /// [новое имя — согласовать]
 final class RoundDjWatching extends RoundPhase {
   const RoundDjWatching();
@@ -192,6 +225,7 @@ final class GameRoundState extends GameUiState {
     this.answeredCount = 0,
     this.eligibleCount = 0,
     this.airplayWarning = false,
+    this.voidNotice,
   });
 
   final RoundView round;
@@ -201,6 +235,10 @@ final class GameRoundState extends GameUiState {
 
   /// Host only: AirPlay adds ~2 s of latency (brief §5).
   final bool airplayWarning;
+
+  /// «Раунд пропущен: <причина>» over a spare round, until `void_notice_ms`
+  /// after `round.voided` passed. [новое имя — согласовать]
+  final RoundVoidReason? voidNotice;
 
   /// No buttons for the track's owner or for a DJ who may not answer; the
   /// DJ sees the cue card instead until the song plays.
@@ -215,12 +253,14 @@ final class GameRoundState extends GameUiState {
     int? answeredCount,
     int? eligibleCount,
     bool? airplayWarning,
+    bool clearVoidNotice = false,
   }) => GameRoundState(
     round: round,
     phase: phase ?? this.phase,
     answeredCount: answeredCount ?? this.answeredCount,
     eligibleCount: eligibleCount ?? this.eligibleCount,
     airplayWarning: airplayWarning ?? this.airplayWarning,
+    voidNotice: clearVoidNotice ? null : voidNotice,
   );
 }
 

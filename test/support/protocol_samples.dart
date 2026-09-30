@@ -19,12 +19,14 @@ abstract final class Samples {
     bool ready = true,
     bool contributor = true,
     int? poolTrackCount,
+    bool? canDj,
   }) => PlayerSnapshot(
     playerId: id,
     displayName: name,
     role: role,
     isContributor: contributor,
     isPlaybackDevice: playbackDevice,
+    canDj: canDj,
     connection: PlayerConnection.connected,
     platform: AppPlatform.android,
     ready: ready,
@@ -70,6 +72,8 @@ abstract final class Samples {
     List<PlayerSnapshot>? players,
     MusicProviderId provider = MusicProviderId.testCatalog,
     ProviderCapabilities? capabilities,
+    List<EmojiMarket>? emojiMarkets,
+    int? emojiMaxDifficulty,
   }) => RoomSnapshot(
     roomId: roomId,
     roomCode: '7KQ2MX',
@@ -83,6 +87,8 @@ abstract final class Samples {
       shuffleStrategy: ShuffleStrategy.spreadConstrained,
       explicitFilter: false,
       poolSources: const [PoolSource.catalogPicks],
+      emojiMarkets: emojiMarkets,
+      emojiMaxDifficulty: emojiMaxDifficulty,
     ),
     mode: mode,
     provider: provider,
@@ -134,9 +140,13 @@ abstract final class Samples {
     RoundClip? clip,
     RoundCue? cue,
     RoundTextPrompt? textPrompt,
+    RoundEmojiPrompt? emojiPrompt,
     RoundPrompt prompt = RoundPrompt.whoseSong,
     int startAtServerMs = 1759212348178,
     int answerWindowMs = 15000,
+    List<RoundOption> options = options,
+    bool? youAreDj,
+    String? djPlayerId,
   }) => RoundPrepare(
     roundId: roundId,
     roundIndex: roundIndex,
@@ -154,6 +164,9 @@ abstract final class Samples {
     clip: clip,
     cue: cue,
     textPrompt: textPrompt,
+    emojiPrompt: emojiPrompt,
+    youAreDj: youAreDj,
+    djPlayerId: djPlayerId,
   );
 
   static const cue = RoundCue(
@@ -162,12 +175,14 @@ abstract final class Samples {
     hintUrl: 'https://music.example.invalid/search?q=Northern%20Lights',
   );
 
-  /// The DJ's round.prepare in an external_player room.
+  /// The DJ's round.prepare in an external_player room ([djId]: the DJ,
+  /// the host unless the server rotates the role).
   static RoundPrepare djPrepare({
     String roundId = 'round-1',
     required int startAtMonoUs,
     RoundPrompt prompt = RoundPrompt.whoseSong,
     bool youAreOwner = false,
+    String djId = hostId,
   }) => prepare(
     roundId: roundId,
     startAtMonoUs: startAtMonoUs,
@@ -175,6 +190,69 @@ abstract final class Samples {
     prompt: prompt,
     youAreOwner: youAreOwner,
     cue: cue,
+    youAreDj: true,
+    djPlayerId: djId,
+  );
+
+  /// Everyone else's round.prepare of the same round: no cue, the DJ named.
+  static RoundPrepare byopGuestPrepare({
+    String roundId = 'round-1',
+    required int startAtMonoUs,
+    RoundPrompt prompt = RoundPrompt.whoseSong,
+    String djId = hostId,
+  }) => prepare(
+    roundId: roundId,
+    startAtMonoUs: startAtMonoUs,
+    source: AudioStartSource.hostReported,
+    prompt: prompt,
+    youAreDj: false,
+    djPlayerId: djId,
+  );
+
+  static const emojiOptions = [
+    RoundOption(optionId: 'opt-a', label: 'Bohemian Rhapsody — Qveen'),
+    RoundOption(optionId: 'opt-b', label: 'Bohemian Rapsody — Qveen'),
+    RoundOption(optionId: 'opt-c', label: 'Bohemian Rhapsody — Queen'),
+    RoundOption(optionId: 'opt-d', label: 'Bohemian Rapsody — Queen'),
+  ];
+
+  /// An emoji_quiz round (no audio, scheduled start).
+  static RoundPrepare emojiPrepare({
+    String roundId = 'round-1',
+    required int startAtMonoUs,
+    String emoji = '🎭🎼👑',
+  }) => prepare(
+    roundId: roundId,
+    startAtMonoUs: startAtMonoUs,
+    source: AudioStartSource.none,
+    prompt: RoundPrompt.emojiRound,
+    emojiPrompt: RoundEmojiPrompt(emoji: emoji),
+    options: emojiOptions,
+  );
+
+  static RoundReveal emojiReveal({String roundId = 'round-1'}) => RoundReveal(
+    roundId: roundId,
+    correctOptionIds: const ['opt-c'],
+    commitSalt: 'b3c1f0e9d8a7b6c5d4e3f2a1b0c9d8e7',
+    track: const RevealTrack(
+      title: 'Bohemian Rhapsody',
+      artists: ['Queen'],
+      attribution: TrackAttribution(provider: MusicProviderId.none),
+      year: 1975,
+    ),
+    ownerPlayerIds: const [],
+    results: const [
+      RoundResult(
+        playerId: guestId,
+        optionId: 'opt-c',
+        correct: true,
+        reactionMs: 2480,
+        points: 917,
+        streak: 1,
+        validation: AnswerValidation.ok,
+      ),
+    ],
+    standings: reveal().standings,
   );
 
   /// A whose_song text round (provider none).
@@ -305,7 +383,10 @@ abstract final class Samples {
       ),
     ),
     djPrepare(roundId: 'round-3', startAtMonoUs: 834514845678),
+    byopGuestPrepare(roundId: 'round-3', startAtMonoUs: 834514845678),
     textPrepare(roundId: 'round-4', startAtMonoUs: 834514845678),
+    emojiPrepare(roundId: 'round-5', startAtMonoUs: 834514845678),
+    emojiReveal(roundId: 'round-5'),
     RoomStateMessage(byopRoom()),
     const RoundStart(roundId: 'round-1', audioStartServerMs: 1759212348201),
     const RoundAnswerAck(roundId: 'round-1', accepted: true),
@@ -396,6 +477,16 @@ abstract final class Samples {
       explicitFilter: false,
       poolSources: [PoolSource.catalogPicks],
     ),
+    LobbyUpdateSettings(
+      mode: GameMode.emojiQuiz,
+      roundsTotal: 10,
+      explicitFilter: true,
+      poolSources: [PoolSource.catalogPicks],
+      emojiMarkets: [EmojiMarket.pl, EmojiMarket.intl],
+      emojiMaxDifficulty: 2,
+    ),
+    LobbySetCanDj(canDj: true),
+    LobbySetCanDj(canDj: false),
     LobbyKick(playerId: 'p-guest'),
     GameStart(),
     RoundPreloaded(roundId: 'round-1', ok: true, preloadMs: 412),

@@ -6,6 +6,7 @@ import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
+import 'package:sporand/features/game/presentation/widgets/emoji_puzzle.dart';
 import 'package:sporand/features/game/presentation/widgets/round_views.dart';
 import 'package:sporand/features/game/presentation/widgets/standings_list.dart';
 
@@ -32,6 +33,8 @@ class RevealScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final correctLabel = reveal.correctLabel;
     final track = reveal.track;
+    final year = track.year;
+    final emoji = reveal.round.emojiPrompt?.emoji;
     final attributionUrl = Uri.tryParse(track.attribution.url ?? '');
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -69,6 +72,17 @@ class RevealScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (emoji != null) ...[
+                  Center(
+                    child: EmojiPuzzle(
+                      emoji: emoji,
+                      revealed: true,
+                      animate: false,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                ],
                 if (reveal.ownerNames.isNotEmpty)
                   Text(
                     l10n.revealOwner(reveal.ownerNames.join(', ')),
@@ -82,8 +96,18 @@ class RevealScreen extends ConsumerWidget {
                 const SizedBox(height: Spacing.xs),
                 Text(
                   '${track.title} — ${track.artists.join(', ')}',
+                  key: const ValueKey('reveal-track'),
                   style: theme.textTheme.titleMedium,
                 ),
+                if (year != null)
+                  Text(
+                    // A string: a year is not grouped like a number.
+                    l10n.revealYear('$year'),
+                    key: const ValueKey('reveal-year'),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 if (track.attribution.text case final text?) ...[
                   const SizedBox(height: Spacing.xxs),
                   Text(

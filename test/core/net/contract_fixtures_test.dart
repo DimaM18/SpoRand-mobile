@@ -38,6 +38,9 @@ final Map<String, _Codec> _restCodecs = {
   'songs_search.query': (j) => SongSearchQuery.fromJson(j).toJson(),
   'songs_search.response': (j) => SongSearchResponse.fromJson(j).toJson(),
   'me_patch.request': (j) => MePatchRequest.fromJson(j).toJson(),
+  'me_get.response': (j) => MeResponse.fromJson(j).toJson(),
+  'me_consent_put.request': (j) => ConsentUpdateRequest.fromJson(j).toJson(),
+  'me_consent_put.response': (j) => ConsentState.fromJson(j).toJson(),
   'me_picks_get.response': (j) => PicksResponse.fromJson(j).toJson(),
   'me_picks_put.request': (j) => PicksUpdateRequest.fromJson(j).toJson(),
   'me_picks_put.response': (j) => PicksResponse.fromJson(j).toJson(),
@@ -53,11 +56,8 @@ const Map<String, String> _restNotConsumed = {
   'catalog_search.response': 'legacy catalogue search (A2.3)',
   'healthz.response': 'ops probe',
   'readyz.response': 'ops probe',
-  'me_consent_put.request': 'not called by the app yet',
-  'me_consent_put.response': 'not called by the app yet',
   'me_delete.response': 'not called by the app yet',
   'me_export.response': 'not called by the app yet',
-  'me_get.response': 'not called by the app yet',
   'me_patch.response': 'the body is ignored (AgeBandSync only needs 2xx)',
   'me_entitlements_sync.response':
       'the body is ignored; entitlements come from RevenueCat',
@@ -67,6 +67,13 @@ const Map<String, String> _restNotConsumed = {
   'webhook_apple_assn.request': 'third party -> server',
   'webhook_google_rtdn.request': 'third party -> server',
   'webhook_revenuecat.request': 'third party -> server',
+};
+
+/// Fixture directories that hold no wire message, and why.
+const Map<String, String> _dirsNotConsumed = {
+  'emoji/':
+      'the emoji catalogue is server data; the app only sees '
+      'round.prepare.emoji_prompt and round.reveal',
 };
 
 /// `ws/invalid` fixtures the app's DTOs deliberately accept, and why. The
@@ -151,6 +158,7 @@ void main() {
             RegExp(r'^ws/variants/(s2c|c2s)/[a-z_.]+/\w+\.json$')
                 .hasMatch(rel) ||
             RegExp(r'^ws/invalid/[\w-]+\.json$').hasMatch(rel) ||
+            _dirsNotConsumed.keys.any(rel.startsWith) ||
             (rel.startsWith('rest/') &&
                 (_restCodecs.containsKey(_restKey(rel)) ||
                     _restNotConsumed.containsKey(_restKey(rel))));
@@ -236,6 +244,13 @@ void main() {
         for (final f in _jsonFiles('ws/invalid')) f.uri.pathSegments.last,
       };
       expect(invalid, containsAll(_invalidNotValidated.keys));
+      for (final dir in _dirsNotConsumed.keys) {
+        expect(
+          _jsonFiles(dir.substring(0, dir.length - 1)),
+          isNotEmpty,
+          reason: 'no fixtures under $dir',
+        );
+      }
     }, skip: skip);
   });
 

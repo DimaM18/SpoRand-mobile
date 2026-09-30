@@ -37,29 +37,61 @@ enum MusicProviderId implements WireEnum {
 
 enum GameMode implements WireEnum {
   whoseSong('whose_song'),
-  guessTrack('guess_track');
+  guessTrack('guess_track'),
+
+  /// No audio at all: each round shows 2-6 emoji that encode a song title
+  /// from the server's curated catalogue, and players race to tap the song.
+  /// No pools, no DJ, no owner [новое имя — согласовать].
+  emojiQuiz('emoji_quiz');
 
   const GameMode(this.wire);
 
   @override
   final String wire;
+
+  /// The mode plays songs from the players' pools (or a pack); emoji_quiz
+  /// draws from the server's catalogue instead.
+  bool get usesPools => this != emojiQuiz;
 }
 
-/// `round.prepare.prompt`: the room mode, or `text_round` for provider `none`
-/// (A2.1). In a text round the options keep the room mode's shape. Protocol
-/// name `RoundPrompt` [новое имя — согласовать].
+/// `round.prepare.prompt`: how the round is rendered. The room mode (with
+/// audio), `text_round` for provider `none` (A2.1; the options keep the room
+/// mode's shape) or `emoji_round` for an emoji_quiz round. Protocol name
+/// `RoundPrompt` and the values `text_round`, `emoji_round`
+/// [новое имя — согласовать].
 enum RoundPrompt implements WireEnum {
   whoseSong('whose_song'),
   guessTrack('guess_track'),
-  textRound('text_round');
+  textRound('text_round'),
+  emojiRound('emoji_round');
 
   const RoundPrompt(this.wire);
 
   @override
   final String wire;
+
+  /// Rounds without audio: `audio_start_source` is `none` exactly for these
+  /// (protocol `SILENT_ROUND_PROMPTS`).
+  bool get isSilent => this == textRound || this == emojiRound;
 }
 
-/// `ProviderCapabilities.audio_source` (docs/LEGAL_PLAYBACK.md): where the
+/// Markets of the curated emoji catalogue (`lobby.update_settings` and
+/// `RoomSettings.emoji_markets`). Owner decision: no Russian or CIS content,
+/// so there is no such market [новое имя — согласовать].
+enum EmojiMarket implements WireEnum {
+  /// International hits.
+  intl('intl'),
+
+  /// Polish songs.
+  pl('pl');
+
+  const EmojiMarket(this.wire);
+
+  @override
+  final String wire;
+}
+
+/// `ProviderCapabilities.audio_source` (docs/DEVELOPMENT.md §7): where the
 /// room's audio comes from. Protocol name `AudioSource` [новое имя —
 /// согласовать].
 enum AudioSource implements WireEnum {
@@ -269,8 +301,8 @@ enum AnswerValidation implements WireEnum {
   badNonce('bad_nonce'),
   ownerIneligible('owner_ineligible'),
 
-  /// A2.6: the DJ answered in guess_track while
-  /// `guess_track_dj_can_answer` is false.
+  /// A2.6: the round's DJ answered while the mode's key forbids it
+  /// (`guess_track_dj_can_answer` / `whose_song_dj_can_answer`).
   djIneligible('dj_ineligible'),
   badOption('bad_option');
 

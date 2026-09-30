@@ -78,6 +78,25 @@ class AuthService implements AccessTokenProvider {
     }
   }
 
+  /// Logout, or the local half of an account deletion: revokes the token
+  /// family (best effort; an offline logout still forgets it locally) and
+  /// clears the session. Listeners of `SessionRepository.changes` then clear
+  /// identities derived from it (the GA4 user id). The next authenticated
+  /// call starts a new guest. [новое имя — согласовать]
+  Future<void> signOut() async {
+    final existing = _sessions.current;
+    if (existing == null) return;
+    try {
+      await _api.logout(
+        accessToken: existing.accessToken,
+        refreshToken: existing.refreshToken,
+      );
+    } on Object {
+      // The family expires on its own; the device forgets it now.
+    }
+    await _sessions.clear();
+  }
+
   Future<AuthSession> _createGuest() =>
       _creating ??= _doCreateGuest().whenComplete(() => _creating = null);
 

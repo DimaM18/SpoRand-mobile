@@ -19,6 +19,7 @@ List<Override> fakeOverrides(FakeServices s) => [
   remoteConfigProvider.overrideWithValue(s.remoteConfig),
   analyticsProvider.overrideWithValue(s.analytics),
   consentServiceProvider.overrideWithValue(s.consent),
+  consentApiProvider.overrideWithValue(s.consentApi),
   adsServiceProvider.overrideWithValue(s.ads),
   purchasesServiceProvider.overrideWithValue(s.purchases),
   secureStoreProvider.overrideWithValue(s.secureStore),

@@ -36,6 +36,8 @@ final class RoomSettings {
     this.maxPlayers,
     this.shuffleStrategy,
     this.packId,
+    this.emojiMarkets,
+    this.emojiMaxDifficulty,
   });
 
   factory RoomSettings.fromJson(JsonMap json) => RoomSettings(
@@ -49,6 +51,11 @@ final class RoomSettings {
       (item) => parseWire(PoolSource.values, item),
     ),
     packId: json.optStr('pack_id'),
+    emojiMarkets: json.optList(
+      'emoji_markets',
+      (item) => parseWire(EmojiMarket.values, item),
+    ),
+    emojiMaxDifficulty: json.optInt('emoji_max_difficulty'),
   );
 
   final GameMode mode;
@@ -59,6 +66,15 @@ final class RoomSettings {
   final List<PoolSource> poolSources;
   final String? packId;
 
+  /// emoji_quiz: the effective catalogue markets (the host's choice, else
+  /// the server's `emoji_markets_by_locale` for the host locale), in order of
+  /// preference. Other modes may omit it [новое имя — согласовать].
+  final List<EmojiMarket>? emojiMarkets;
+
+  /// emoji_quiz: the hardest puzzles played, 1 (easy) to 3 (hard; the
+  /// default) [новое имя — согласовать].
+  final int? emojiMaxDifficulty;
+
   JsonMap toJson() => {
     'mode': mode.wire,
     'rounds_total': roundsTotal,
@@ -67,7 +83,18 @@ final class RoomSettings {
     'explicit_filter': explicitFilter,
     'pool_sources': [for (final s in poolSources) s.wire],
     'pack_id': ?packId,
+    'emoji_markets': ?emojiMarkets?.map((m) => m.wire).toList(),
+    'emoji_max_difficulty': ?emojiMaxDifficulty,
   };
+}
+
+/// Limits of the emoji_quiz lobby settings (packages/protocol
+/// `EMOJI_MIN_DIFFICULTY`, `EMOJI_MAX_DIFFICULTY`,
+/// `EMOJI_DEFAULT_MAX_DIFFICULTY`).
+abstract final class EmojiDifficulty {
+  static const min = 1;
+  static const max = 3;
+  static const defaultMax = 3;
 }
 
 final class PlayerSnapshot {
@@ -79,10 +106,11 @@ final class PlayerSnapshot {
     required this.isPlaybackDevice,
     required this.connection,
     required this.platform,
+    bool? canDj,
     this.ready = false,
     this.poolTrackCount = 0,
     this.entitlements = EntitlementsSnapshot.none,
-  });
+  }) : canDj = canDj ?? role == PlayerRole.host;
 
   factory PlayerSnapshot.fromJson(JsonMap json) {
     final entitlements = json.optObj('entitlements_snapshot');
@@ -92,6 +120,8 @@ final class PlayerSnapshot {
       role: json.wire('role', PlayerRole.values),
       isContributor: json.boolean('is_contributor'),
       isPlaybackDevice: json.boolean('is_playback_device'),
+      // Required since wave 3; an older server gets the protocol defaults.
+      canDj: json.optBool('can_dj'),
       connection: json.wire('connection', PlayerConnection.values),
       platform: json.wire('platform', AppPlatform.values),
       ready: json.optBool('ready') ?? false,
@@ -106,7 +136,15 @@ final class PlayerSnapshot {
   final String displayName;
   final PlayerRole role;
   final bool isContributor;
+
+  /// The room playback device (the host). In BYOP rooms the round's DJ is
+  /// `round.prepare.dj_player_id`, not this flag.
   final bool isPlaybackDevice;
+
+  /// Opted in to the DJ role (`lobby.set_can_dj`): the server may pick this
+  /// player as a round DJ when `byop_dj_rotation` is on. Defaults: true for
+  /// the host, false for guests [новое имя — согласовать].
+  final bool canDj;
   final PlayerConnection connection;
   final AppPlatform platform;
   final bool ready;
@@ -122,6 +160,7 @@ final class PlayerSnapshot {
         role: role,
         isContributor: isContributor,
         isPlaybackDevice: isPlaybackDevice,
+        canDj: canDj,
         connection: connection,
         platform: platform,
         ready: ready,
@@ -135,6 +174,7 @@ final class PlayerSnapshot {
     'role': role.wire,
     'is_contributor': isContributor,
     'is_playback_device': isPlaybackDevice,
+    'can_dj': canDj,
     'connection': connection.wire,
     'platform': platform.wire,
     'ready': ready,
@@ -531,6 +571,22 @@ final class RoundTextPrompt {
   JsonMap toJson() => {'title': title, 'artists': artists};
 }
 
+/// `round.prepare.emoji_prompt` (emoji_quiz): the 2-6 emoji that encode the
+/// song title, sent to every player. Never the title or the artist: they
+/// arrive only in `round.reveal`. Protocol name `RoundEmojiPrompt`
+/// [новое имя — согласовать].
+final class RoundEmojiPrompt {
+  const RoundEmojiPrompt({required this.emoji});
+
+  factory RoundEmojiPrompt.fromJson(JsonMap json) =>
+      RoundEmojiPrompt(emoji: json.str('emoji'));
+
+  /// Shown as is (spaces between emoji are allowed).
+  final String emoji;
+
+  JsonMap toJson() => {'emoji': emoji};
+}
+
 /// `game.starting.prefetch[]`.
 final class PrefetchClip {
   const PrefetchClip({
@@ -587,6 +643,7 @@ final class RevealTrack {
     required this.artists,
     required this.attribution,
     this.artworkUrl,
+    this.year,
   });
 
   factory RevealTrack.fromJson(JsonMap json) => RevealTrack(
@@ -594,18 +651,26 @@ final class RevealTrack {
     artists: json.list('artists', asString),
     attribution: TrackAttribution.fromJson(json.obj('attribution')),
     artworkUrl: json.optStr('artwork_url'),
+    year: json.optInt('year'),
   );
 
   final String title;
   final List<String> artists;
   final TrackAttribution attribution;
+
+  /// Never shown: cover images are not cleared (A2.3).
   final String? artworkUrl;
+
+  /// Year of first release, when known; always sent in emoji rounds
+  /// [новое имя — согласовать].
+  final int? year;
 
   JsonMap toJson() => {
     'title': title,
     'artists': artists,
     'attribution': attribution.toJson(),
     'artwork_url': ?artworkUrl,
+    'year': ?year,
   };
 }
 
@@ -698,9 +763,20 @@ final class RoomConfig {
   /// A2.2: how long the DJ has to start the song before the round is voided.
   int get byopStartTimeoutMs => _int('byop_start_timeout_ms', 20000);
 
-  /// A2.2: whether the DJ of an external_player room may answer in
+  /// A2.2: whether the round's DJ (external_player) may answer in
   /// guess_track (otherwise the server rejects with `dj_ineligible`).
   bool get guessTrackDjCanAnswer => _bool('guess_track_dj_can_answer', false);
+
+  /// The same for whose_song: the DJ reads the cue before the audio starts,
+  /// so by default they do not answer [новое имя — согласовать].
+  bool get whoseSongDjCanAnswer => _bool('whose_song_dj_can_answer', false);
+
+  /// The server picks each round's DJ among players with `can_dj`.
+  bool get byopDjRotation => _bool('byop_dj_rotation', false);
+
+  /// The pause between `round.voided` and the spare's `round.prepare`; the
+  /// app keeps the void notice visible this long [новое имя — согласовать].
+  int get voidNoticeMs => _int('void_notice_ms', 1500);
   int get poolMinTracksPerContributor =>
       _int('pool_min_tracks_per_contributor', 5);
   int get poolMaxTracksPerContributor =>

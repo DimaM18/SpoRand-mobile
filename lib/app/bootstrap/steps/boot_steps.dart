@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sporand/app/bootstrap/domain/boot_models.dart';
 import 'package:sporand/app/bootstrap/domain/init_context.dart';
 import 'package:sporand/app/bootstrap/domain/init_step.dart';
@@ -331,8 +333,18 @@ Future<StepResult?> _auth(InitContext ctx) async {
     degraded = true;
   }
   final session = ctx.session = await deps.auth.ensureSession();
+  final identity = deps.analyticsIdentity;
   final analyticsUid = session.analyticsUid;
-  if (analyticsUid != null) {
+  if (identity != null) {
+    final attached = identity.attach(session);
+    // A restored session without an id asks `/v1/me`, which must not hold
+    // up the boot.
+    if (analyticsUid == null) {
+      unawaited(attached);
+    } else {
+      await attached;
+    }
+  } else if (analyticsUid != null) {
     await deps.analytics.setUserId(analyticsUid);
     await deps.crashGate.setUserId(analyticsUid);
   }

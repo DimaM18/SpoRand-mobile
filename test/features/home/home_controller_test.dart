@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/features/home/presentation/home_controller.dart';
 
 import '../../support/fake_services.dart';
@@ -31,6 +32,7 @@ void main() {
           appEnvProvider.overrideWithValue(services.env),
           userPrefsProvider.overrideWithValue(services.userPrefs),
           consentServiceProvider.overrideWithValue(services.consent),
+          consentApiProvider.overrideWithValue(services.consentApi),
           analyticsProvider.overrideWithValue(services.analytics),
           adsServiceProvider.overrideWithValue(services.ads),
           remoteConfigProvider.overrideWithValue(services.remoteConfig),
@@ -56,6 +58,11 @@ void main() {
         expect(services.ads.initOptions?.personalizedAllowed, isTrue);
         expect(services.analytics.consent, AnalyticsConsent.granted);
         expect(services.analyticsBackend.consent?.analyticsStorage, isTrue);
+
+        // The renewed UMP choice is scheduled for PUT /v1/me/consent.
+        final pending = container.read(consentSyncProvider).pending;
+        expect(pending?.source, ConsentSource.ump);
+        expect(pending?.consentAnalytics, isTrue);
       },
     );
 

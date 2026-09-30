@@ -27,7 +27,10 @@ void main() {
       'answers the same round', () async {
     final party = await Party.assemble(
       api: e2eApiBaseUrl()!,
-      names: const ['Gosia', 'Hubert', 'Iga'],
+      // Four players: the DJ (host) and the owner sit out every whose_song
+      // round, and someone besides the dropper must answer during the
+      // outage (its round.progress is among the lost frames).
+      names: const ['Gosia', 'Hubert', 'Iga', 'Janek'],
       mode: GameMode.whoseSong,
       provider: MusicProviderId.externalPlayer,
       audit: audit,
@@ -80,7 +83,7 @@ void main() {
       final roundId = rounds[dj]!.round.roundId;
       final owner = phones.singleWhere((p) => rounds[p]!.round.youAreOwner);
       final correct = optionLabelled(
-        rounds[phones.firstWhere((p) => p != owner)]!,
+        rounds[phones.firstWhere((p) => p != owner && p != dj)]!,
         owner.name,
       ).optionId;
       // Consecutive rounds have different owners (spread_owner_gap), so
@@ -101,7 +104,7 @@ void main() {
 
       final others = [
         for (final p in phones)
-          if (p != owner && !(outage && p == dropper)) p,
+          if (p != owner && p != dj && !(outage && p == dropper)) p,
       ];
       for (final phone in others) {
         await phone.waitGame<GameRoundState>(
@@ -159,7 +162,7 @@ void main() {
         'round.reveal',
         where: (f) => f.payload['round_id'] == roundId,
       );
-      for (final phone in phones.where((p) => p != owner)) {
+      for (final phone in phones.where((p) => p != owner && p != dj)) {
         final result = resultOf(reveal, phone);
         expect(result.correct, isTrue, reason: '${phone.name} round $index');
         expect(result.validation, AnswerValidation.ok);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:sporand/core/security/secure_store.dart';
@@ -70,8 +71,14 @@ class SessionRepository {
 
   final SecureStore _store;
   AuthSession? _current;
+  final StreamController<AuthSession?> _changes =
+      StreamController<AuthSession?>.broadcast(sync: true);
 
   AuthSession? get current => _current;
+
+  /// Every [save] (new guest, rotated tokens) and [clear] (logout, account
+  /// deletion, a revoked family), in order. Not emitted by [restore].
+  Stream<AuthSession?> get changes => _changes.stream;
 
   Future<AuthSession?> restore() async {
     final raw = await _store.read(storageKey);
@@ -90,11 +97,13 @@ class SessionRepository {
 
   Future<void> save(AuthSession session) async {
     _current = session;
+    _changes.add(session);
     await _store.write(storageKey, jsonEncode(session.toJson()));
   }
 
   Future<void> clear() async {
     _current = null;
+    _changes.add(null);
     await _store.delete(storageKey);
   }
 }

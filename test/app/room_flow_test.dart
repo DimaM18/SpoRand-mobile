@@ -256,4 +256,129 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
   });
+
+  testWidgets('a host creates an emoji quiz and picks markets and '
+      'difficulty; no pools, no DJ', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3200);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final services = FakeServices(
+      prefs: {'age_band': '18_plus', 'onboarding_completed': true},
+    );
+    final server = FakeWsServer();
+    final rooms = FakeRoomsApi();
+    final container = await launch(
+      tester,
+      services,
+      extra: [
+        roomsApiProvider.overrideWithValue(rooms),
+        wsConnectorProvider.overrideWithValue(server.connect),
+        inputClockProvider.overrideWithValue(
+          FakeInputClock(clock: tester.binding.clock),
+        ),
+        appSignalSourceProvider.overrideWithValue(FakeAppSignalSource()),
+      ],
+    );
+
+    await tester.tap(find.text('Создать комнату'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Угадайте песню по эмодзи — музыка не нужна'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Эмодзи-квиз'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Ваше имя в игре'),
+      'Ania',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Создать комнату').last);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(rooms.lastCreatedMode, GameMode.emojiQuiz);
+
+    server.send(
+      Samples.welcome(
+        me: Samples.hostId,
+        room: Samples.room(mode: GameMode.emojiQuiz),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Без музыки: хватит телефонов'), findsOneWidget);
+    expect(find.text('Международные'), findsOneWidget);
+    expect(find.text('Польские'), findsOneWidget);
+    expect(find.byKey(const ValueKey('lobby-add-my-songs')), findsNothing);
+    expect(find.byKey(const ValueKey('lobby-can-dj')), findsNothing);
+
+    await tester.tap(find.text('Международные'));
+    await tester.pump();
+    await tester.tap(find.text('Лёгкие'));
+    await tester.pump();
+    final sent = server.current.sent<LobbyUpdateSettings>();
+    expect(sent.first.mode, GameMode.emojiQuiz);
+    expect(sent.first.emojiMarkets, [EmojiMarket.pl]);
+    expect(sent.last.emojiMaxDifficulty, 1);
+
+    unawaited(container.read(activeRoomProvider.notifier).leave());
+    await tester.pump();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a BYOP guest opts in to the DJ role and gets the DJ badge', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 3200);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final services = FakeServices(
+      prefs: {'age_band': '18_plus', 'onboarding_completed': true},
+    );
+    final server = FakeWsServer();
+    final container = await launch(
+      tester,
+      services,
+      extra: [
+        roomsApiProvider.overrideWithValue(FakeRoomsApi()),
+        wsConnectorProvider.overrideWithValue(server.connect),
+        inputClockProvider.overrideWithValue(
+          FakeInputClock(clock: tester.binding.clock),
+        ),
+        appSignalSourceProvider.overrideWithValue(FakeAppSignalSource()),
+      ],
+    );
+    await tester.enterText(find.byType(TextField), '7kq2mx');
+    await tester.tap(find.text('Войти'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Bartek');
+    await tester.tap(find.text('Войти в комнату'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    server.send(
+      Samples.welcome(room: Samples.byopRoom(state: RoomState.lobby)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Могу включать музыку'), findsOneWidget);
+    expect(
+      find.textContaining('Ведущий · DJ'),
+      findsOneWidget,
+      reason: 'the host',
+    );
+    await tester.tap(find.text('Могу включать музыку'));
+    await tester.pump();
+    expect(server.current.sent<LobbySetCanDj>().single.canDj, isTrue);
+
+    server.send(
+      RoomPlayerUpdated(Samples.player(Samples.guestId, 'Bartek', canDj: true)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Вы · DJ'), findsOneWidget);
+    final toggle = tester.widget<SwitchListTile>(
+      find.byKey(const ValueKey('lobby-can-dj')),
+    );
+    expect(toggle.value, isTrue);
+
+    unawaited(container.read(activeRoomProvider.notifier).leave());
+    await tester.pump();
+    await tester.pumpAndSettle();
+  });
 }

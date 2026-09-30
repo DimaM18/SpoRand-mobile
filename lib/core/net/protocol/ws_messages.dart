@@ -6,6 +6,7 @@
 /// lib/contracts/ code later. Type strings and field names are canonical.
 library;
 
+import 'package:sporand/core/net/protocol/emoji_text.dart';
 import 'package:sporand/core/net/protocol/json_read.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
@@ -304,10 +305,13 @@ final class RoundPrepare extends ServerMessage {
     required this.answerWindowMs,
     required this.audioStartSource,
     required this.commitHash,
+    bool? youAreDj,
+    this.djPlayerId,
     this.clip,
     this.cue,
     this.textPrompt,
-  });
+    this.emojiPrompt,
+  }) : youAreDj = youAreDj ?? cue != null;
 
   /// Also enforces the protocol's cross-field rules (packages/protocol
   /// `roundPrepareIssues`), so a malformed prepare is dropped like any other
@@ -316,6 +320,7 @@ final class RoundPrepare extends ServerMessage {
     final clip = json.optObj('clip');
     final cue = json.optObj('cue');
     final textPrompt = json.optObj('text_prompt');
+    final emojiPrompt = json.optObj('emoji_prompt');
     final message = RoundPrepare(
       roundId: json.str('round_id'),
       roundIndex: json.integer('round_index'),
@@ -327,6 +332,9 @@ final class RoundPrepare extends ServerMessage {
         (item) => RoundOption.fromJson(asObject(item)),
       ),
       youAreOwner: json.boolean('you_are_owner'),
+      // Required since wave 3; an older server sent the cue to the DJ only.
+      youAreDj: json.optBool('you_are_dj'),
+      djPlayerId: json.optStr('dj_player_id'),
       startAtServerMs: json.integer('start_at_server_ms'),
       startAtMonoUs: json.integer('start_at_mono_us'),
       answerWindowMs: json.integer('answer_window_ms'),
@@ -340,6 +348,9 @@ final class RoundPrepare extends ServerMessage {
       textPrompt: textPrompt == null
           ? null
           : RoundTextPrompt.fromJson(textPrompt),
+      emojiPrompt: emojiPrompt == null
+          ? null
+          : RoundEmojiPrompt.fromJson(emojiPrompt),
     );
     final issue = message.crossFieldIssue;
     if (issue != null) throw ProtocolFormatException(issue);
@@ -351,12 +362,24 @@ final class RoundPrepare extends ServerMessage {
   final RoundKind kind;
   final String nonce;
 
-  /// The room mode, or [RoundPrompt.textRound] for provider `none`.
+  /// The room mode, [RoundPrompt.textRound] for provider `none` or
+  /// [RoundPrompt.emojiRound] in emoji_quiz.
   final RoundPrompt prompt;
 
   /// Already shuffled for this player; shown in this order.
   final List<RoundOption> options;
   final bool youAreOwner;
+
+  /// This player is the round's DJ (BYOP) and gets the [cue]; they may
+  /// answer only when the mode's key allows it
+  /// (`whose_song_dj_can_answer` / `guess_track_dj_can_answer`).
+  /// [новое имя — согласовать]
+  final bool youAreDj;
+
+  /// The round's DJ, sent to every player (the others show «<имя>
+  /// включает песню…»). Absent when the round has no DJ (in-app clips, text
+  /// and emoji rounds) [новое имя — согласовать].
+  final String? djPlayerId;
   final int startAtServerMs;
 
   /// [startAtServerMs] converted by the server with this device's clock
@@ -370,34 +393,60 @@ final class RoundPrepare extends ServerMessage {
   /// Playback device only (`test_catalog`, `licensed_clips`, Spotify).
   final RoundClip? clip;
 
-  /// DJ only (`external_player`, A2.2): the song to start in the DJ's own
-  /// music app. Never together with [clip].
+  /// The round's DJ only (`external_player`, A2.2): the song to start in
+  /// the DJ's own music app. Never together with [clip].
   final RoundCue? cue;
 
   /// whose_song text rounds (provider `none`): the song everyone reads.
   final RoundTextPrompt? textPrompt;
 
+  /// emoji_quiz rounds: the emoji puzzle everyone sees.
+  final RoundEmojiPrompt? emojiPrompt;
+
   bool get isTextRound => prompt == RoundPrompt.textRound;
+  bool get isEmojiRound => prompt == RoundPrompt.emojiRound;
 
   /// The first violated rule of packages/protocol `roundPrepareIssues`
-  /// (A2.1, A2.6), or null.
+  /// (A2.1, A2.6, BYOP DJ, emoji_quiz), or null.
   String? get crossFieldIssue {
     final silent = audioStartSource == AudioStartSource.none;
+    final hostReported = audioStartSource == AudioStartSource.hostReported;
+    final emoji = emojiPrompt;
     if (clip != null && cue != null) {
       return 'round.prepare: clip and cue are mutually exclusive';
     }
-    if (cue != null && audioStartSource != AudioStartSource.hostReported) {
+    if (cue != null && !hostReported) {
       return 'round.prepare: a cue needs audio_start_source host_reported';
     }
-    if (isTextRound != silent) {
-      return 'round.prepare: prompt text_round goes with audio_start_source '
-          'none, and only with it';
+    if (prompt.isSilent != silent) {
+      return 'round.prepare: prompts text_round and emoji_round go with '
+          'audio_start_source none, and only they do';
     }
     if (silent && (clip != null || cue != null)) {
       return 'round.prepare: a round without audio carries no clip or cue';
     }
     if (textPrompt != null && !isTextRound) {
       return 'round.prepare: text_prompt is only sent in a text round';
+    }
+    if (isEmojiRound != (emoji != null)) {
+      return 'round.prepare: an emoji round carries emoji_prompt, and only '
+          'an emoji round does';
+    }
+    if (emoji != null && !isEmojiPrompt(emoji.emoji)) {
+      return 'round.prepare: emoji_prompt holds 2-6 emoji and nothing else';
+    }
+    if (isEmojiRound && youAreOwner) {
+      return 'round.prepare: an emoji round has no owner';
+    }
+    if ((cue != null) != youAreDj) {
+      return "round.prepare: the cue goes to the round's DJ, and the DJ "
+          'always gets it';
+    }
+    if (youAreDj && djPlayerId == null) {
+      return 'round.prepare: you_are_dj needs dj_player_id';
+    }
+    if (djPlayerId != null && !hostReported) {
+      return 'round.prepare: only a round with a host-reported start has a DJ';
     }
     return null;
   }
@@ -414,6 +463,8 @@ final class RoundPrepare extends ServerMessage {
     'prompt': prompt.wire,
     'options': [for (final o in options) o.toJson()],
     'you_are_owner': youAreOwner,
+    'you_are_dj': youAreDj,
+    'dj_player_id': ?djPlayerId,
     'start_at_server_ms': startAtServerMs,
     'start_at_mono_us': startAtMonoUs,
     'answer_window_ms': answerWindowMs,
@@ -422,6 +473,7 @@ final class RoundPrepare extends ServerMessage {
     'clip': ?clip?.toJson(),
     'cue': ?cue?.toJson(),
     'text_prompt': ?textPrompt?.toJson(),
+    'emoji_prompt': ?emojiPrompt?.toJson(),
   };
 }
 
@@ -556,7 +608,7 @@ final class RoundReveal extends ServerMessage {
   final String commitSalt;
   final RevealTrack track;
 
-  /// Empty in `guess_track`.
+  /// Empty in `guess_track` and emoji rounds.
   final List<String> ownerPlayerIds;
   final List<RoundResult> results;
   final List<Standing> standings;
@@ -875,6 +927,7 @@ sealed class ClientMessage {
       payload,
     ),
     WsClientMessage.lobbyKick => LobbyKick.fromJson(payload),
+    WsClientMessage.lobbySetCanDj => LobbySetCanDj.fromJson(payload),
     WsClientMessage.gameStart => _empty(payload, const GameStart()),
     WsClientMessage.roundPreloaded => RoundPreloaded.fromJson(payload),
     WsClientMessage.roundPlaybackStarted => RoundPlaybackStarted.fromJson(
@@ -1017,19 +1070,41 @@ final class LobbyUpdateSettings extends ClientMessage {
     required this.poolSources,
     this.shuffleStrategy,
     this.packId,
+    this.emojiMarkets,
+    this.emojiMaxDifficulty,
   });
 
-  factory LobbyUpdateSettings.fromJson(JsonMap json) => LobbyUpdateSettings(
-    mode: (json..expectOnly(_keys)).wire('mode', GameMode.values),
-    roundsTotal: json.integer('rounds_total'),
-    shuffleStrategy: json.optWire('shuffle_strategy', ShuffleStrategy.values),
-    explicitFilter: json.boolean('explicit_filter'),
-    poolSources: json.list(
-      'pool_sources',
-      (item) => parseWire(PoolSource.values, item),
-    ),
-    packId: json.optStr('pack_id'),
-  );
+  factory LobbyUpdateSettings.fromJson(JsonMap json) {
+    final markets = (json..expectOnly(_keys)).optList(
+      'emoji_markets',
+      (item) => parseWire(EmojiMarket.values, item),
+    );
+    if (markets != null &&
+        (markets.isEmpty || markets.toSet().length != markets.length)) {
+      throw const ProtocolFormatException(
+        'emoji_markets needs 1-2 distinct markets',
+      );
+    }
+    final difficulty = json.optInt('emoji_max_difficulty');
+    if (difficulty != null &&
+        (difficulty < EmojiDifficulty.min ||
+            difficulty > EmojiDifficulty.max)) {
+      throw const ProtocolFormatException('emoji_max_difficulty must be 1-3');
+    }
+    return LobbyUpdateSettings(
+      mode: json.wire('mode', GameMode.values),
+      roundsTotal: json.integer('rounds_total'),
+      shuffleStrategy: json.optWire('shuffle_strategy', ShuffleStrategy.values),
+      explicitFilter: json.boolean('explicit_filter'),
+      poolSources: json.list(
+        'pool_sources',
+        (item) => parseWire(PoolSource.values, item),
+      ),
+      packId: json.optStr('pack_id'),
+      emojiMarkets: markets,
+      emojiMaxDifficulty: difficulty,
+    );
+  }
 
   final GameMode mode;
   final int roundsTotal;
@@ -1038,6 +1113,13 @@ final class LobbyUpdateSettings extends ClientMessage {
   final List<PoolSource> poolSources;
   final String? packId;
 
+  /// emoji_quiz: catalogue markets to draw from; omitted = the server's
+  /// `emoji_markets_by_locale` for the host locale [новое имя — согласовать].
+  final List<EmojiMarket>? emojiMarkets;
+
+  /// emoji_quiz: the hardest puzzles to play (1-3) [новое имя — согласовать].
+  final int? emojiMaxDifficulty;
+
   static const _keys = {
     'mode',
     'rounds_total',
@@ -1045,6 +1127,8 @@ final class LobbyUpdateSettings extends ClientMessage {
     'explicit_filter',
     'pool_sources',
     'pack_id',
+    'emoji_markets',
+    'emoji_max_difficulty',
   };
 
   @override
@@ -1058,7 +1142,28 @@ final class LobbyUpdateSettings extends ClientMessage {
     'explicit_filter': explicitFilter,
     'pool_sources': [for (final s in poolSources) s.wire],
     'pack_id': ?packId,
+    'emoji_markets': ?emojiMarkets?.map((m) => m.wire).toList(),
+    'emoji_max_difficulty': ?emojiMaxDifficulty,
   };
+}
+
+/// Any player, lobby only: opt in or out of the DJ role (BYOP,
+/// `byop_dj_rotation`). The server echoes it as `room.player_updated`
+/// (`PlayerSnapshot.can_dj`). [новое имя — согласовать]
+final class LobbySetCanDj extends ClientMessage {
+  const LobbySetCanDj({required this.canDj});
+
+  factory LobbySetCanDj.fromJson(JsonMap json) => LobbySetCanDj(
+    canDj: (json..expectOnly(const {'can_dj'})).boolean('can_dj'),
+  );
+
+  final bool canDj;
+
+  @override
+  String get type => WsClientMessage.lobbySetCanDj;
+
+  @override
+  JsonMap toJson() => {'can_dj': canDj};
 }
 
 final class LobbyKick extends ClientMessage {

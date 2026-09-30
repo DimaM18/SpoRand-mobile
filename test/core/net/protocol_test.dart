@@ -24,7 +24,8 @@ const serverTypes = {
 
 const clientTypes = {
   'hello', 'clock.pong', 'app.state', 'lobby.ready', //
-  'lobby.update_settings', 'lobby.kick', 'game.start', 'round.preloaded',
+  'lobby.update_settings', 'lobby.kick', 'lobby.set_can_dj', 'game.start',
+  'round.preloaded',
   'round.playback_started', 'round.playback_failed', 'round.answer',
   'bonus.request', 'bonus.ad_result', 'ad.interstitial_result',
   'game.play_again', 'room.leave',

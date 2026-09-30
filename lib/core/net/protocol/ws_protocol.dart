@@ -53,6 +53,9 @@ abstract final class WsClientMessage {
   static const lobbyReady = 'lobby.ready';
   static const lobbyUpdateSettings = 'lobby.update_settings';
   static const lobbyKick = 'lobby.kick';
+
+  /// [новое имя — согласовать]
+  static const lobbySetCanDj = 'lobby.set_can_dj';
   static const gameStart = 'game.start';
   static const roundPreloaded = 'round.preloaded';
   static const roundPlaybackStarted = 'round.playback_started';

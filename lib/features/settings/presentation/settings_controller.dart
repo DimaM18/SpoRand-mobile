@@ -9,6 +9,8 @@ import 'package:sporand/core/ads/ads_policy.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/consent/consent_policy.dart';
+import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/platform/app_info.dart';
 import 'package:sporand/core/purchases/entitlement_sync_api.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
@@ -95,6 +97,13 @@ class SettingsController extends Notifier<SettingsState> {
       AnalyticsParams.adsPersonalized: adsPersonalized,
       AnalyticsParams.source: 'settings',
     });
+    ref
+        .read(consentSyncProvider)
+        .schedule(
+          analytics: enabled,
+          adsPersonalized: adsPersonalized,
+          source: ConsentSource.settings,
+        );
     if (!enabled) await log();
     await analytics.applyConsent(
       enabled ? AnalyticsConsent.granted : AnalyticsConsent.denied,
@@ -104,12 +113,27 @@ class SettingsController extends Notifier<SettingsState> {
   }
 
   Future<void> openPrivacyOptions() async {
+    final ConsentInfo info;
     try {
-      final info = await ref.read(consentServiceProvider).showPrivacyOptions();
-      state = state.copyWith(privacy: info.privacyOptionsRequired);
+      info = await ref.read(consentServiceProvider).showPrivacyOptions();
     } on Object {
       // Nothing to show; UMP is unavailable.
+      return;
     }
+    if (!ref.mounted) return;
+    state = state.copyWith(privacy: info.privacyOptionsRequired);
+    // The UMP choice may have changed the ads signal: tell the server.
+    final prefs = ref.read(userPrefsProvider);
+    ref
+        .read(consentSyncProvider)
+        .schedule(
+          analytics: state.analyticsAvailable && state.analyticsEnabled,
+          adsPersonalized: resolveAdsPersonalized(
+            ageBand: prefs.ageBand,
+            ump: info,
+          ),
+          source: ConsentSource.ump,
+        );
   }
 
   Future<RestoreOutcome> restorePurchases() async {

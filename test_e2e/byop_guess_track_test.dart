@@ -1,7 +1,7 @@
 // End-to-end: guess_track with provider external_player (addendum A2.2):
 // the DJ saw the title, so it may not answer (`dj_ineligible`), and a round
 // the DJ never starts is voided after `byop_start_timeout_ms` and replaced
-// by a spare. See apps/mobile/README.md, "End-to-end suite".
+// by a spare `void_notice_ms` later. See apps/mobile/README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;
 
@@ -43,6 +43,8 @@ void main() {
       final guests = phones.skip(1).toList();
       expect(dj.session.config.guessTrackDjCanAnswer, isFalse);
       final byopStartTimeoutMs = dj.session.config.byopStartTimeoutMs;
+      final voidNoticeMs = dj.session.config.voidNoticeMs;
+      expect(voidNoticeMs, 800, reason: 'scripts/e2e.sh sets void_notice_ms');
 
       party.start();
       final starting = await dj.waitMessage<GameStarting>('game.starting');
@@ -84,6 +86,46 @@ void main() {
             (voidedAtUs - startAtUs) / 1000,
             inInclusiveRange(byopStartTimeoutMs - 50, byopStartTimeoutMs + 500),
           );
+          // void_notice_ms: the spare's round.prepare comes only after the
+          // players had time to read why the round was voided; meanwhile
+          // each phone shows the voided screen.
+          for (final phone in phones) {
+            final voidedFrame = receivedFor(
+              phone,
+              'round.voided',
+              round.roundId,
+            );
+            final spare = await phone.waitFor(
+              'the spare round.prepare',
+              () => phone.wire
+                  .receivedOf('round.prepare')
+                  .where((f) => f.atUs > voidedFrame.atUs)
+                  .firstOrNull,
+              timeout: Duration(milliseconds: voidNoticeMs + 5000),
+            );
+            final gapMs = (spare.atUs - voidedFrame.atUs) / 1000;
+            expect(
+              gapMs,
+              inInclusiveRange(voidNoticeMs - 20, voidNoticeMs + 500),
+              reason: '${phone.name}: round.voided -> spare round.prepare',
+            );
+            expect(
+              phone.gameStates
+                  .where(
+                    (e) =>
+                        e.atUs > voidedFrame.atUs &&
+                        e.atUs < spare.atUs &&
+                        e.state is! GameVoidedState,
+                  )
+                  .map((e) => e.state.runtimeType),
+              isEmpty,
+              reason: '${phone.name}: the voided screen stays until the spare',
+            );
+            e2eLog(
+              '${phone.name}: spare round.prepare ${gapMs.toStringAsFixed(1)} '
+              'ms after round.voided (void_notice_ms $voidNoticeMs)',
+            );
+          }
           voided = true;
           continue;
         }

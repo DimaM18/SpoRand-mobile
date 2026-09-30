@@ -24,4 +24,6 @@ dart run pigeon --input pigeons/music_app.dart
 
 The native code lives in a plugin (not in `Runner`) so that it is registered by
 `GeneratedPluginRegistrant` without edits to the Xcode project or `MainActivity`.
-It has not been compiled in the sandbox that produced it (no Xcode/Android SDK).
+It compiles: on 2026-09-30 `flutter build ios --simulator --debug` and `flutter build apk --debug`
+succeeded on the owner's Mac (Xcode 27.0, Android SDK 36). Runtime behaviour on real devices
+(clock calibration, scheduled clip start, the music-app intent) is still unverified.

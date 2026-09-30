@@ -13,6 +13,7 @@ import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/game/presentation/widgets/answer_grid.dart';
+import 'package:sporand/features/game/presentation/widgets/emoji_puzzle.dart';
 
 /// The question of a round. A text round (provider `none`) keeps the room
 /// mode's question.
@@ -25,9 +26,32 @@ String promptText(
   RoundPrompt.guessTrack => l10n.gamePromptGuessTrack,
   RoundPrompt.textRound => switch (mode) {
     GameMode.guessTrack => l10n.gamePromptGuessTrack,
-    GameMode.whoseSong || null => l10n.gamePromptWhoseSong,
+    GameMode.whoseSong ||
+    GameMode.emojiQuiz ||
+    null => l10n.gamePromptWhoseSong,
   },
+  RoundPrompt.emojiRound => l10n.gamePromptEmoji,
 };
+
+/// Why a round was voided, or null when the server gave no known reason.
+String? voidReasonText(AppLocalizations l10n, RoundVoidReason reason) =>
+    switch (reason) {
+      RoundVoidReason.playbackTimeout ||
+      RoundVoidReason.playbackFailed => l10n.gameVoidedPlayback,
+      RoundVoidReason.hostDisconnected => l10n.gameVoidedHost,
+      RoundVoidReason.serverRestart => l10n.gameVoidedServer,
+      RoundVoidReason.unknown => null,
+    };
+
+/// «Раунд пропущен: <причина>» (the reason starts lower-case after the
+/// colon).
+String voidNoticeText(AppLocalizations l10n, RoundVoidReason reason) {
+  final text = voidReasonText(l10n, reason);
+  if (text == null || text.isEmpty) return l10n.gameVoidedNoticeNoReason;
+  return l10n.gameVoidedNotice(
+    text.substring(0, 1).toLowerCase() + text.substring(1),
+  );
+}
 
 class RoundHeader extends StatelessWidget {
   const RoundHeader({super.key, required this.round});
@@ -71,9 +95,12 @@ class RoundScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final round = state.round;
     final animate = !MediaQuery.disableAnimationsOf(context);
+    final djName = round.djName;
     final status = switch (state.phase) {
-      RoundLocked() when round.isTextRound => l10n.gameTextRoundLocked,
-      RoundLocked() when round.waitsForDj => l10n.gameDjStarting,
+      RoundLocked() when round.isTextRound || round.isEmojiRound =>
+        l10n.gameTextRoundLocked,
+      RoundLocked() when round.waitsForDj =>
+        djName == null ? l10n.gameDjStarting : l10n.gameDjStartingNamed(djName),
       RoundLocked() => l10n.gameListen,
       RoundOpen() => l10n.gameTapFast,
       RoundAnswered(:final ack, :final rejection) => switch (ack) {
@@ -90,7 +117,9 @@ class RoundScreen extends StatelessWidget {
       RoundDjWatching() => l10n.gameDjWatchingHint,
     };
     final textPrompt = round.textPrompt;
-    return ListView(
+    final emojiPrompt = round.emojiPrompt;
+    final voidNotice = state.voidNotice;
+    final list = ListView(
       padding: const EdgeInsets.fromLTRB(
         Spacing.lg,
         Spacing.xs,
@@ -118,7 +147,15 @@ class RoundScreen extends StatelessWidget {
             const SizedBox(height: Spacing.sm),
             SongCard(title: textPrompt.title, artists: textPrompt.artists),
           ],
-        ] else
+        ] else if (emojiPrompt != null)
+          Center(
+            child: EmojiPuzzle(
+              key: ValueKey('emoji-puzzle-${round.roundId}'),
+              emoji: emojiPrompt.emoji,
+              revealed: state.phase is! RoundLocked,
+            ),
+          )
+        else
           Center(
             child: EqualizerBars(
               animate:
@@ -141,9 +178,20 @@ class RoundScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Spacing.lg),
-        if (state.phase is RoundDjCue)
-          DjCueCard(round: round)
-        else if (state.showsButtons)
+        if (state.phase is RoundDjCue) ...[
+          DjCueCard(round: round),
+          if (!round.djMayAnswer) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              l10n.gameDjRoundNoAnswer,
+              key: const ValueKey('dj-no-answer'),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ] else if (state.showsButtons)
           AnswerGrid(state: state)
         else if (round.youAreOwner)
           const _OwnerCard()
@@ -168,6 +216,62 @@ class RoundScreen extends StatelessWidget {
           ),
         ],
       ],
+    );
+    // Over the round, not in its layout: when the notice goes, nothing moves
+    // under the player's finger.
+    return Stack(
+      children: [
+        list,
+        if (voidNotice != null)
+          Positioned(
+            top: Spacing.xs,
+            left: Spacing.lg,
+            right: Spacing.lg,
+            child: VoidNoticeBanner(text: voidNoticeText(l10n, voidNotice)),
+          ),
+      ],
+    );
+  }
+}
+
+/// «Раунд пропущен: <причина>» over a spare round. It ignores pointers, so
+/// it never blocks the answers under it.
+class VoidNoticeBanner extends StatelessWidget {
+  const VoidNoticeBanner({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return IgnorePointer(
+      child: Semantics(
+        liveRegion: true,
+        child: Material(
+          key: const ValueKey('void-notice'),
+          color: scheme.inverseSurface,
+          elevation: 3,
+          borderRadius: BorderRadius.circular(Radii.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.replay_rounded, color: scheme.onInverseSurface),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(color: scheme.onInverseSurface),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -340,14 +444,15 @@ class _OwnerCard extends StatelessWidget {
   );
 }
 
-/// guess_track: the DJ started the song and may not answer (dj_ineligible).
+/// The DJ started the song and may not answer this round (dj_ineligible):
+/// «Ты DJ этого раунда — отвечают остальные».
 class _DjWatchingCard extends StatelessWidget {
   const _DjWatchingCard();
 
   @override
   Widget build(BuildContext context) => _BannerCard(
     icon: Icons.speaker_rounded,
-    title: context.l10n.gameDjWatchingTitle,
+    title: context.l10n.gameDjRoundNoAnswer,
   );
 }
 

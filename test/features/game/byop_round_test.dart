@@ -90,13 +90,16 @@ Future<void> _pointerDown(
 void main() {
   testWidgets('DJ: cue card, hand-off to the music app, and a pointer down on '
       '«Музыка играет!» sends round.playback_started{dj_tap} with the event '
-      'time minus the process anchor; whose_song DJ then answers', (
-    tester,
-  ) async {
+      'time minus the process anchor; with whose_song_dj_can_answer the DJ '
+      'then answers', (tester) async {
     final h = await _harness(
       tester,
       me: Samples.hostId,
-      welcome: Samples.welcome(me: Samples.hostId, room: Samples.byopRoom()),
+      welcome: Samples.welcome(
+        me: Samples.hostId,
+        room: Samples.byopRoom(),
+        config: const {'whose_song_dj_can_answer': true},
+      ),
     );
     h.send(Samples.djPrepare(startAtMonoUs: h.inputClock.monoNowUs + 2500000));
     await tester.pump();
@@ -132,8 +135,7 @@ void main() {
     expect(started.outputLatencyMs, 0);
     expect(started.outputRoute, OutputRoute.other);
 
-    // whose_song: hearing the song says nothing about whose it is, so the
-    // DJ answers like everyone else, from their own start.
+    // The room lets the whose_song DJ answer: from their own start.
     await tester.pump();
     expect(find.text('Жмите быстрее всех!'), findsOneWidget);
     expect(_answer('opt-a'), findsOneWidget);
@@ -242,7 +244,10 @@ void main() {
       h.received<RoundPlaybackStarted>().single.source,
       PlaybackStartSource.djTap,
     );
-    expect(find.text('Вы диджей!'), findsOneWidget);
+    expect(
+      find.text('Ты DJ этого раунда — отвечают остальные'),
+      findsOneWidget,
+    );
     expect(find.text('В этом раунде отвечают гости'), findsOneWidget);
     expect(_answer('opt-a'), findsNothing);
 
@@ -296,6 +301,90 @@ void main() {
     expect(h.received<RoundAnswer>().single.optionId, 'opt-c');
     expect(h.received<RoundPlaybackStarted>(), isEmpty);
     expect(h.playback.prepared, isEmpty);
+    await _end(tester, h);
+  });
+
+  testWidgets('whose_song DJ does not answer by default: «Ты DJ этого '
+      'раунда — отвечают остальные» from the cue card on', (tester) async {
+    final h = await _harness(
+      tester,
+      me: Samples.hostId,
+      welcome: Samples.welcome(me: Samples.hostId, room: Samples.byopRoom()),
+    );
+    h.send(Samples.djPrepare(startAtMonoUs: h.inputClock.monoNowUs));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dj-no-answer')), findsOneWidget);
+    expect(_answer('opt-a'), findsNothing);
+
+    await _pointerDown(
+      tester,
+      find.byKey(const ValueKey('dj-music-playing')),
+      osUs: h.inputClock.nowUs,
+    );
+    expect(h.received<RoundPlaybackStarted>(), hasLength(1));
+    expect((h.state as GameRoundState).phase, isA<RoundDjWatching>());
+    expect(
+      find.text('Ты DJ этого раунда — отвечают остальные'),
+      findsOneWidget,
+    );
+    expect(_answer('opt-a'), findsNothing);
+    await _end(tester, h);
+  });
+
+  testWidgets('a rotated DJ is whoever gets you_are_dj: a guest DJ gets the '
+      'cue and reports dj_tap', (tester) async {
+    final h = await _harness(
+      tester,
+      me: Samples.guestId,
+      welcome: Samples.welcome(room: Samples.byopRoom()),
+    );
+    expect(h.session.isPlaybackDevice, isFalse);
+    h.send(
+      Samples.djPrepare(
+        startAtMonoUs: h.inputClock.monoNowUs,
+        djId: Samples.guestId,
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Northern Lights'), findsOneWidget);
+    await _pointerDown(
+      tester,
+      find.byKey(const ValueKey('dj-music-playing')),
+      osUs: h.inputClock.nowUs,
+    );
+    expect(
+      h.received<RoundPlaybackStarted>().single.source,
+      PlaybackStartSource.djTap,
+    );
+    await _end(tester, h);
+  });
+
+  testWidgets('the playback device is not the DJ of a rotated round: no cue, '
+      'no «Музыка играет!», «<имя> включает песню…»', (tester) async {
+    final h = await _harness(
+      tester,
+      me: Samples.hostId,
+      welcome: Samples.welcome(me: Samples.hostId, room: Samples.byopRoom()),
+    );
+    expect(h.session.isPlaybackDevice, isTrue);
+    h.send(
+      Samples.byopGuestPrepare(
+        startAtMonoUs: h.inputClock.monoNowUs,
+        djId: Samples.guestId,
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Bartek включает песню…'), findsOneWidget);
+    expect(find.text('Northern Lights'), findsNothing);
+    expect(find.byKey(const ValueKey('dj-music-playing')), findsNothing);
+    expect(_answer('opt-a'), findsOneWidget);
+    expect((h.state as GameRoundState).phase, isA<RoundLocked>());
+
+    h.send(const RoundStart(roundId: 'round-1', audioStartServerMs: 1));
+    await tester.pump();
+    await tester.pump();
+    expect((h.state as GameRoundState).phase, isA<RoundOpen>());
+    expect(h.received<RoundPlaybackStarted>(), isEmpty);
     await _end(tester, h);
   });
 

@@ -27,6 +27,13 @@ final class ClipPlayerAdapter implements PlaybackAdapter {
   @override
   AudioStartSource get startSource => AudioStartSource.scheduled;
 
+  bool _playing = false;
+
+  /// Tracked on the Dart side: the native player is only ever started by
+  /// [playAt] and silenced by [stop] or [dispose].
+  @override
+  bool get isPlaying => _playing;
+
   @override
   Future<void> initialize() async {
     // Nothing to warm up: the audio session is configured per clip, so the
@@ -75,6 +82,7 @@ final class ClipPlayerAdapter implements PlaybackAdapter {
     } on PlatformException catch (e) {
       throw PlaybackFailure(_reason(e));
     }
+    _playing = true;
     return PlaybackStarted(
       audioStartMonoUs: _clock.fromOsUs(started.audioStartOsUs),
       outputLatencyMs: started.outputLatencyMs,
@@ -96,6 +104,7 @@ final class ClipPlayerAdapter implements PlaybackAdapter {
     } on PlatformException {
       // Nothing was playing.
     }
+    _playing = false;
   }
 
   @override
@@ -105,6 +114,7 @@ final class ClipPlayerAdapter implements PlaybackAdapter {
     } on PlatformException {
       // Already released.
     }
+    _playing = false;
   }
 
   static PreloadOutcome _outcome(PreloadResultMessage result) => PreloadOutcome(

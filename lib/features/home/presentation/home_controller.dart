@@ -4,8 +4,10 @@ import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/app/router/routes.dart';
 import 'package:sporand/core/ads/ads_policy.dart';
+import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/consent/consent_policy.dart';
 import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 
 final homeControllerProvider = Provider<HomeController>(HomeController.new);
 
@@ -37,16 +39,22 @@ class HomeController {
     }
     final prefs = _ref.read(userPrefsProvider);
     final band = prefs.ageBand;
+    final analyticsConsent = resolveAnalyticsConsent(
+      ageBand: band,
+      storedChoice: prefs.analyticsConsent,
+      ump: info,
+    );
+    final adsPersonalized = resolveAdsPersonalized(ageBand: band, ump: info);
+    _ref
+        .read(consentSyncProvider)
+        .schedule(
+          analytics: analyticsConsent == AnalyticsConsent.granted,
+          adsPersonalized: adsPersonalized,
+          source: ConsentSource.ump,
+        );
     await _ref
         .read(analyticsProvider)
-        .applyConsent(
-          resolveAnalyticsConsent(
-            ageBand: band,
-            storedChoice: prefs.analyticsConsent,
-            ump: info,
-          ),
-          adsPersonalized: resolveAdsPersonalized(ageBand: band, ump: info),
-        );
+        .applyConsent(analyticsConsent, adsPersonalized: adsPersonalized);
     await initializeAdsIfAllowed(
       ads: _ref.read(adsServiceProvider),
       flavorAllowsMonetization: _ref.read(appEnvProvider).monetizationAllowed,

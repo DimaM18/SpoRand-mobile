@@ -92,17 +92,21 @@ class ApiClient {
     bool authenticated = true,
   }) => send('GET', path, query: query, authenticated: authenticated);
 
+  /// [bearer] sends that access token as is (no refresh on 401): for the
+  /// unauthenticated auth client, e.g. `POST /v1/auth/logout`.
   Future<Map<String, Object?>> post(
     String path, {
     Object? body,
     bool authenticated = true,
     AppCheckUse appCheck = AppCheckUse.standard,
+    String? bearer,
   }) => send(
     'POST',
     path,
     body: body ?? const <String, Object?>{},
     authenticated: authenticated,
     appCheck: appCheck,
+    bearer: bearer,
   );
 
   Future<Map<String, Object?>> put(String path, {Object? body}) =>
@@ -120,8 +124,14 @@ class ApiClient {
     Map<String, String>? query,
     bool authenticated = true,
     AppCheckUse appCheck = AppCheckUse.standard,
+    String? bearer,
   }) async {
     final tokens = _tokens;
+    if (bearer != null) {
+      return _decode(
+        await _perform(method, path, body, query, bearer, appCheck),
+      );
+    }
     if (authenticated && tokens == null) {
       throw StateError('ApiClient without tokens cannot call $path');
     }
