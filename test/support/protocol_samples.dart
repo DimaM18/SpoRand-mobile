@@ -18,6 +18,7 @@ abstract final class Samples {
     bool playbackDevice = false,
     bool ready = true,
     bool contributor = true,
+    int? poolTrackCount,
   }) => PlayerSnapshot(
     playerId: id,
     displayName: name,
@@ -27,7 +28,7 @@ abstract final class Samples {
     connection: PlayerConnection.connected,
     platform: AppPlatform.android,
     ready: ready,
-    poolTrackCount: contributor ? 5 : 0,
+    poolTrackCount: poolTrackCount ?? (contributor ? 5 : 0),
   );
 
   static List<PlayerSnapshot> players() => [
@@ -36,11 +37,39 @@ abstract final class Samples {
     player(thirdId, 'Celina'),
   ];
 
+  /// `provider_capabilities` of an external_player (BYOP) room, as in
+  /// packages/protocol `fixtures/ws/variants/s2c/room.state/byop.json`.
+  static const byopCapabilities = ProviderCapabilities(
+    playback: AudioStartSource.hostReported,
+    audioSource: AudioSource.externalApp,
+    allowsMonetization: true,
+    allowsPrefetch: false,
+    allowsCustomOffset: false,
+    revealsMetadataDuringPlay: true,
+    licensedTerritories: ['*'],
+    requiresPremiumHost: false,
+    supportsSearch: true,
+  );
+
+  static const textCapabilities = ProviderCapabilities(
+    playback: AudioStartSource.none,
+    audioSource: AudioSource.none,
+    allowsMonetization: true,
+    allowsPrefetch: false,
+    allowsCustomOffset: false,
+    revealsMetadataDuringPlay: false,
+    licensedTerritories: ['*'],
+    requiresPremiumHost: false,
+    supportsSearch: true,
+  );
+
   static RoomSnapshot room({
     RoomState state = RoomState.lobby,
     GameMode mode = GameMode.guessTrack,
     HostTier tier = HostTier.free,
     List<PlayerSnapshot>? players,
+    MusicProviderId provider = MusicProviderId.testCatalog,
+    ProviderCapabilities? capabilities,
   }) => RoomSnapshot(
     roomId: roomId,
     roomCode: '7KQ2MX',
@@ -56,9 +85,21 @@ abstract final class Samples {
       poolSources: const [PoolSource.catalogPicks],
     ),
     mode: mode,
-    provider: MusicProviderId.testCatalog,
+    provider: provider,
+    providerCapabilities: capabilities,
     audioMode: AudioMode.hostDevice,
     hostTier: tier,
+  );
+
+  /// An external_player room (the host is the DJ).
+  static RoomSnapshot byopRoom({
+    RoomState state = RoomState.roundPlaying,
+    GameMode mode = GameMode.whoseSong,
+  }) => room(
+    state: state,
+    mode: mode,
+    provider: MusicProviderId.externalPlayer,
+    capabilities: byopCapabilities,
   );
 
   static Welcome welcome({
@@ -91,22 +132,64 @@ abstract final class Samples {
     AudioStartSource source = AudioStartSource.scheduled,
     RoundKind kind = RoundKind.regular,
     RoundClip? clip,
+    RoundCue? cue,
+    RoundTextPrompt? textPrompt,
+    RoundPrompt prompt = RoundPrompt.whoseSong,
+    int startAtServerMs = 1759212348178,
     int answerWindowMs = 15000,
   }) => RoundPrepare(
     roundId: roundId,
     roundIndex: roundIndex,
     kind: kind,
     nonce: '4f1d9c2b7a6e5d3c2b1a0f9e8d7c6b5a',
-    prompt: GameMode.whoseSong,
+    prompt: prompt,
     options: options,
     youAreOwner: youAreOwner,
-    startAtServerMs: 1759212348178,
+    startAtServerMs: startAtServerMs,
     startAtMonoUs: startAtMonoUs,
     answerWindowMs: answerWindowMs,
     audioStartSource: source,
     commitHash:
         'fcb326c4a60b146025d44fa3758ccf983a9ce51c58ad53ae325186ab48767c35',
     clip: clip,
+    cue: cue,
+    textPrompt: textPrompt,
+  );
+
+  static const cue = RoundCue(
+    title: 'Northern Lights',
+    artists: ['Test Artist', 'Example Choir'],
+    hintUrl: 'https://music.example.invalid/search?q=Northern%20Lights',
+  );
+
+  /// The DJ's round.prepare in an external_player room.
+  static RoundPrepare djPrepare({
+    String roundId = 'round-1',
+    required int startAtMonoUs,
+    RoundPrompt prompt = RoundPrompt.whoseSong,
+    bool youAreOwner = false,
+  }) => prepare(
+    roundId: roundId,
+    startAtMonoUs: startAtMonoUs,
+    source: AudioStartSource.hostReported,
+    prompt: prompt,
+    youAreOwner: youAreOwner,
+    cue: cue,
+  );
+
+  /// A whose_song text round (provider none).
+  static RoundPrepare textPrepare({
+    String roundId = 'round-1',
+    required int startAtMonoUs,
+  }) => prepare(
+    roundId: roundId,
+    startAtMonoUs: startAtMonoUs,
+    source: AudioStartSource.none,
+    prompt: RoundPrompt.textRound,
+    textPrompt: const RoundTextPrompt(
+      title: 'Paper Boats',
+      artists: ['Sample Band'],
+    ),
   );
 
   static const urlClip = UrlRoundClip(
@@ -221,12 +304,20 @@ abstract final class Samples {
         snippetDurationMs: 15000,
       ),
     ),
+    djPrepare(roundId: 'round-3', startAtMonoUs: 834514845678),
+    textPrepare(roundId: 'round-4', startAtMonoUs: 834514845678),
+    RoomStateMessage(byopRoom()),
     const RoundStart(roundId: 'round-1', audioStartServerMs: 1759212348201),
     const RoundAnswerAck(roundId: 'round-1', accepted: true),
     const RoundAnswerAck(
       roundId: 'round-1',
       accepted: false,
       reason: AnswerValidation.tooEarly,
+    ),
+    const RoundAnswerAck(
+      roundId: 'round-1',
+      accepted: false,
+      reason: AnswerValidation.djIneligible,
     ),
     const RoundProgress(roundId: 'round-1', answeredCount: 2, eligibleCount: 3),
     const RoundVoided(
@@ -315,6 +406,13 @@ abstract final class Samples {
       outputRoute: OutputRoute.speaker,
       source: PlaybackStartSource.scheduled,
     ),
+    RoundPlaybackStarted(
+      roundId: 'round-3',
+      audioStartMonoUs: 2056435,
+      outputLatencyMs: 0,
+      outputRoute: OutputRoute.other,
+      source: PlaybackStartSource.djTap,
+    ),
     RoundPlaybackFailed(roundId: 'round-1', reason: 'clip_load_failed'),
     RoundAnswer(
       roundId: 'round-1',
@@ -324,6 +422,7 @@ abstract final class Samples {
       unlockMonoUs: 834514853012,
     ),
     BonusRequest(bonusId: 'bonus-1', appCheckToken: 'limited-use-token-123'),
+    BonusRequest(bonusId: 'bonus-1'),
     BonusAdResult(bonusId: 'bonus-1', status: BonusAdStatus.earned),
     AdInterstitialResult(
       gameId: gameId,

@@ -1,3 +1,4 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,12 +10,55 @@ import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 
 void main() {
-  group('tap_mono_us', () {
-    test('is the pointer event timestamp in microseconds', () {
+  group('process anchor (brief §5, Apple reason 35F9.1)', () {
+    test('tap_mono_us is the pointer event timestamp minus the anchor', () {
       const event = PointerDownEvent(
         timeStamp: Duration(microseconds: 834515687654),
       );
-      expect(tapMonoUsFromPointer(event), 834515687654);
+      final clock = FakeInputClock(anchorUs: 834000000000);
+      expect(tapMonoUsFromPointer(clock, event), 515687654);
+    });
+
+    test('init reads the anchor once; every source converts through it', () {
+      fakeAsync((async) {
+        final source = FakeInputClockSource(
+          startUs: 912345678901,
+          clock: async.getClock(DateTime(2026)),
+        );
+        final clock = InputClock(source);
+        expect(clock.isAnchored, isFalse);
+        clock.init();
+        async.flushMicrotasks();
+        expect(clock.isAnchored, isTrue);
+
+        async.elapse(const Duration(seconds: 3));
+        int? now;
+        clock.nowMicros().then((v) => now = v);
+        async.flushMicrotasks();
+        expect(now, 3000000, reason: 'nowMicros is anchored');
+        // A second init does not move the anchor.
+        clock.init();
+        async.flushMicrotasks();
+        expect(clock.fromOsUs(912345678901 + 3000000), 3000000);
+        expect(
+          clock.fromOs(const Duration(microseconds: 912345678901 + 2500000)),
+          2500000,
+        );
+        expect(clock.toOsUs(2500000), 912345678901 + 2500000);
+      });
+    });
+
+    test('without init the first converted value becomes the anchor', () {
+      final clock = InputClock(FakeInputClockSource(startUs: 5000000000));
+      expect(clock.fromOsUs(4000000000), 0);
+      expect(clock.fromOsUs(4000250000), 250000);
+      expect(clock.toOsUs(250000), 4000250000);
+    });
+
+    test('values sent off-device are small, not the device uptime', () async {
+      final clock = InputClock(FakeInputClockSource(startUs: 86400000000));
+      await clock.init();
+      expect(await clock.nowMicros(), lessThan(1000000));
     });
   });
 

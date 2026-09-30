@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sporand/app/di/providers.dart';
-import 'package:sporand/app/flavors/flavor.dart';
 import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/net/api_client.dart';
@@ -114,10 +113,9 @@ class ActiveRoomController extends Notifier<ActiveRoomState> {
     required String displayName,
   }) async {
     if (_endpoint() == null) return const RoomOpenFailed(RoomOpenError.network);
-    final env = ref.read(appEnvProvider);
-    final provider = env.flavor == Flavor.spotifyProto
-        ? MusicProviderId.spotifyAppRemote
-        : MusicProviderId.testCatalog;
+    final provider = ref.read(appEnvProvider).roomProvider;
+    // The server reads the age band at create (explicit filter, ads).
+    await ref.read(ageBandSyncProvider).ensureSynced();
     final CreatedRoom created;
     try {
       created = await ref
@@ -163,6 +161,8 @@ class ActiveRoomController extends Notifier<ActiveRoomState> {
         AnalyticsParams.via: via.wire,
       }),
     );
+    // ...and at join.
+    await ref.read(ageBandSyncProvider).ensureSynced();
     final JoinedRoom joined;
     try {
       joined = await ref

@@ -32,6 +32,25 @@ final class _RoundRuntime {
 
   String get roundId => prepare.roundId;
 
+  /// This device got the cue: it is the DJ of an external_player round.
+  bool get isDj => prepare.cue != null;
+
+  /// Bumped by every (re)schedule of the unlock timer, so a slower earlier
+  /// scheduling cannot overwrite a newer one.
+  int unlockSchedule = 0;
+
+  /// Set once the DJ tapped «Музыка играет!».
+  bool djTapped = false;
+
+  /// DJ only: `nowMicros()` read when the cue arrived, before «Музыка
+  /// играет!» could be shown (a lower bound for its tap); null if that read
+  /// failed.
+  Future<int?>? cueShownUs;
+
+  /// The input clock could not be read to schedule the unlock: the round
+  /// then opens on `round.start`, like a host-reported one.
+  bool unlockOnRoundStart = false;
+
   bool unlockRequested = false;
 
   /// `nowMicros()` read when the unlock was requested, before the frame
@@ -54,9 +73,14 @@ final class _RoundRuntime {
 
 /// Turns server messages into [GameUiState] and owns the timing-critical
 /// client work (brief §5):
-/// - scheduled rounds unlock with a local timer at `start_at_mono_us`;
-///   host-reported rounds unlock on `round.start` (the host: on its own
+/// - scheduled rounds (and text rounds) unlock with a local timer at
+///   `start_at_server_ms` converted with the latest `clock.result` offset
+///   (the server's `start_at_mono_us` only before the first result);
+///   host-reported rounds unlock on `round.start` (the host or DJ: on its own
 ///   playback start);
+/// - the DJ of an external_player round (A2.2) starts the song in their own
+///   music app and reports `round.playback_started{source: dj_tap}` with the
+///   pointer-down time of «Музыка играет!»;
 /// - the first pointer down commits and sends `round.answer` with the OS
 ///   touch time as `tap_mono_us` and the unlock frame time as
 ///   `unlock_mono_us`;
@@ -71,6 +95,10 @@ class GameController extends Notifier<GameUiState> {
   Timer? _timeUpTimer;
   String? _gameId;
   int _roundsTotal = 0;
+
+  /// Rounds of this game that reached `round.reveal` (by id: a catch-up can
+  /// repeat the last reveal).
+  final Set<String> _revealedRounds = {};
   List<Standing> _standings = const [];
   bool _adOnScreen = false;
   GameResults? _bufferedResults;
@@ -95,6 +123,7 @@ class GameController extends Notifier<GameUiState> {
   }
 
   InputClock get _clock => ref.read(inputClockProvider);
+  InputClock get inputClock => _clock;
   AdsService get _ads => ref.read(adsServiceProvider);
   RemoteConfigService get _config => ref.read(remoteConfigProvider);
 
@@ -138,6 +167,78 @@ class GameController extends Notifier<GameUiState> {
     runtime.frameUnlockUs ??= frameTimestampUs;
   }
 
+  /// «Музыка играет!» (external_player DJ, A2.2): [audioStartMonoUs] is
+  /// the pointer-down time of the tap on the anchored input clock (null for
+  /// a screen-reader activation, then the input clock is read now). Sends
+  /// `round.playback_started{source: dj_tap}` once per round. Returns true
+  /// when this call reported the start.
+  bool djStarted({required String roundId, required int? audioStartMonoUs}) {
+    final runtime = _round;
+    final current = state;
+    if (runtime == null ||
+        runtime.roundId != roundId ||
+        !runtime.isDj ||
+        runtime.djTapped ||
+        current is! GameRoundState ||
+        current.round.roundId != roundId ||
+        current.phase is! RoundDjCue) {
+      return false;
+    }
+    // Claimed synchronously so a second tap cannot report twice.
+    runtime.djTapped = true;
+    final view = current.round;
+    state = current.copyWith(
+      phase: view.youAreOwner
+          ? const RoundOwnerWatching()
+          : view.djMayAnswer
+          ? const RoundLocked()
+          : const RoundDjWatching(),
+    );
+    unawaited(_reportDjStart(runtime, audioStartMonoUs));
+    return true;
+  }
+
+  Future<void> _reportDjStart(_RoundRuntime runtime, int? tapMonoUs) async {
+    final shown = await runtime.cueShownUs;
+    final now = await _readMono(_clock.nowMicros());
+    // The same plausibility rule as answer taps: a pointer time on another
+    // clock base would put the start seconds off (the server clamps an early
+    // one to the cue, which lengthens every guest's reaction).
+    final start = tapMonoUs == null || now == null
+        ? tapMonoUs ?? now
+        : MonoTimestamps.resolveTap(
+            tapUs: tapMonoUs,
+            unlockUs: shown ?? tapMonoUs,
+            nowUs: now,
+          );
+    if (_round != runtime || start == null) return;
+    _session?.send(
+      RoundPlaybackStarted(
+        roundId: runtime.roundId,
+        audioStartMonoUs: start,
+        // The song plays from another app on the DJ's speaker: its output
+        // latency is unknown here and the same for everyone who hears it.
+        outputLatencyMs: 0,
+        outputRoute: OutputRoute.other,
+        source: PlaybackStartSource.djTap,
+      ),
+    );
+    // Host-reported: the DJ unlocks on its own start, guests on round.start.
+    _unlock(runtime);
+  }
+
+  /// «Открыть в музыкальном приложении»: hands the cue to the DJ's own music
+  /// app (never played by us). False when nothing could be opened.
+  Future<bool> openCueInMusicApp() async {
+    final cue = _round?.prepare.cue;
+    if (cue == null) return false;
+    try {
+      return await ref.read(musicAppLauncherProvider).open(cue);
+    } on Object {
+      return false;
+    }
+  }
+
   /// «Посмотри рекламу — +1 раунд для всех»: first `bonus.request` wins.
   Future<void> requestBonus() async {
     final current = state;
@@ -145,13 +246,15 @@ class GameController extends Notifier<GameUiState> {
     final phase = current.phase;
     if (phase is! BonusOffered || !phase.canWatch) return;
     state = current.withPhase(const BonusRequested());
-    // Limited-use App Check token (brief §7).
+    // Limited-use App Check token (brief §7). Without App Check (dev, no
+    // Firebase) the field is omitted and the server decides by
+    // `app_check_mode`.
     final token = await ref.read(appCheckProvider).getLimitedUseToken();
-    // TODO(protocol): the schema requires a token; without App Check (dev,
-    // no Firebase) an empty one is sent and the server decides by
-    // app_check_mode.
     _session?.send(
-      BonusRequest(bonusId: current.bonusId, appCheckToken: token ?? ''),
+      BonusRequest(
+        bonusId: current.bonusId,
+        appCheckToken: token == null || token.isEmpty ? null : token,
+      ),
     );
   }
 
@@ -168,6 +271,8 @@ class GameController extends Notifier<GameUiState> {
         _onRoomSnapshot(room);
       case GameStarting():
         _onGameStarting(message);
+      case ClockResult():
+        _onClockResult(message);
       case RoundPrepare():
         _onRoundPrepare(message);
       case RoundStart():
@@ -257,11 +362,16 @@ class GameController extends Notifier<GameUiState> {
   void _onRoundPrepare(RoundPrepare message) {
     _cancelTimers();
     final runtime = _RoundRuntime(message);
+    if (runtime.isDj) runtime.cueShownUs = _readMono(_clock.nowMicros());
     _round = runtime;
-    _roundsTotal = math.max(_roundsTotal, message.roundIndex + 1);
+    _roundsTotal = math.max(_roundsTotal, _positionOf(message));
+    final view = _viewOf(message);
     state = GameRoundState(
-      round: RoundView.fromPrepare(message, roundsTotal: _roundsTotal),
-      phase: message.youAreOwner
+      round: view,
+      phase: view.isDj
+          // The DJ starts the song even when it is their own.
+          ? const RoundDjCue()
+          : message.youAreOwner
           ? const RoundOwnerWatching()
           : const RoundLocked(),
     );
@@ -270,36 +380,96 @@ class GameController extends Notifier<GameUiState> {
     final host = message.clip == null ? null : _hostCoordinator();
     if (host != null) {
       unawaited(
-        host.playRound(message).then((started) {
-          if (started == null || _round != runtime) return;
-          final current = state;
-          if (started.outputRoute == OutputRoute.airplay &&
-              current is GameRoundState) {
-            state = current.copyWith(airplayWarning: true);
-          }
-          // Host-reported source: the host unlocks on its own playback
-          // start instead of waiting for `round.start`.
-          if (message.audioStartSource == AudioStartSource.hostReported) {
-            _unlock(runtime);
-          }
-        }),
+        host
+            .playRound(message, startAtMonoUs: () => _startAtMonoUs(message))
+            .then((started) {
+              if (started == null || _round != runtime) return;
+              final current = state;
+              if (started.outputRoute == OutputRoute.airplay &&
+                  current is GameRoundState) {
+                state = current.copyWith(airplayWarning: true);
+              }
+              // Host-reported source: the host unlocks on its own playback
+              // start instead of waiting for `round.start`.
+              if (message.audioStartSource == AudioStartSource.hostReported) {
+                _unlock(runtime);
+              }
+            }),
       );
     }
-    if (message.audioStartSource == AudioStartSource.scheduled) {
-      unawaited(_scheduleUnlock(runtime));
-    }
+    if (_unlocksOnSchedule(message)) unawaited(_scheduleUnlock(runtime));
   }
 
-  Future<void> _scheduleUnlock(_RoundRuntime runtime) async {
+  /// The round's place in the game as played. A regular round's plan index
+  /// is its place (a spare takes over a voided round's place, so later
+  /// regular rounds keep theirs); a spare or bonus round comes right after
+  /// the rounds revealed so far.
+  int _positionOf(RoundPrepare message) => message.kind == RoundKind.regular
+      ? message.roundIndex + 1
+      : _revealedRounds.length + 1;
+
+  RoundView _viewOf(RoundPrepare message) {
+    final room = _session?.room;
+    return RoundView.fromPrepare(
+      message,
+      position: _positionOf(message),
+      roundsTotal: _roundsTotal,
+      mode: room?.mode,
+      externalAudio: room?.capabilities.isExternalApp ?? false,
+      guessTrackDjCanAnswer: _session?.config.guessTrackDjCanAnswer ?? false,
+    );
+  }
+
+  /// Scheduled rounds and text rounds (no audio) open at `start_at`.
+  static bool _unlocksOnSchedule(RoundPrepare message) =>
+      message.audioStartSource == AudioStartSource.scheduled ||
+      message.audioStartSource == AudioStartSource.none;
+
+  /// `start_at` on this device's anchored input clock (brief §5):
+  /// `start_at_server_ms` × 1000 + the latest `clock.result` offset.
+  /// `start_at_mono_us` was converted by the server with the offset it had
+  /// when it sent `round.prepare`, which is stale after a reconnect or a
+  /// device sleep, so it is only the fallback before the first result.
+  int _startAtMonoUs(RoundPrepare prepare, {int? offsetUs}) {
+    final offset = offsetUs ?? _session?.clock.offsetUs;
+    return offset == null
+        ? prepare.startAtMonoUs
+        : prepare.startAtServerMs * 1000 + offset;
+  }
+
+  /// A newer `clock.result` (e.g. the burst after a reconnect or wake-up)
+  /// moves a pending unlock.
+  void _onClockResult(ClockResult message) {
+    final runtime = _round;
+    if (runtime == null ||
+        runtime.unlockRequested ||
+        !_unlocksOnSchedule(runtime.prepare)) {
+      return;
+    }
+    unawaited(_scheduleUnlock(runtime, offsetUs: message.offsetUs));
+  }
+
+  Future<void> _scheduleUnlock(_RoundRuntime runtime, {int? offsetUs}) async {
     final epoch = _epoch;
-    final now = await _clock.nowMicros();
-    if (_isStale(epoch) || _round != runtime) return;
-    final delayUs = runtime.prepare.startAtMonoUs - now;
+    final schedule = ++runtime.unlockSchedule;
+    final startAt = _startAtMonoUs(runtime.prepare, offsetUs: offsetUs);
+    final now = await _readMono(_clock.nowMicros());
+    if (_isStale(epoch) ||
+        _round != runtime ||
+        schedule != runtime.unlockSchedule ||
+        runtime.unlockRequested) {
+      return;
+    }
+    if (now == null) {
+      runtime.unlockOnRoundStart = true;
+      return;
+    }
+    final delayUs = startAt - now;
+    _unlockTimer?.cancel();
     if (delayUs <= 0) {
       _unlock(runtime);
       return;
     }
-    _unlockTimer?.cancel();
     _unlockTimer = Timer(
       Duration(microseconds: delayUs),
       () => _unlock(runtime),
@@ -311,21 +481,25 @@ class GameController extends Notifier<GameUiState> {
     if (runtime == null || runtime.roundId != message.roundId) return;
     // Guests of a host-reported round unlock on receipt: about two one-way
     // trips late, below human reaction time (brief §5).
-    if (runtime.prepare.audioStartSource == AudioStartSource.hostReported) {
+    if (runtime.prepare.audioStartSource == AudioStartSource.hostReported ||
+        runtime.unlockOnRoundStart) {
       _unlock(runtime);
     }
   }
 
   void _unlock(_RoundRuntime runtime) {
+    final current = state;
     if (_round != runtime ||
         runtime.unlockRequested ||
-        runtime.prepare.youAreOwner) {
+        runtime.prepare.youAreOwner ||
+        (current is GameRoundState &&
+            current.round.isDj &&
+            !current.round.djMayAnswer)) {
       return;
     }
     runtime
       ..unlockRequested = true
       ..provisionalUnlockUs = _readMono(_clock.nowMicros());
-    final current = state;
     if (current is GameRoundState &&
         current.round.roundId == runtime.roundId &&
         current.phase is RoundLocked) {
@@ -446,7 +620,7 @@ class GameController extends Notifier<GameUiState> {
         current is GameRoundState && current.round.roundId == message.roundId
         ? current.round
         : runtime != null
-        ? RoundView.fromPrepare(runtime.prepare, roundsTotal: _roundsTotal)
+        ? _viewOf(runtime.prepare)
         : null;
     final me = _session?.playerId;
     RoundResult? myResult;
@@ -459,6 +633,7 @@ class GameController extends Notifier<GameUiState> {
     );
     _standings = message.standings;
     _round = null;
+    _revealedRounds.add(message.roundId);
     state = GameRevealState(
       RevealView(
         round:
@@ -468,7 +643,7 @@ class GameController extends Notifier<GameUiState> {
               roundIndex: 0,
               roundsTotal: _roundsTotal,
               kind: RoundKind.regular,
-              prompt: GameMode.whoseSong,
+              prompt: RoundPrompt.whoseSong,
               options: const [],
               youAreOwner: false,
               answerWindowMs: 0,
@@ -701,7 +876,7 @@ class GameController extends Notifier<GameUiState> {
         _config.monetizationEnabled &&
         !_config.killSwitchAds &&
         (session?.config.monetizationEnabled ?? true) &&
-        (session?.room?.provider.allowsMonetization ?? true);
+        (session?.room?.capabilities.allowsMonetization ?? true);
   }
 
   bool get _rewardedAllowed =>
@@ -710,11 +885,12 @@ class GameController extends Notifier<GameUiState> {
       (_session?.config.rewardedEnabled ?? true) &&
       _ads.isInitialized;
 
-  /// The last regular round: preload a rewarded ad and an interstitial
-  /// (brief §6 step 1). Nothing is shown during the round.
+  /// The last planned round (the last regular one, or the spare that took
+  /// its place): preload a rewarded ad and an interstitial (brief §6 step
+  /// 1). Nothing is shown during the round.
   void _maybePreloadAds(RoundPrepare message) {
-    if (message.kind != RoundKind.regular ||
-        message.roundIndex != _roundsTotal - 1 ||
+    if (message.kind == RoundKind.bonus ||
+        _positionOf(message) != _roundsTotal ||
         !_monetizationAllowed ||
         !_ads.isInitialized) {
       return;
@@ -782,6 +958,7 @@ class GameController extends Notifier<GameUiState> {
     _round = null;
     _gameId = null;
     _roundsTotal = 0;
+    _revealedRounds.clear();
     _standings = const [];
     _bufferedResults = null;
     unawaited(_host?.stop());
@@ -798,6 +975,7 @@ class GameController extends Notifier<GameUiState> {
     _round = null;
     _gameId = null;
     _roundsTotal = 0;
+    _revealedRounds.clear();
     _standings = const [];
     _bufferedResults = null;
     _adOnScreen = false;

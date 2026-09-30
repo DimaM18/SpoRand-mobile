@@ -14,11 +14,13 @@ class SporandNativePlugin : FlutterPlugin {
         val player = ClipPlayerHost(binding.applicationContext)
         clipPlayer = player
         ClipPlayerApi.setUp(binding.binaryMessenger, player)
+        MusicAppApi.setUp(binding.binaryMessenger, MusicAppHost(binding.applicationContext))
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         InputClockApi.setUp(binding.binaryMessenger, null)
         ClipPlayerApi.setUp(binding.binaryMessenger, null)
+        MusicAppApi.setUp(binding.binaryMessenger, null)
         clipPlayer?.dispose()
         clipPlayer = null
     }

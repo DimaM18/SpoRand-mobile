@@ -7,6 +7,7 @@ import 'package:sporand/app/router/routes.dart';
 import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/app/widgets/qr_code_view.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
@@ -151,8 +152,22 @@ class _LobbyBody extends ConsumerWidget {
             child: _Banner(text: l10n.lobbyReconnecting),
           ),
         _InviteCard(view: view),
+        if (view.isDjHost) ...[
+          const SizedBox(height: Spacing.md),
+          Text(
+            l10n.lobbyDjHint,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
         const SizedBox(height: Spacing.lg),
         _SettingsCard(view: view),
+        if (view.collectsPools) ...[
+          const SizedBox(height: Spacing.lg),
+          _MySongsCard(view: view),
+        ],
         const SizedBox(height: Spacing.lg),
         Text(
           l10n.lobbyPlayersTitle(view.players.length),
@@ -170,6 +185,126 @@ class _LobbyBody extends ConsumerWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// «Добавить мои песни»: this player's pool for the room, sent only after
+/// the «Что увидят друзья» consent (design doc S1.9).
+class _MySongsCard extends ConsumerWidget {
+  const _MySongsCard({required this.view});
+
+  final LobbyView view;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final count = view.myPoolTrackCount;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.homeMySongs, style: theme.textTheme.titleMedium),
+            if (count > 0) ...[
+              const SizedBox(height: Spacing.xxs),
+              Text(l10n.lobbyPoolTrackCount(count)),
+            ],
+            const SizedBox(height: Spacing.sm),
+            FilledButton.tonalIcon(
+              key: const ValueKey('lobby-add-my-songs'),
+              onPressed: () => _addMySongs(context, ref),
+              icon: const Icon(Icons.queue_music_rounded),
+              label: Text(
+                count > 0 ? l10n.lobbyUpdateMySongs : l10n.lobbyAddMySongs,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _addMySongs(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final controller = ref.read(lobbyControllerProvider.notifier);
+    void snack(String text, {SnackBarAction? action}) =>
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(text), action: action));
+
+    final draft = await controller.preparePool();
+    if (!context.mounted) return;
+    switch (draft) {
+      case PoolUnavailable():
+        snack(l10n.lobbyPoolFailed);
+      case PoolNeedsPicks(:final minimum):
+        snack(
+          l10n.lobbyPoolNeedPicks(minimum),
+          action: SnackBarAction(
+            label: l10n.lobbyOpenMySongs,
+            onPressed: () => context.push(Routes.mySongs),
+          ),
+        );
+      case PoolReady(:final picks):
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => _PoolConsentDialog(picks: picks),
+        );
+        if (confirmed != true || !context.mounted) return;
+        final sent = await controller.submitPool(draft);
+        if (!context.mounted) return;
+        snack(sent ? l10n.lobbyPoolSent : l10n.lobbyPoolFailed);
+    }
+  }
+}
+
+/// «Что увидят друзья»: exactly the list that may be revealed as this
+/// player's, and the consent «Эти песни будут показаны комнате как ваши».
+class _PoolConsentDialog extends StatelessWidget {
+  const _PoolConsentDialog({required this.picks});
+
+  final List<CatalogPick> picks;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: Text(l10n.mySongsPreviewTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Text(l10n.mySongsPreviewBody),
+            const SizedBox(height: Spacing.sm),
+            for (final pick in picks)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: Spacing.xxs),
+                child: Text(
+                  '${pick.title} — ${pick.artists.join(', ')}',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            const SizedBox(height: Spacing.sm),
+            Text(l10n.lobbyPoolConsentBody, style: theme.textTheme.titleSmall),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.commonCancel),
+        ),
+        FilledButton(
+          key: const ValueKey('pool-consent-confirm'),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l10n.lobbyPoolConsentConfirm),
+        ),
       ],
     );
   }
@@ -400,6 +535,8 @@ class _PlayerTile extends ConsumerWidget {
       subtitle: Text(
         [
           ...badges,
+          if (player.poolTrackCount > 0)
+            l10n.lobbyPoolTrackCount(player.poolTrackCount),
           if (away)
             l10n.lobbyAway
           else if (!player.isHost)
@@ -481,6 +618,19 @@ class _LobbyActions extends ConsumerWidget {
 
   final LobbyView view;
 
+  /// What still blocks the start; missing contributors are already shown
+  /// under the player list.
+  static String? _blockerText(AppLocalizations l10n, StartBlocker? blocker) =>
+      switch (blocker) {
+        NeedMorePlayers(:final minimum) => l10n.lobbyNeedPlayers(minimum),
+        PoolTooSmall(:final name, :final minimum) => l10n.lobbyPoolTooSmall(
+          name,
+          minimum,
+        ),
+        NeedAnyPool() => l10n.lobbyNeedAnyPool,
+        NeedContributors() || null => null,
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
@@ -500,11 +650,11 @@ class _LobbyActions extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (view.isHost) ...[
-              if (blocker is NeedMorePlayers)
+              if (_blockerText(l10n, blocker) case final text?)
                 Padding(
                   padding: const EdgeInsets.only(bottom: Spacing.xs),
                   child: Text(
-                    l10n.lobbyNeedPlayers(blocker.minimum),
+                    text,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,

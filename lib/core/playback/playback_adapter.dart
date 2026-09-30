@@ -43,6 +43,9 @@ final class PlaybackFailure implements Exception {
   static const spotifyNotRunning = 'spotify_not_running';
   static const startTimeout = 'start_timeout';
 
+  /// The room's provider plays no audio in the app (external_player, none).
+  static const noAudio = 'no_audio';
+
   final String reason;
 
   @override
@@ -58,7 +61,8 @@ final class PlaybackFailure implements Exception {
 abstract interface class PlaybackAdapter {
   MusicProviderId get provider;
 
-  /// `scheduled` for clip providers, `host_reported` for Spotify.
+  /// `scheduled` for clip providers, `host_reported` for Spotify and
+  /// external_player, `none` for text rounds.
   AudioStartSource get startSource;
 
   /// Prepares the provider (audio session, native bridge). Never plays.
@@ -78,6 +82,48 @@ abstract interface class PlaybackAdapter {
 
   /// Releases the player and purges cached clips.
   Future<void> dispose();
+}
+
+/// `external_player` (BYOP) and `none` (text rounds): the app plays nothing
+/// (docs/LEGAL_PLAYBACK.md). For external_player the DJ starts the song in
+/// their own music app and reports it with `dj_tap` from the round screen,
+/// so this adapter only fails loudly if something asks it to play.
+/// [новое имя — согласовать]
+final class NoAudioPlaybackAdapter implements PlaybackAdapter {
+  const NoAudioPlaybackAdapter(this.provider);
+
+  static const _noAudio = PreloadOutcome(
+    ok: false,
+    preloadMs: 0,
+    error: PlaybackFailure.noAudio,
+  );
+
+  @override
+  final MusicProviderId provider;
+
+  @override
+  AudioStartSource get startSource => provider == MusicProviderId.none
+      ? AudioStartSource.none
+      : AudioStartSource.hostReported;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<PreloadOutcome> prefetch(PrefetchClip clip) async => _noAudio;
+
+  @override
+  Future<PreloadOutcome> prepare(PlaybackClip clip) async => _noAudio;
+
+  @override
+  Future<PlaybackStarted> playAt(int startAtMonoUs) async =>
+      throw const PlaybackFailure(PlaybackFailure.noAudio);
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> dispose() async {}
 }
 
 /// Scriptable fake for tests and for builds without a playback device.

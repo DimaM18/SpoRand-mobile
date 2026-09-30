@@ -6,23 +6,26 @@ import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 
 /// A Spotify App Remote player-state callback, stamped by native code on
-/// the input clock the moment it arrived.
+/// the raw OS input clock the moment it arrived.
 final class SpotifyPlayerState {
   const SpotifyPlayerState({
     required this.isPaused,
     required this.playbackPositionMs,
-    required this.receiptMonoUs,
+    required this.receiptOsUs,
     this.trackUri,
   });
 
   final bool isPaused;
   final int playbackPositionMs;
-  final int receiptMonoUs;
+
+  /// Raw OS time; converted with `InputClock.fromOsUs` before use.
+  final int receiptOsUs;
   final String? trackUri;
 }
 
 /// Brief §5, host-reported source, steps 2–3. Returns `audio_start_mono_us`
-/// for the first usable player state, or null when [state] does not qualify:
+/// for the first usable player state, or null when [state] does not qualify
+/// ([receiptMonoUs] is its receipt time through the process anchor):
 /// - it must be playing (`isPaused == false`);
 /// - its position must be at least `snippet_start_ms − 250`, which skips the
 ///   states from before the seek (App Remote briefly plays the track start
@@ -33,6 +36,7 @@ final class SpotifyPlayerState {
 /// backdates the receipt to the moment the snippet start was playing.
 int? computeAudioStartFromPlayerState({
   required SpotifyPlayerState state,
+  required int receiptMonoUs,
   required int snippetStartMs,
   String? expectedUri,
   int positionToleranceMs = 250,
@@ -43,8 +47,7 @@ int? computeAudioStartFromPlayerState({
   if (state.playbackPositionMs < snippetStartMs - positionToleranceMs) {
     return null;
   }
-  return state.receiptMonoUs -
-      (state.playbackPositionMs - snippetStartMs) * 1000;
+  return receiptMonoUs - (state.playbackPositionMs - snippetStartMs) * 1000;
 }
 
 /// Dart side of the future Pigeon `SpotifyRemoteApi` (brief §3, spotifyProto
@@ -64,7 +67,7 @@ abstract interface class SpotifyRemoteBridge {
 
   Future<void> pause();
 
-  /// Player states with native receipt timestamps (input clock).
+  /// Player states with native receipt timestamps (raw OS input clock).
   Stream<SpotifyPlayerState> get playerStates;
 
   Future<void> disconnect();
@@ -167,6 +170,7 @@ final class SpotifyRemotePlaybackAdapter implements PlaybackAdapter {
     final sub = _bridge.playerStates.listen((state) {
       final start = computeAudioStartFromPlayerState(
         state: state,
+        receiptMonoUs: _clock.fromOsUs(state.receiptOsUs),
         snippetStartMs: clip.snippetStartMs,
         expectedUri: clip.spotifyUri,
       );

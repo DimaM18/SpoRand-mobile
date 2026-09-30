@@ -94,6 +94,29 @@ extension JsonRead on JsonMap {
   List<T>? optList<T>(String key, T Function(Object? item) read) =>
       this[key] == null ? null : list(key, read);
 
+  /// `*_mono_us` values: non-negative microseconds on the device input clock,
+  /// counted from the process anchor (brief §5).
+  int monoUs(String key) {
+    final value = integer(key);
+    if (value < 0) throw ProtocolFormatException('"$key" must be >= 0');
+    return value;
+  }
+
+  /// Client -> server payloads and REST request bodies are strict
+  /// (packages/protocol "Wire policies"): unknown fields and explicit nulls
+  /// are rejected. The app never parses these except when it plays the
+  /// server's side (tests, tools), so a client bug surfaces there.
+  void expectOnly(Set<String> allowed) {
+    for (final MapEntry(:key, :value) in entries) {
+      if (!allowed.contains(key)) {
+        throw ProtocolFormatException('unknown field "$key"');
+      }
+      if (value == null) {
+        throw ProtocolFormatException('"$key" must be omitted, not null');
+      }
+    }
+  }
+
   T wire<T extends WireEnum>(String key, List<T> values, {T? fallback}) =>
       parseWire(values, _required(key), fallback: fallback);
 

@@ -7,6 +7,9 @@ abstract final class Routes {
   static const home = '/home';
   static const paywall = '/paywall';
   static const settings = '/settings';
+
+  /// «Мои песни» (addendum A2.3) [новое имя — согласовать].
+  static const mySongs = '/my-songs';
   static const forceUpdate = '/force-update';
   static const maintenance = '/maintenance';
 

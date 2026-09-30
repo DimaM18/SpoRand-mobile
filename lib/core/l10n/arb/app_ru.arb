@@ -451,5 +451,144 @@
   },
   "debugClockCopy": "Скопировать отчёт",
   "debugClockClear": "Очистить",
-  "settingsClockCalibration": "Калибровка часов (для разработчиков)"
+  "settingsClockCalibration": "Калибровка часов (для разработчиков)",
+  "gameDjStarting": "Ведущий включает песню…",
+  "@gameDjStarting": {
+    "description": "Guests of an external_player (BYOP) round while the DJ has not started the song yet."
+  },
+  "gameDjCueTitle": "Включи эту песню в своём музыкальном приложении",
+  "@gameDjCueTitle": {
+    "description": "DJ card title (addendum A2.2). The app never plays the song itself."
+  },
+  "gameDjCueSecret": "Название видишь только ты — не показывай экран",
+  "@gameDjCueSecret": {
+    "description": "DJ card hint: only the DJ sees the title before the reveal."
+  },
+  "gameDjOpenApp": "Открыть в музыкальном приложении",
+  "@gameDjOpenApp": {
+    "description": "DJ card button: hands the song to the DJ's own music app (Android play-from-search, iOS the server's hint link)."
+  },
+  "gameDjOpenAppFailed": "Не получилось открыть приложение — найдите песню вручную",
+  "gameDjMusicPlaying": "Музыка играет!",
+  "@gameDjMusicPlaying": {
+    "description": "The DJ taps it the moment the song starts; the touch time is the round's audio start (dj_tap)."
+  },
+  "gameDjMusicPlayingHint": "Нажмите, как только песня зазвучит",
+  "gameDjWatchingTitle": "Вы диджей!",
+  "@gameDjWatchingTitle": {
+    "description": "guess_track: the DJ may not answer (dj_ineligible)."
+  },
+  "gameDjWatchingHint": "В этом раунде отвечают гости",
+  "gameAnswerRejectedDj": "Диджей в этом раунде не отвечает",
+  "@gameAnswerRejectedDj": {
+    "description": "round.answer_ack with reason dj_ineligible."
+  },
+  "gameTextRoundHint": "Раунд без музыки: читаем и угадываем",
+  "@gameTextRoundHint": {
+    "description": "Text round (provider none): no audio."
+  },
+  "gameTextRoundLocked": "Приготовьтесь…",
+  "@gameTextRoundLocked": {
+    "description": "Text round before the answer buttons unlock."
+  },
+  "homeMySongs": "Мои песни",
+  "mySongsTitle": "Мои песни",
+  "mySongsSearchLabel": "Песня или исполнитель",
+  "mySongsSearchEmpty": "Ничего не нашлось",
+  "mySongsSearchFailed": "Поиск не сработал. Проверьте интернет.",
+  "mySongsSelected": "Выбрано {count} из {max}",
+  "@mySongsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mySongsNeedMore": "{count, plural, one{Добавьте ещё {count} песню} few{Добавьте ещё {count} песни} many{Добавьте ещё {count} песен} other{Добавьте ещё {count} песни}}",
+  "@mySongsNeedMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mySongsFull": "Можно выбрать не больше {max} песен",
+  "@mySongsFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mySongsSave": "Сохранить",
+  "mySongsSaved": "Песни сохранены",
+  "mySongsSaveFailed": "Не получилось сохранить",
+  "mySongsLoadFailed": "Не получилось загрузить ваши песни",
+  "mySongsEmpty": "Найдите от {min} до {max} любимых песен — друзья будут угадывать, чьи они",
+  "@mySongsEmpty": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mySongsAdd": "Добавить",
+  "mySongsRemove": "Убрать",
+  "mySongsPreviewTitle": "Что увидят друзья",
+  "@mySongsPreviewTitle": {
+    "description": "Privacy preview of the pool (design doc S1.9)."
+  },
+  "mySongsPreviewBody": "Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.",
+  "lobbyAddMySongs": "Добавить мои песни",
+  "lobbyUpdateMySongs": "Обновить мои песни",
+  "lobbyOpenMySongs": "Открыть «Мои песни»",
+  "lobbyPoolConsentBody": "Эти песни будут показаны комнате как ваши",
+  "@lobbyPoolConsentBody": {
+    "description": "Consent line before PUT /v1/rooms/{room_id}/pool."
+  },
+  "lobbyPoolConsentConfirm": "Подтвердить",
+  "lobbyPoolSent": "Ваши песни в игре",
+  "lobbyPoolFailed": "Не получилось добавить песни",
+  "lobbyPoolNeedPicks": "Сначала выберите хотя бы {min} песен в «Мои песни»",
+  "@lobbyPoolNeedPicks": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyPoolTrackCount": "{count, plural, one{{count} песня} few{{count} песни} many{{count} песен} other{{count} песни}}",
+  "@lobbyPoolTrackCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyPoolTooSmall": "У {name} меньше {min} песен",
+  "@lobbyPoolTooSmall": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyNeedAnyPool": "Хотя бы одному игроку нужно добавить свои песни",
+  "lobbyDjHint": "Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче",
+  "@lobbyDjHint": {
+    "description": "Lobby hint for the host of an external_player (BYOP) room."
+  },
+  "mySongsLegacyHint": "Песни из старого каталога нужно заменить новыми",
+  "@mySongsLegacyHint": {
+    "description": "«Мои песни» still holds legacy catalogue picks (test_catalog); they cannot be saved as songs."
+  }
 }

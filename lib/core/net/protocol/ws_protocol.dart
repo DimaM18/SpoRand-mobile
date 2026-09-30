@@ -27,15 +27,17 @@ final class WsEnvelope {
     'payload': payload,
   };
 
+  /// Null for anything that is not a v1 envelope.
   static WsEnvelope? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final v = json['v'];
     final type = json['type'];
     final seq = json['seq'];
     final payload = json['payload'];
-    if (v is! int || type is! String || seq is! int) return null;
+    // Only protocol v1 exists; a frame of another version cannot be read.
+    if (v != protocolVersion || type is! String || seq is! int) return null;
     return WsEnvelope(
-      v: v,
+      v: protocolVersion,
       type: type,
       seq: seq,
       payload: payload is Map<String, Object?> ? payload : const {},

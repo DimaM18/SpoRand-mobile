@@ -8,5 +8,6 @@ public class SporandNativePlugin: NSObject, FlutterPlugin {
     let messenger = registrar.messenger()
     InputClockApiSetup.setUp(binaryMessenger: messenger, api: InputClockHost())
     ClipPlayerApiSetup.setUp(binaryMessenger: messenger, api: ClipPlayerHost())
+    MusicAppApiSetup.setUp(binaryMessenger: messenger, api: MusicAppHost())
   }
 }

@@ -761,4 +761,168 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsClockCalibration => 'Калибровка часов (для разработчиков)';
+
+  @override
+  String get gameDjStarting => 'Ведущий включает песню…';
+
+  @override
+  String get gameDjCueTitle =>
+      'Включи эту песню в своём музыкальном приложении';
+
+  @override
+  String get gameDjCueSecret =>
+      'Название видишь только ты — не показывай экран';
+
+  @override
+  String get gameDjOpenApp => 'Открыть в музыкальном приложении';
+
+  @override
+  String get gameDjOpenAppFailed =>
+      'Не получилось открыть приложение — найдите песню вручную';
+
+  @override
+  String get gameDjMusicPlaying => 'Музыка играет!';
+
+  @override
+  String get gameDjMusicPlayingHint => 'Нажмите, как только песня зазвучит';
+
+  @override
+  String get gameDjWatchingTitle => 'Вы диджей!';
+
+  @override
+  String get gameDjWatchingHint => 'В этом раунде отвечают гости';
+
+  @override
+  String get gameAnswerRejectedDj => 'Диджей в этом раунде не отвечает';
+
+  @override
+  String get gameTextRoundHint => 'Раунд без музыки: читаем и угадываем';
+
+  @override
+  String get gameTextRoundLocked => 'Приготовьтесь…';
+
+  @override
+  String get homeMySongs => 'Мои песни';
+
+  @override
+  String get mySongsTitle => 'Мои песни';
+
+  @override
+  String get mySongsSearchLabel => 'Песня или исполнитель';
+
+  @override
+  String get mySongsSearchEmpty => 'Ничего не нашлось';
+
+  @override
+  String get mySongsSearchFailed => 'Поиск не сработал. Проверьте интернет.';
+
+  @override
+  String mySongsSelected(int count, int max) {
+    return 'Выбрано $count из $max';
+  }
+
+  @override
+  String mySongsNeedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Добавьте ещё $count песни',
+      many: 'Добавьте ещё $count песен',
+      few: 'Добавьте ещё $count песни',
+      one: 'Добавьте ещё $count песню',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mySongsFull(int max) {
+    return 'Можно выбрать не больше $max песен';
+  }
+
+  @override
+  String get mySongsSave => 'Сохранить';
+
+  @override
+  String get mySongsSaved => 'Песни сохранены';
+
+  @override
+  String get mySongsSaveFailed => 'Не получилось сохранить';
+
+  @override
+  String get mySongsLoadFailed => 'Не получилось загрузить ваши песни';
+
+  @override
+  String mySongsEmpty(int min, int max) {
+    return 'Найдите от $min до $max любимых песен — друзья будут угадывать, чьи они';
+  }
+
+  @override
+  String get mySongsAdd => 'Добавить';
+
+  @override
+  String get mySongsRemove => 'Убрать';
+
+  @override
+  String get mySongsPreviewTitle => 'Что увидят друзья';
+
+  @override
+  String get mySongsPreviewBody =>
+      'Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.';
+
+  @override
+  String get lobbyAddMySongs => 'Добавить мои песни';
+
+  @override
+  String get lobbyUpdateMySongs => 'Обновить мои песни';
+
+  @override
+  String get lobbyOpenMySongs => 'Открыть «Мои песни»';
+
+  @override
+  String get lobbyPoolConsentBody =>
+      'Эти песни будут показаны комнате как ваши';
+
+  @override
+  String get lobbyPoolConsentConfirm => 'Подтвердить';
+
+  @override
+  String get lobbyPoolSent => 'Ваши песни в игре';
+
+  @override
+  String get lobbyPoolFailed => 'Не получилось добавить песни';
+
+  @override
+  String lobbyPoolNeedPicks(int min) {
+    return 'Сначала выберите хотя бы $min песен в «Мои песни»';
+  }
+
+  @override
+  String lobbyPoolTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count песни',
+      many: '$count песен',
+      few: '$count песни',
+      one: '$count песня',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lobbyPoolTooSmall(String name, int min) {
+    return 'У $name меньше $min песен';
+  }
+
+  @override
+  String get lobbyNeedAnyPool =>
+      'Хотя бы одному игроку нужно добавить свои песни';
+
+  @override
+  String get lobbyDjHint =>
+      'Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче';
+
+  @override
+  String get mySongsLegacyHint =>
+      'Песни из старого каталога нужно заменить новыми';
 }

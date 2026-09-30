@@ -6,11 +6,15 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/net/app_signals.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
+import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 import 'package:sporand/core/share/share_service.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
+import 'package:sporand/features/my_songs/data/my_songs_api.dart';
+import 'package:sporand/features/my_songs/presentation/my_songs_controller.dart';
 
 import '../support/app_harness.dart';
 import '../support/fake_services.dart';
@@ -186,6 +190,70 @@ void main() {
     expect(find.text('Чья это песня?'), findsOneWidget);
     // Let the snackbar time out so no timer is left behind.
     await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a guest adds «Мои песни» to a BYOP room after the consent '
+      '«Эти песни будут показаны комнате как ваши»', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3200);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final services = FakeServices(
+      prefs: {'age_band': '18_plus', 'onboarding_completed': true},
+    );
+    final server = FakeWsServer();
+    final rooms = FakeRoomsApi();
+    final mySongs = FakeMySongsApi(
+      picks: [
+        for (final (i, song) in FakeMySongsApi.sampleSongs.take(5).indexed)
+          SongPick(position: i + 1, song: song),
+      ],
+    );
+    final container = await launch(
+      tester,
+      services,
+      extra: [
+        roomsApiProvider.overrideWithValue(rooms),
+        mySongsApiProvider.overrideWithValue(mySongs),
+        wsConnectorProvider.overrideWithValue(server.connect),
+        inputClockProvider.overrideWithValue(
+          FakeInputClock(clock: tester.binding.clock),
+        ),
+        appSignalSourceProvider.overrideWithValue(FakeAppSignalSource()),
+      ],
+    );
+    await tester.enterText(find.byType(TextField), '7kq2mx');
+    await tester.tap(find.text('Войти'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Bartek');
+    await tester.tap(find.text('Войти в комнату'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    server.send(
+      Samples.welcome(room: Samples.byopRoom(state: RoomState.lobby)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('5 песен'), findsWidgets, reason: 'pool_track_count');
+
+    await tester.tap(find.byKey(const ValueKey('lobby-add-my-songs')));
+    await tester.pumpAndSettle();
+    expect(find.text('Что увидят друзья'), findsOneWidget);
+    expect(
+      find.text('Эти песни будут показаны комнате как ваши'),
+      findsOneWidget,
+    );
+    expect(find.text('Northern Lights — Test Artist'), findsOneWidget);
+    expect(rooms.pools, isEmpty, reason: 'nothing is sent before consent');
+
+    await tester.tap(find.byKey(const ValueKey('pool-consent-confirm')));
+    await tester.pumpAndSettle();
+    final pool = rooms.pools.single.pool;
+    expect(pool.tracks.whereType<SongPoolTrack>(), hasLength(5));
+    expect(find.text('Ваши песни в игре'), findsOneWidget);
+    // Let the snackbar time out and leave, so no timer is left behind.
+    await tester.pump(const Duration(seconds: 5));
+    unawaited(container.read(activeRoomProvider.notifier).leave());
+    await tester.pump();
     await tester.pumpAndSettle();
   });
 }

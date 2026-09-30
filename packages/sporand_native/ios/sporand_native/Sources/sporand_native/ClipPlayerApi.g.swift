@@ -278,8 +278,10 @@ struct PreloadResultMessage: Hashable, CustomStringConvertible {
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct PlaybackStartedMessage: Hashable, CustomStringConvertible {
-  /// When the audio started, on the input clock (InputClockApi base).
-  var audioStartMonoUs: Int64
+  /// When the audio started: a raw OS input-clock value (InputClockApi
+  /// base). Native code never knows the process anchor; the Dart side
+  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  var audioStartOsUs: Int64
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.
   var outputLatencyMs: Int64
   var outputRoute: OutputRouteMessage
@@ -287,19 +289,19 @@ struct PlaybackStartedMessage: Hashable, CustomStringConvertible {
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> PlaybackStartedMessage? {
-    let audioStartMonoUs = pigeonVar_list[0] as! Int64
+    let audioStartOsUs = pigeonVar_list[0] as! Int64
     let outputLatencyMs = pigeonVar_list[1] as! Int64
     let outputRoute = pigeonVar_list[2] as! OutputRouteMessage
 
     return PlaybackStartedMessage(
-      audioStartMonoUs: audioStartMonoUs,
+      audioStartOsUs: audioStartOsUs,
       outputLatencyMs: outputLatencyMs,
       outputRoute: outputRoute
     )
   }
   func toList() -> [Any?] {
     return [
-      audioStartMonoUs,
+      audioStartOsUs,
       outputLatencyMs,
       outputRoute,
     ]
@@ -308,18 +310,18 @@ struct PlaybackStartedMessage: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return ClipPlayerApiPigeonInternal.deepEquals(lhs.audioStartMonoUs, rhs.audioStartMonoUs) && ClipPlayerApiPigeonInternal.deepEquals(lhs.outputLatencyMs, rhs.outputLatencyMs) && ClipPlayerApiPigeonInternal.deepEquals(lhs.outputRoute, rhs.outputRoute)
+    return ClipPlayerApiPigeonInternal.deepEquals(lhs.audioStartOsUs, rhs.audioStartOsUs) && ClipPlayerApiPigeonInternal.deepEquals(lhs.outputLatencyMs, rhs.outputLatencyMs) && ClipPlayerApiPigeonInternal.deepEquals(lhs.outputRoute, rhs.outputRoute)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("PlaybackStartedMessage")
-    ClipPlayerApiPigeonInternal.deepHash(value: audioStartMonoUs, hasher: &hasher)
+    ClipPlayerApiPigeonInternal.deepHash(value: audioStartOsUs, hasher: &hasher)
     ClipPlayerApiPigeonInternal.deepHash(value: outputLatencyMs, hasher: &hasher)
     ClipPlayerApiPigeonInternal.deepHash(value: outputRoute, hasher: &hasher)
   }
 
   public var description: String {
-    return "PlaybackStartedMessage(audioStartMonoUs: \(String(describing: audioStartMonoUs)), outputLatencyMs: \(String(describing: outputLatencyMs)), outputRoute: \(String(describing: outputRoute)))"
+    return "PlaybackStartedMessage(audioStartOsUs: \(String(describing: audioStartOsUs)), outputLatencyMs: \(String(describing: outputLatencyMs)), outputRoute: \(String(describing: outputRoute)))"
   }
 }
 
@@ -387,11 +389,12 @@ protocol ClipPlayerApi {
   /// Loads the clip, positions it at the snippet start and prepares the audio
   /// output. Never produces sound.
   func prepare(clip: ClipSourceMessage) async throws -> PreloadResultMessage
-  /// Starts the prepared clip at [startAtMonoUs] on the input clock and
-  /// completes once playback has started. Plays at most the snippet.
+  /// Starts the prepared clip at [startAtOsUs] (raw OS input clock; the Dart
+  /// side adds the process anchor with `InputClock.toOsUs`) and completes
+  /// once playback has started. Plays at most the snippet.
   /// iOS: `AVAudioPlayer.play(atTime:)` mapped through `deviceCurrentTime`.
   /// Android: `Handler.postAtTime` on the uptime clock, then `play()`.
-  func playAt(startAtMonoUs: Int64) async throws -> PlaybackStartedMessage
+  func playAt(startAtOsUs: Int64) async throws -> PlaybackStartedMessage
   /// Stops playback and releases the prepared clip.
   func stop() throws
   /// Releases the player and deletes every cached clip (licensing: clips are
@@ -444,18 +447,19 @@ class ClipPlayerApiSetup {
     } else {
       prepareChannel.setMessageHandler(nil)
     }
-    /// Starts the prepared clip at [startAtMonoUs] on the input clock and
-    /// completes once playback has started. Plays at most the snippet.
+    /// Starts the prepared clip at [startAtOsUs] (raw OS input clock; the Dart
+    /// side adds the process anchor with `InputClock.toOsUs`) and completes
+    /// once playback has started. Plays at most the snippet.
     /// iOS: `AVAudioPlayer.play(atTime:)` mapped through `deviceCurrentTime`.
     /// Android: `Handler.postAtTime` on the uptime clock, then `play()`.
     let playAtChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.sporand_native.ClipPlayerApi.playAt\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       playAtChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
-        let startAtMonoUsArg = args[0] as! Int64
+        let startAtOsUsArg = args[0] as! Int64
         Task { @MainActor in
           do {
-            let result = try await api.playAt(startAtMonoUs: startAtMonoUsArg)
+            let result = try await api.playAt(startAtOsUs: startAtOsUsArg)
             reply(wrapResult(result))
           } catch {
             reply(wrapError(error))

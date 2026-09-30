@@ -746,4 +746,162 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsClockCalibration => 'Clock calibration (developers)';
+
+  @override
+  String get gameDjStarting => 'The host is starting the song…';
+
+  @override
+  String get gameDjCueTitle => 'Play this song in your music app';
+
+  @override
+  String get gameDjCueSecret =>
+      'Only you can see the title — keep your screen to yourself';
+
+  @override
+  String get gameDjOpenApp => 'Open in music app';
+
+  @override
+  String get gameDjOpenAppFailed =>
+      'Couldn\'t open a music app — find the song manually';
+
+  @override
+  String get gameDjMusicPlaying => 'Music is playing!';
+
+  @override
+  String get gameDjMusicPlayingHint => 'Tap as soon as the song starts';
+
+  @override
+  String get gameDjWatchingTitle => 'You\'re the DJ!';
+
+  @override
+  String get gameDjWatchingHint => 'The guests answer this round';
+
+  @override
+  String get gameAnswerRejectedDj => 'The DJ doesn\'t answer this round';
+
+  @override
+  String get gameTextRoundHint => 'No music this round: read and guess';
+
+  @override
+  String get gameTextRoundLocked => 'Get ready…';
+
+  @override
+  String get homeMySongs => 'My songs';
+
+  @override
+  String get mySongsTitle => 'My songs';
+
+  @override
+  String get mySongsSearchLabel => 'Song or artist';
+
+  @override
+  String get mySongsSearchEmpty => 'Nothing found';
+
+  @override
+  String get mySongsSearchFailed => 'Search failed. Check your connection.';
+
+  @override
+  String mySongsSelected(int count, int max) {
+    return '$count of $max selected';
+  }
+
+  @override
+  String mySongsNeedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count more songs',
+      one: 'Add $count more song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mySongsFull(int max) {
+    return 'You can pick up to $max songs';
+  }
+
+  @override
+  String get mySongsSave => 'Save';
+
+  @override
+  String get mySongsSaved => 'Songs saved';
+
+  @override
+  String get mySongsSaveFailed => 'Couldn\'t save';
+
+  @override
+  String get mySongsLoadFailed => 'Couldn\'t load your songs';
+
+  @override
+  String mySongsEmpty(int min, int max) {
+    return 'Find $min to $max favourite songs — friends will guess whose they are';
+  }
+
+  @override
+  String get mySongsAdd => 'Add';
+
+  @override
+  String get mySongsRemove => 'Remove';
+
+  @override
+  String get mySongsPreviewTitle => 'What friends will see';
+
+  @override
+  String get mySongsPreviewBody =>
+      'If one of your songs comes up, everyone sees its title, artist and that it\'s yours. Nobody ever sees your whole list.';
+
+  @override
+  String get lobbyAddMySongs => 'Add my songs';
+
+  @override
+  String get lobbyUpdateMySongs => 'Update my songs';
+
+  @override
+  String get lobbyOpenMySongs => 'Open My songs';
+
+  @override
+  String get lobbyPoolConsentBody =>
+      'These songs will be shown to the room as yours';
+
+  @override
+  String get lobbyPoolConsentConfirm => 'Confirm';
+
+  @override
+  String get lobbyPoolSent => 'Your songs are in the game';
+
+  @override
+  String get lobbyPoolFailed => 'Couldn\'t add your songs';
+
+  @override
+  String lobbyPoolNeedPicks(int min) {
+    return 'First pick at least $min songs in My songs';
+  }
+
+  @override
+  String lobbyPoolTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '$count song',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lobbyPoolTooSmall(String name, int min) {
+    return '$name has fewer than $min songs';
+  }
+
+  @override
+  String get lobbyNeedAnyPool => 'At least one player needs to add songs';
+
+  @override
+  String get lobbyDjHint =>
+      'You\'re the DJ: play the songs in your own music app, loud on a speaker';
+
+  @override
+  String get mySongsLegacyHint =>
+      'Songs from the old catalogue need to be replaced';
 }

@@ -93,6 +93,21 @@ final class PurchaseFailed extends PurchaseOutcome {
   final String code;
 }
 
+/// Before a purchase or restore: configures the SDK if needed and logs in as
+/// the current user when it is not logged in as them yet. The boot
+/// `purchases` step skips `logIn` without a session (and may fail); a
+/// purchase made then would belong to an anonymous RevenueCat user the
+/// server cannot map to our `user_id`. Throws when the user id cannot be
+/// obtained or `logIn` fails, so nothing is bought anonymously.
+Future<void> ensurePurchasesUser(
+  PurchasesService purchases, {
+  required Future<String> Function() userId,
+}) async {
+  if (!purchases.isConfigured) await purchases.configure();
+  final id = await userId();
+  if (purchases.appUserId != id) await purchases.logIn(id);
+}
+
 /// In-app purchases behind an interface (RevenueCat in production).
 abstract interface class PurchasesService {
   bool get isConfigured;
@@ -102,6 +117,10 @@ abstract interface class PurchasesService {
   /// `Purchases.logIn(user_id)`: our `user_id` is RevenueCat's
   /// `app_user_id` (brief §4.7).
   Future<void> logIn(String userId);
+
+  /// The user id of the last successful [logIn] in this process; null while
+  /// RevenueCat still runs under an anonymous id.
+  String? get appUserId;
 
   Future<List<PaywallPackage>> loadPaywallPackages();
 
@@ -151,6 +170,11 @@ final class FakePurchasesService implements PurchasesService {
   Entitlements restorable = Entitlements.none;
 
   String? loggedInUserId;
+
+  /// Every SDK call, in order (`configure`, `logIn:<id>`, `purchase:<id>`,
+  /// `restore`).
+  final List<String> calls = [];
+  Object? logInFailWith;
   bool _configured = false;
   Entitlements _entitlements;
   final StreamController<Entitlements> _changes =
@@ -161,18 +185,28 @@ final class FakePurchasesService implements PurchasesService {
 
   @override
   Future<void> configure() async {
+    calls.add('configure');
     if (failConfigure) throw StateError('purchases unavailable');
     _configured = true;
   }
 
   @override
-  Future<void> logIn(String userId) async => loggedInUserId = userId;
+  Future<void> logIn(String userId) async {
+    calls.add('logIn:$userId');
+    final error = logInFailWith;
+    if (error != null) throw error;
+    loggedInUserId = userId;
+  }
+
+  @override
+  String? get appUserId => loggedInUserId;
 
   @override
   Future<List<PaywallPackage>> loadPaywallPackages() async => packages;
 
   @override
   Future<PurchaseOutcome> purchase(String packageId) async {
+    calls.add('purchase:$packageId');
     final scripted = nextOutcome;
     if (scripted != null) return scripted;
     final package = packages.firstWhere((p) => p.packageId == packageId);
@@ -186,6 +220,7 @@ final class FakePurchasesService implements PurchasesService {
 
   @override
   Future<Entitlements> restore() async {
+    calls.add('restore');
     _set(restorable);
     return _entitlements;
   }

@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'package:sporand/core/net/protocol/json_read.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/security/app_check_service.dart';
 
 /// A failed REST call. Server errors carry the RFC 9457 problem `code`
@@ -188,14 +190,37 @@ class ApiClient {
         status: response.statusCode,
       );
     }
-    final problem = json is Map<String, Object?> ? json : const {};
+    if (json is Map<String, Object?>) {
+      final Problem problem;
+      try {
+        problem = Problem.fromJson(json);
+      } on ProtocolFormatException {
+        return _lenientError(response.statusCode, json);
+      }
+      throw ApiError(
+        status: response.statusCode,
+        code: problem.code,
+        title: problem.title,
+        detail: problem.detail,
+        fieldErrors: [
+          for (final e in problem.errors ?? const <ProblemFieldError>[])
+            (path: e.path, message: e.message),
+        ],
+      );
+    }
+    return _lenientError(response.statusCode, const {});
+  }
+
+  /// A body that is not RFC 9457 (a proxy or load balancer answered): keep
+  /// whatever can be read.
+  static Never _lenientError(int status, Map<String, Object?> problem) {
     final code = problem['code'];
     final title = problem['title'];
     final detail = problem['detail'];
     final errors = problem['errors'];
     throw ApiError(
-      status: response.statusCode,
-      code: code is String ? code : 'http_${response.statusCode}',
+      status: status,
+      code: code is String ? code : 'http_$status',
       title: title is String ? title : null,
       detail: detail is String ? detail : null,
       fieldErrors: [

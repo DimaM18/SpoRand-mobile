@@ -11,14 +11,14 @@ final class ClockCalibrationSample {
     required this.nativeNowUs,
   });
 
-  /// `PointerDownEvent.timeStamp` (would become `tap_mono_us`).
+  /// `PointerDownEvent.timeStamp` through the anchor (`tap_mono_us`).
   final int pointerUs;
 
   /// `currentSystemFrameTimeStamp` of the first frame after the event, read
   /// in its post-frame callback exactly like `unlock_mono_us`.
   final int frameUs;
 
-  /// `InputClockApi.nowMicros()` read right after the event.
+  /// `InputClock.nowMicros()` read right after the event.
   final int nativeNowUs;
 
   /// Event-to-read delay; small and positive when the pointer clock shares

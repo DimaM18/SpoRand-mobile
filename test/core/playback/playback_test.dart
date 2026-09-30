@@ -24,7 +24,7 @@ SpotifyPlayerState _state({
 }) => SpotifyPlayerState(
   isPaused: paused,
   playbackPositionMs: positionMs,
-  receiptMonoUs: receiptUs,
+  receiptOsUs: receiptUs,
   trackUri: uri,
 );
 
@@ -65,12 +65,12 @@ class _FakeClipPlayerApi extends ClipPlayerApi {
   }
 
   @override
-  Future<PlaybackStartedMessage> playAt(int startAtMonoUs) async {
+  Future<PlaybackStartedMessage> playAt(int startAtOsUs) async {
     final error = playError;
     if (error != null) throw error;
-    playAtUs = startAtMonoUs;
+    playAtUs = startAtOsUs;
     return PlaybackStartedMessage(
-      audioStartMonoUs: startAtMonoUs,
+      audioStartOsUs: startAtOsUs + 3000,
       outputLatencyMs: 180,
       outputRoute: OutputRouteMessage.bluetooth,
     );
@@ -83,6 +83,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 30120, receiptUs: 50000000),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         50000000 - 120000,
@@ -93,6 +94,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 29900, receiptUs: 50000000),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         50100000,
@@ -103,6 +105,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 29750),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         isNotNull,
@@ -113,6 +116,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 180),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         isNull,
@@ -120,6 +124,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 29749),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         isNull,
@@ -130,6 +135,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(paused: true, positionMs: 30100),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
         ),
         isNull,
@@ -137,6 +143,7 @@ void main() {
       expect(
         computeAudioStartFromPlayerState(
           state: _state(positionMs: 30100, uri: 'spotify:track:other'),
+          receiptMonoUs: 50000000,
           snippetStartMs: 30000,
           expectedUri: 'spotify:track:4uLU6hMCjMI75M1A2tKUQC',
         ),
@@ -145,11 +152,14 @@ void main() {
     });
   });
 
-  test('SpotifyRemotePlaybackAdapter: play, seek, first qualifying state', () {
+  test('SpotifyRemotePlaybackAdapter: play, seek, first qualifying state; '
+      'native receipt stamps go through the process anchor', () {
     fakeAsync((async) {
       final bridge = _FakeBridge();
+      // OS time 10 s, anchor 4 s: mono time 6 s.
       final clock = FakeInputClock(
         startUs: 10000000,
+        anchorUs: 4000000,
         clock: async.getClock(DateTime(2026)),
       );
       final adapter = SpotifyRemotePlaybackAdapter(
@@ -167,7 +177,7 @@ void main() {
       expect(preload?.ok, isTrue);
 
       PlaybackStarted? started;
-      adapter.playAt(10500000).then((value) => started = value);
+      adapter.playAt(6500000).then((value) => started = value);
       async.elapse(const Duration(milliseconds: 499));
       expect(bridge.calls, ['connect']);
       async.elapse(const Duration(milliseconds: 2));
@@ -180,7 +190,7 @@ void main() {
       bridge.states.add(_state(positionMs: 200, receiptUs: 10520000));
       bridge.states.add(_state(positionMs: 30080, receiptUs: 10610000));
       async.flushMicrotasks();
-      expect(started?.audioStartMonoUs, 10610000 - 80000);
+      expect(started?.audioStartMonoUs, 10610000 - 4000000 - 80000);
       expect(started?.source, PlaybackStartSource.playerState);
       // The snippet ends snippet_duration_ms after the audio start.
       async.elapse(const Duration(seconds: 14));
@@ -240,16 +250,22 @@ void main() {
   );
 
   group('ClipPlayerAdapter over the Pigeon API', () {
-    test('maps the clip and the playback report', () async {
+    test('maps the clip and the playback report; native times are raw OS '
+        'time, the adapter converts through the process anchor', () async {
       final api = _FakeClipPlayerApi();
-      final adapter = ClipPlayerAdapter(MusicProviderId.testCatalog, api: api);
+      final adapter = ClipPlayerAdapter(
+        MusicProviderId.testCatalog,
+        clock: FakeInputClock(anchorUs: 700000000),
+        api: api,
+      );
       final preload = await adapter.prepare(Samples.urlClip);
       expect(preload.ok, isTrue);
       expect(preload.preloadMs, 140);
       expect(api.prepared?.clipRef, Samples.urlClip.clipRef);
       expect(api.prepared?.snippetStartMs, 42000);
       final started = await adapter.playAt(834514845678);
-      expect(api.playAtUs, 834514845678);
+      expect(api.playAtUs, 834514845678 + 700000000);
+      expect(started.audioStartMonoUs, 834514845678 + 3000);
       expect(started.outputRoute, OutputRoute.bluetooth);
       expect(started.outputLatencyMs, 180);
       expect(started.source, PlaybackStartSource.scheduled);
@@ -258,7 +274,11 @@ void main() {
     test('native errors become playback failures', () async {
       final api = _FakeClipPlayerApi()
         ..playError = PlatformException(code: 'not_prepared');
-      final adapter = ClipPlayerAdapter(MusicProviderId.testCatalog, api: api);
+      final adapter = ClipPlayerAdapter(
+        MusicProviderId.testCatalog,
+        clock: FakeInputClock(),
+        api: api,
+      );
       await expectLater(
         adapter.playAt(1),
         throwsA(
@@ -274,6 +294,7 @@ void main() {
     test('a Spotify clip cannot be prepared by the clip player', () async {
       final adapter = ClipPlayerAdapter(
         MusicProviderId.testCatalog,
+        clock: FakeInputClock(),
         api: _FakeClipPlayerApi(),
       );
       final outcome = await adapter.prepare(

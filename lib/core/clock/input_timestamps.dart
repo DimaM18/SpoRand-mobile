@@ -1,8 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 
+import 'package:sporand/core/clock/input_clock.dart';
+
 /// `tap_mono_us` from a pointer-down event (brief §5 "Unlocking the answer
-/// buttons and capturing the tap").
+/// buttons and capturing the tap"): the OS touch time minus the process
+/// anchor ([InputClock.fromOs]).
 ///
 /// Assumption: the Flutter engine forwards the platform's event time
 /// unchanged, so `PointerEvent.timeStamp` shares the base of
@@ -14,15 +17,14 @@ import 'package:flutter/scheduler.dart';
 /// `ClockCalibrationRecorder`) checks for both: an engine that rebases
 /// pointer times, and pointer resampling (`GestureBinding.resamplingEnabled`
 /// must stay false, the default), which rewrites timestamps.
-int tapMonoUsFromPointer(PointerEvent event) => event.timeStamp.inMicroseconds;
+int tapMonoUsFromPointer(InputClock clock, PointerEvent event) =>
+    clock.fromOs(event.timeStamp);
 
-/// `SchedulerBinding.currentSystemFrameTimeStamp` in µs: the vsync time of
-/// the frame being built. Read it inside `addPostFrameCallback` of the first
-/// frame that shows enabled buttons to get `unlock_mono_us`.
-int currentFrameTimestampUs([SchedulerBinding? binding]) =>
-    (binding ?? SchedulerBinding.instance)
-        .currentSystemFrameTimeStamp
-        .inMicroseconds;
+/// `SchedulerBinding.currentSystemFrameTimeStamp` as mono µs: the vsync time
+/// of the frame being built. Read it inside `addPostFrameCallback` of the
+/// first frame that shows enabled buttons to get `unlock_mono_us`.
+int currentFrameMonoUs(InputClock clock, [SchedulerBinding? binding]) => clock
+    .fromOs((binding ?? SchedulerBinding.instance).currentSystemFrameTimeStamp);
 
 /// Sanity rules that keep a clock-base mismatch (engine frame clock or
 /// pointer clock not on the input clock, e.g. after device sleep on iOS)

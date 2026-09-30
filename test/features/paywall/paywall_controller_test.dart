@@ -7,11 +7,16 @@ import 'package:sporand/app/flavors/flavor.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/auth/auth_api.dart';
+import 'package:sporand/core/auth/auth_service.dart';
+import 'package:sporand/core/platform/app_info.dart';
 import 'package:sporand/core/platform/app_platform.dart';
 import 'package:sporand/core/purchases/entitlement_sync_api.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
 import 'package:sporand/core/remote_config/remote_config_service.dart';
+import 'package:sporand/core/security/secure_store.dart';
+import 'package:sporand/core/security/session_repository.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 import 'package:sporand/features/paywall/presentation/paywall_controller.dart';
 
@@ -39,6 +44,19 @@ void main() {
         appEnvProvider.overrideWithValue(
           const AppEnv(flavor: Flavor.dev, platform: AppPlatform.ios),
         ),
+        authServiceProvider.overrideWithValue(
+          AuthService(
+            api: FakeAuthApi(),
+            sessions: SessionRepository(InMemorySecureStore()),
+            appInfo: const FakeAppInfoSource(
+              AppInfo(
+                version: '1.0.0',
+                buildNumber: '1',
+                platform: AppPlatform.ios,
+              ),
+            ),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -61,6 +79,12 @@ void main() {
     expect(outcome, isA<PurchaseSucceeded>());
     expect(purchases.entitlements.noAds, isTrue);
     expect(sync.calls, 1);
+    // No session at boot: the purchase first logs in as our user_id.
+    expect(purchases.calls, [
+      'configure',
+      'logIn:guest-1',
+      'purchase:remove_ads',
+    ]);
     expect(events.named(AnalyticsEvents.paywallView).single.params, {
       'placement': 'ad_break',
       'paywall_variant': 'a',

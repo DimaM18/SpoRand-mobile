@@ -305,8 +305,12 @@ data class PreloadResultMessage (
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class PlaybackStartedMessage (
-  /** When the audio started, on the input clock (InputClockApi base). */
-  val audioStartMonoUs: Long,
+  /**
+   * When the audio started: a raw OS input-clock value (InputClockApi
+   * base). Native code never knows the process anchor; the Dart side
+   * converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+   */
+  val audioStartOsUs: Long,
   /** iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0. */
   val outputLatencyMs: Long,
   val outputRoute: OutputRouteMessage
@@ -314,15 +318,15 @@ data class PlaybackStartedMessage (
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): PlaybackStartedMessage {
-      val audioStartMonoUs = pigeonVar_list[0] as Long
+      val audioStartOsUs = pigeonVar_list[0] as Long
       val outputLatencyMs = pigeonVar_list[1] as Long
       val outputRoute = pigeonVar_list[2] as OutputRouteMessage
-      return PlaybackStartedMessage(audioStartMonoUs, outputLatencyMs, outputRoute)
+      return PlaybackStartedMessage(audioStartOsUs, outputLatencyMs, outputRoute)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
-      audioStartMonoUs,
+      audioStartOsUs,
       outputLatencyMs,
       outputRoute,
     )
@@ -335,18 +339,18 @@ data class PlaybackStartedMessage (
       return true
     }
     val other = other as PlaybackStartedMessage
-    return ClipPlayerApiPigeonUtils.deepEquals(this.audioStartMonoUs, other.audioStartMonoUs) && ClipPlayerApiPigeonUtils.deepEquals(this.outputLatencyMs, other.outputLatencyMs) && ClipPlayerApiPigeonUtils.deepEquals(this.outputRoute, other.outputRoute)
+    return ClipPlayerApiPigeonUtils.deepEquals(this.audioStartOsUs, other.audioStartOsUs) && ClipPlayerApiPigeonUtils.deepEquals(this.outputLatencyMs, other.outputLatencyMs) && ClipPlayerApiPigeonUtils.deepEquals(this.outputRoute, other.outputRoute)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
-    result = 31 * result + ClipPlayerApiPigeonUtils.deepHash(this.audioStartMonoUs)
+    result = 31 * result + ClipPlayerApiPigeonUtils.deepHash(this.audioStartOsUs)
     result = 31 * result + ClipPlayerApiPigeonUtils.deepHash(this.outputLatencyMs)
     result = 31 * result + ClipPlayerApiPigeonUtils.deepHash(this.outputRoute)
     return result
   }
   override fun toString(): String {
-    return "PlaybackStartedMessage(audioStartMonoUs=$audioStartMonoUs, outputLatencyMs=$outputLatencyMs, outputRoute=$outputRoute)"
+    return "PlaybackStartedMessage(audioStartOsUs=$audioStartOsUs, outputLatencyMs=$outputLatencyMs, outputRoute=$outputRoute)"
   }
 }
 private open class ClipPlayerApiPigeonCodec : StandardMessageCodec() {
@@ -412,12 +416,13 @@ interface ClipPlayerApi {
    */
   suspend fun prepare(clip: ClipSourceMessage): PreloadResultMessage
   /**
-   * Starts the prepared clip at [startAtMonoUs] on the input clock and
-   * completes once playback has started. Plays at most the snippet.
+   * Starts the prepared clip at [startAtOsUs] (raw OS input clock; the Dart
+   * side adds the process anchor with `InputClock.toOsUs`) and completes
+   * once playback has started. Plays at most the snippet.
    * iOS: `AVAudioPlayer.play(atTime:)` mapped through `deviceCurrentTime`.
    * Android: `Handler.postAtTime` on the uptime clock, then `play()`.
    */
-  suspend fun playAt(startAtMonoUs: Long): PlaybackStartedMessage
+  suspend fun playAt(startAtOsUs: Long): PlaybackStartedMessage
   /** Stops playback and releases the prepared clip. */
   fun stop()
   /**
@@ -479,10 +484,10 @@ interface ClipPlayerApi {
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val startAtMonoUsArg = args[0] as Long
+            val startAtOsUsArg = args[0] as Long
             CoroutineScope(Dispatchers.Main).launch {
               val wrapped: List<Any?> = try {
-                listOf(api.playAt(startAtMonoUsArg))
+                listOf(api.playAt(startAtOsUsArg))
               } catch (exception: Throwable) {
                 ClipPlayerApiPigeonUtils.wrapError(exception)
               }

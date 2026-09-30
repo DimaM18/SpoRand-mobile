@@ -1353,6 +1353,258 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Калибровка часов (для разработчиков)'**
   String get settingsClockCalibration;
+
+  /// Guests of an external_player (BYOP) round while the DJ has not started the song yet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ведущий включает песню…'**
+  String get gameDjStarting;
+
+  /// DJ card title (addendum A2.2). The app never plays the song itself.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включи эту песню в своём музыкальном приложении'**
+  String get gameDjCueTitle;
+
+  /// DJ card hint: only the DJ sees the title before the reveal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название видишь только ты — не показывай экран'**
+  String get gameDjCueSecret;
+
+  /// DJ card button: hands the song to the DJ's own music app (Android play-from-search, iOS the server's hint link).
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть в музыкальном приложении'**
+  String get gameDjOpenApp;
+
+  /// No description provided for @gameDjOpenAppFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не получилось открыть приложение — найдите песню вручную'**
+  String get gameDjOpenAppFailed;
+
+  /// The DJ taps it the moment the song starts; the touch time is the round's audio start (dj_tap).
+  ///
+  /// In ru, this message translates to:
+  /// **'Музыка играет!'**
+  String get gameDjMusicPlaying;
+
+  /// No description provided for @gameDjMusicPlayingHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нажмите, как только песня зазвучит'**
+  String get gameDjMusicPlayingHint;
+
+  /// guess_track: the DJ may not answer (dj_ineligible).
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы диджей!'**
+  String get gameDjWatchingTitle;
+
+  /// No description provided for @gameDjWatchingHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'В этом раунде отвечают гости'**
+  String get gameDjWatchingHint;
+
+  /// round.answer_ack with reason dj_ineligible.
+  ///
+  /// In ru, this message translates to:
+  /// **'Диджей в этом раунде не отвечает'**
+  String get gameAnswerRejectedDj;
+
+  /// Text round (provider none): no audio.
+  ///
+  /// In ru, this message translates to:
+  /// **'Раунд без музыки: читаем и угадываем'**
+  String get gameTextRoundHint;
+
+  /// Text round before the answer buttons unlock.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приготовьтесь…'**
+  String get gameTextRoundLocked;
+
+  /// No description provided for @homeMySongs.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои песни'**
+  String get homeMySongs;
+
+  /// No description provided for @mySongsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои песни'**
+  String get mySongsTitle;
+
+  /// No description provided for @mySongsSearchLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Песня или исполнитель'**
+  String get mySongsSearchLabel;
+
+  /// No description provided for @mySongsSearchEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ничего не нашлось'**
+  String get mySongsSearchEmpty;
+
+  /// No description provided for @mySongsSearchFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск не сработал. Проверьте интернет.'**
+  String get mySongsSearchFailed;
+
+  /// No description provided for @mySongsSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрано {count} из {max}'**
+  String mySongsSelected(int count, int max);
+
+  /// No description provided for @mySongsNeedMore.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{Добавьте ещё {count} песню} few{Добавьте ещё {count} песни} many{Добавьте ещё {count} песен} other{Добавьте ещё {count} песни}}'**
+  String mySongsNeedMore(int count);
+
+  /// No description provided for @mySongsFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'Можно выбрать не больше {max} песен'**
+  String mySongsFull(int max);
+
+  /// No description provided for @mySongsSave.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранить'**
+  String get mySongsSave;
+
+  /// No description provided for @mySongsSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Песни сохранены'**
+  String get mySongsSaved;
+
+  /// No description provided for @mySongsSaveFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не получилось сохранить'**
+  String get mySongsSaveFailed;
+
+  /// No description provided for @mySongsLoadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не получилось загрузить ваши песни'**
+  String get mySongsLoadFailed;
+
+  /// No description provided for @mySongsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найдите от {min} до {max} любимых песен — друзья будут угадывать, чьи они'**
+  String mySongsEmpty(int min, int max);
+
+  /// No description provided for @mySongsAdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить'**
+  String get mySongsAdd;
+
+  /// No description provided for @mySongsRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать'**
+  String get mySongsRemove;
+
+  /// Privacy preview of the pool (design doc S1.9).
+  ///
+  /// In ru, this message translates to:
+  /// **'Что увидят друзья'**
+  String get mySongsPreviewTitle;
+
+  /// No description provided for @mySongsPreviewBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.'**
+  String get mySongsPreviewBody;
+
+  /// No description provided for @lobbyAddMySongs.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить мои песни'**
+  String get lobbyAddMySongs;
+
+  /// No description provided for @lobbyUpdateMySongs.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить мои песни'**
+  String get lobbyUpdateMySongs;
+
+  /// No description provided for @lobbyOpenMySongs.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть «Мои песни»'**
+  String get lobbyOpenMySongs;
+
+  /// Consent line before PUT /v1/rooms/{room_id}/pool.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эти песни будут показаны комнате как ваши'**
+  String get lobbyPoolConsentBody;
+
+  /// No description provided for @lobbyPoolConsentConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить'**
+  String get lobbyPoolConsentConfirm;
+
+  /// No description provided for @lobbyPoolSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваши песни в игре'**
+  String get lobbyPoolSent;
+
+  /// No description provided for @lobbyPoolFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не получилось добавить песни'**
+  String get lobbyPoolFailed;
+
+  /// No description provided for @lobbyPoolNeedPicks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала выберите хотя бы {min} песен в «Мои песни»'**
+  String lobbyPoolNeedPicks(int min);
+
+  /// No description provided for @lobbyPoolTrackCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{{count} песня} few{{count} песни} many{{count} песен} other{{count} песни}}'**
+  String lobbyPoolTrackCount(int count);
+
+  /// No description provided for @lobbyPoolTooSmall.
+  ///
+  /// In ru, this message translates to:
+  /// **'У {name} меньше {min} песен'**
+  String lobbyPoolTooSmall(String name, int min);
+
+  /// No description provided for @lobbyNeedAnyPool.
+  ///
+  /// In ru, this message translates to:
+  /// **'Хотя бы одному игроку нужно добавить свои песни'**
+  String get lobbyNeedAnyPool;
+
+  /// Lobby hint for the host of an external_player (BYOP) room.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче'**
+  String get lobbyDjHint;
+
+  /// «Мои песни» still holds legacy catalogue picks (test_catalog); they cannot be saved as songs.
+  ///
+  /// In ru, this message translates to:
+  /// **'Песни из старого каталога нужно заменить новыми'**
+  String get mySongsLegacyHint;
 }
 
 class _AppLocalizationsDelegate

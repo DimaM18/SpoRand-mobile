@@ -10,15 +10,16 @@ class SpotifyPlayerStateMessage {
   SpotifyPlayerStateMessage({
     required this.isPaused,
     required this.playbackPositionMs,
-    required this.receiptMonoUs,
+    required this.receiptOsUs,
     this.trackUri,
   });
 
   bool isPaused;
   int playbackPositionMs;
 
-  /// Stamped natively on the input clock when the callback arrived.
-  int receiptMonoUs;
+  /// Stamped natively on the raw OS input clock when the callback arrived;
+  /// the Dart side converts it with `InputClock.fromOsUs`.
+  int receiptOsUs;
   String? trackUri;
 }
 

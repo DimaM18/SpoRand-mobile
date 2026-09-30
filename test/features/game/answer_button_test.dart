@@ -15,7 +15,8 @@ import '../../support/protocol_samples.dart';
 
 void main() {
   testWidgets('a pointer down on an answer sends round.answer with the '
-      "pointer event's timestamp; the second touch is ignored", (tester) async {
+      "pointer event's timestamp minus the process anchor; the second touch "
+      'is ignored', (tester) async {
     final haptics = <String>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -56,7 +57,7 @@ void main() {
       ),
     );
 
-    final startAt = h.inputClock.nowUs + 100000;
+    final startAt = h.inputClock.monoNowUs + 100000;
     h.send(Samples.prepare(startAtMonoUs: startAt));
     await tester.pump();
     expect(find.text('Celina'), findsOneWidget);
@@ -69,13 +70,17 @@ void main() {
     expect(find.text('Жмите быстрее всех!'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 400));
-    // The OS stamped the touch 12 ms before Flutter handled it.
-    final tapUs = h.inputClock.nowUs - 12000;
+    // The OS stamped the touch 12 ms before Flutter handled it. Pointer
+    // events carry raw OS input-clock time; the wire gets it minus the
+    // process anchor.
+    final tapOsUs = h.inputClock.nowUs - 12000;
+    final tapUs = tapOsUs - h.inputClock.anchorUs;
+    expect(h.inputClock.anchorUs, isNot(0));
     final finger = TestPointer(1);
     await tester.sendEventToBinding(
       finger.down(
         tester.getCenter(find.byKey(const ValueKey('answer-opt-c'))),
-        timeStamp: Duration(microseconds: tapUs),
+        timeStamp: Duration(microseconds: tapOsUs),
       ),
     );
     await tester.pump();
@@ -85,7 +90,7 @@ void main() {
     await tester.sendEventToBinding(
       second.down(
         tester.getCenter(find.byKey(const ValueKey('answer-opt-a'))),
-        timeStamp: Duration(microseconds: tapUs + 80000),
+        timeStamp: Duration(microseconds: tapOsUs + 80000),
       ),
     );
     await tester.pump();

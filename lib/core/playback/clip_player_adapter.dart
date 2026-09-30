@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
@@ -12,10 +13,13 @@ import 'package:sporand_native/sporand_native.dart';
 /// `deviceCurrentTime`; Android starts a prepared media3 ExoPlayer with
 /// `Handler.postAtTime` on the uptime clock (brief §5).
 final class ClipPlayerAdapter implements PlaybackAdapter {
-  ClipPlayerAdapter(this.provider, {ClipPlayerApi? api})
+  ClipPlayerAdapter(this.provider, {required this._clock, ClipPlayerApi? api})
     : _api = api ?? ClipPlayerApi();
 
   final ClipPlayerApi _api;
+
+  /// Native code works on raw OS time; the anchor lives here (brief §5).
+  final InputClock _clock;
 
   @override
   final MusicProviderId provider;
@@ -67,12 +71,12 @@ final class ClipPlayerAdapter implements PlaybackAdapter {
   Future<PlaybackStarted> playAt(int startAtMonoUs) async {
     final PlaybackStartedMessage started;
     try {
-      started = await _api.playAt(startAtMonoUs);
+      started = await _api.playAt(_clock.toOsUs(startAtMonoUs));
     } on PlatformException catch (e) {
       throw PlaybackFailure(_reason(e));
     }
     return PlaybackStarted(
-      audioStartMonoUs: started.audioStartMonoUs,
+      audioStartMonoUs: _clock.fromOsUs(started.audioStartOsUs),
       outputLatencyMs: started.outputLatencyMs,
       outputRoute: switch (started.outputRoute) {
         OutputRouteMessage.speaker => OutputRoute.speaker,

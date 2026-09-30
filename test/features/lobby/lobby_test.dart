@@ -1,6 +1,9 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/flavors/app_env.dart';
@@ -9,15 +12,18 @@ import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/auth/age_band_sync.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/net/api_client.dart';
 import 'package:sporand/core/net/app_signals.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_protocol.dart';
 import 'package:sporand/core/net/realtime_client.dart';
 import 'package:sporand/core/platform/app_info.dart';
 import 'package:sporand/core/platform/app_platform.dart';
+import 'package:sporand/core/privacy/age_band.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
 import 'package:sporand/core/remote_config/remote_config_service.dart';
@@ -28,12 +34,22 @@ import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/domain/display_name.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/lobby/presentation/lobby_controller.dart';
+import 'package:sporand/features/my_songs/data/my_songs_api.dart';
+import 'package:sporand/features/my_songs/presentation/my_songs_controller.dart';
 
 import '../../support/fake_ws.dart';
 import '../../support/protocol_samples.dart';
 
+class _Tokens implements AccessTokenProvider {
+  @override
+  Future<String?> accessToken() async => 'access-1';
+
+  @override
+  Future<String?> refreshAfterUnauthorized(String rejectedToken) async => null;
+}
+
 class _Lobby {
-  _Lobby(this.async) {
+  _Lobby(this.async, {List<Override> extra = const []}) {
     final analytics = AnalyticsService(backend: events);
     analytics.initialize();
     analytics.applyConsent(AnalyticsConsent.granted);
@@ -49,6 +65,7 @@ class _Lobby {
           ),
         ),
         roomsApiProvider.overrideWithValue(rooms),
+        mySongsApiProvider.overrideWith((ref) => mySongs),
         wsConnectorProvider.overrideWithValue(server.connect),
         inputClockProvider.overrideWithValue(
           FakeInputClock(clock: async.getClock(DateTime(2026))),
@@ -71,6 +88,7 @@ class _Lobby {
         ),
         realtimeClientProvider.overrideWithValue(realtime),
         shareServiceProvider.overrideWithValue(share),
+        ...extra,
       ],
     );
     container.listen(lobbyControllerProvider, (_, _) {});
@@ -79,6 +97,7 @@ class _Lobby {
 
   final FakeAsync async;
   final FakeRoomsApi rooms = FakeRoomsApi();
+  FakeMySongsApi mySongs = FakeMySongsApi();
   final FakeWsServer server = FakeWsServer();
   final InMemoryAnalyticsBackend events = InMemoryAnalyticsBackend();
   final InMemoryPreferencesStore prefs = InMemoryPreferencesStore();
@@ -166,6 +185,65 @@ void main() {
       });
       expect(t.container.read(activeRoomProvider), isA<RoomActive>());
       t.container.dispose();
+    });
+  });
+
+  group('create and join first tell the server the age gate band', () {
+    // Found by test_e2e: the app never sent it, so the server knew no one's
+    // age, forced the explicit filter for everyone and never offered the
+    // rewarded bonus or an interstitial.
+    ({_Lobby lobby, List<String> log}) harness(FakeAsync async) {
+      final log = <String>[];
+      late final _Lobby t;
+      t = _Lobby(
+        async,
+        extra: [
+          ageBandSyncProvider.overrideWith(
+            (ref) => AgeBandSync(
+              client: ApiClient(
+                baseUrl: Uri.parse('https://api.example.test'),
+                tokens: _Tokens(),
+                httpClient: MockClient((request) async {
+                  log.add(
+                    '${request.method} ${request.url.path} ${request.body} '
+                    '(rooms created: ${t.rooms.roomsCreated}, '
+                    'joined: ${t.rooms.lastJoin != null})',
+                  );
+                  return http.Response('{}', 200);
+                }),
+              ),
+              prefs: ref.watch(userPrefsProvider),
+              currentUserId: () async => 'user-1',
+            ),
+          ),
+        ],
+      );
+      t.prefs.values[PrefKeys.ageBand] = AgeBand.age16to17.wireName;
+      return (lobby: t, log: log);
+    }
+
+    test('PATCH /v1/me before POST /v1/rooms', () {
+      fakeAsync((async) {
+        final (:lobby, :log) = harness(async);
+        lobby.active.create(mode: GameMode.whoseSong, displayName: 'Ania');
+        async.flushMicrotasks();
+        expect(lobby.container.read(activeRoomProvider), isA<RoomActive>());
+        expect(log, [
+          'PATCH /v1/me {"age_band":"16_17"} (rooms created: 0, joined: false)',
+        ]);
+        lobby.container.dispose();
+      });
+    });
+
+    test('PATCH /v1/me before POST /v1/rooms/join', () {
+      fakeAsync((async) {
+        final (:lobby, :log) = harness(async);
+        expect(lobby.join(), isA<RoomOpened>());
+        expect(log, [
+          'PATCH /v1/me {"age_band":"16_17"} (rooms created: 0, joined: false)',
+        ]);
+        lobby.container.dispose();
+      });
     });
   });
 
@@ -288,6 +366,156 @@ void main() {
         (t.container.read(activeRoomProvider) as RoomEnded).reason,
         RoomEndReason.closed,
       );
+      t.container.dispose();
+    });
+  });
+
+  List<CatalogPick> songPicks(int count) => [
+    for (final (i, song) in FakeMySongsApi.sampleSongs.take(count).indexed)
+      SongPick(position: i + 1, song: song),
+  ];
+
+  PoolDraft? prepare(_Lobby t) {
+    PoolDraft? draft;
+    t.lobby.preparePool().then((value) => draft = value);
+    t.async.flushMicrotasks();
+    return draft;
+  }
+
+  test('my songs into a BYOP room: consent draft, then PUT pool with song '
+      'ids in order', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..mySongs = FakeMySongsApi(picks: songPicks(6));
+      t.join();
+      t.send(
+        Samples.welcome(
+          room: Samples.byopRoom(state: RoomState.lobby),
+          config: const {'pool_min_tracks_per_contributor': 5},
+        ),
+      );
+      expect(t.view.collectsPools, isTrue);
+
+      final draft = prepare(t)! as PoolReady;
+      expect(draft.picks.map((p) => p.title), [
+        for (final song in FakeMySongsApi.sampleSongs.take(6)) song.title,
+      ]);
+      bool? sent;
+      t.lobby.submitPool(draft).then((value) => sent = value);
+      async.flushMicrotasks();
+      expect(sent, isTrue);
+      final pool = t.rooms.pools.single;
+      expect(pool.roomId, 'room-joined');
+      expect(pool.pool.poolSource, PoolSource.catalogPicks);
+      expect(pool.pool.toJson()['tracks'], [
+        for (final (i, song) in FakeMySongsApi.sampleSongs.take(6).indexed)
+          {'song_id': song.songId, 'rank': i + 1},
+      ]);
+
+      // The server then reports the new count.
+      t.send(
+        RoomPlayerUpdated(
+          Samples.player(Samples.guestId, 'Bartek', poolTrackCount: 6),
+        ),
+      );
+      expect(t.view.myPoolTrackCount, 6);
+      t.container.dispose();
+    });
+  });
+
+  test('too few usable picks asks for «Мои песни» first', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..mySongs = FakeMySongsApi(picks: songPicks(3));
+      t.join();
+      t.send(Samples.welcome(room: Samples.byopRoom(state: RoomState.lobby)));
+      expect((prepare(t)! as PoolNeedsPicks).minimum, 5);
+
+      // Song picks cannot feed a legacy catalogue room.
+      t.mySongs = FakeMySongsApi(picks: songPicks(6));
+      t.container.invalidate(mySongsApiProvider);
+      t.send(RoomStateMessage(Samples.room()));
+      expect(prepare(t), isA<PoolNeedsPicks>());
+      expect(t.rooms.pools, isEmpty);
+      t.container.dispose();
+    });
+  });
+
+  test('start needs enough pools: whose_song contributors and pool sizes', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.room(
+            mode: GameMode.whoseSong,
+            players: [
+              Samples.player(
+                Samples.hostId,
+                'Ania',
+                role: PlayerRole.host,
+                playbackDevice: true,
+              ),
+              Samples.player(Samples.guestId, 'Bartek'),
+              Samples.player(Samples.thirdId, 'Celina', poolTrackCount: 2),
+            ],
+          ),
+        ),
+      );
+      final blocker = t.view.startBlocker! as PoolTooSmall;
+      expect(blocker.name, 'Celina');
+      expect(blocker.minimum, 5);
+      expect(t.view.contributorsNeeded, 1);
+      expect(t.view.canStart, isFalse);
+
+      t.send(
+        RoomPlayerUpdated(
+          Samples.player(Samples.thirdId, 'Celina', poolTrackCount: 5),
+        ),
+      );
+      expect(t.view.startBlocker, isNull);
+      expect(t.view.canStart, isTrue);
+      t.container.dispose();
+    });
+  });
+
+  test('guess_track from player pools needs at least one pool', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.room(
+            players: [
+              Samples.player(
+                Samples.hostId,
+                'Ania',
+                role: PlayerRole.host,
+                playbackDevice: true,
+                contributor: false,
+              ),
+              Samples.player(Samples.guestId, 'Bartek', contributor: false),
+            ],
+          ),
+        ),
+      );
+      expect(t.view.startBlocker, isA<NeedAnyPool>());
+      t.send(RoomPlayerUpdated(Samples.player(Samples.guestId, 'Bartek')));
+      expect(t.view.canStart, isTrue);
+      t.container.dispose();
+    });
+  });
+
+  test('the host of a BYOP room is told they are the DJ', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.byopRoom(state: RoomState.lobby),
+        ),
+      );
+      expect(t.view.isDjHost, isTrue);
+      t.send(RoomStateMessage(Samples.room()));
+      expect(t.view.isDjHost, isFalse);
       t.container.dispose();
     });
   });

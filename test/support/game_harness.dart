@@ -13,8 +13,10 @@ import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/net/app_signals.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
+import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/net/ws_client.dart';
 import 'package:sporand/core/platform/app_platform.dart';
+import 'package:sporand/core/playback/music_app_launcher.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
@@ -81,10 +83,20 @@ class GameHarness {
     AdsService? ads,
     FakePlaybackAdapter? playback,
     InputClock Function(FakeInputClock clock)? gameClock,
+    int anchorUs = defaultAnchorUs,
+    FakeAppCheckService? appCheck,
     List<Override> extraOverrides = const [],
   }) : ads = ads ?? GatedAdsService(),
+       appCheck =
+           appCheck ?? FakeAppCheckService(token: 'limited-use-token-123'),
        playback = playback ?? FakePlaybackAdapter(),
-       inputClock = FakeInputClock(startUs: 1000000000, clock: clock) {
+       inputClock = FakeInputClock(
+         startUs: 1000000000,
+         // A realistic process anchor: every `*_mono_us` the harness sees is
+         // OS time minus this (brief §5).
+         anchorUs: anchorUs,
+         clock: clock,
+       ) {
     ws = WsClient(
       endpoint: Uri.parse('wss://api.example.test/v1/ws'),
       fetchTicket: () async => const WsTicket(ticket: 'wst_test_ticket_0001'),
@@ -118,7 +130,8 @@ class GameHarness {
         ),
         purchasesServiceProvider.overrideWithValue(purchases),
         playbackAdapterFactoryProvider.overrideWithValue((_) => this.playback),
-        appCheckProvider.overrideWithValue(appCheck),
+        appCheckProvider.overrideWithValue(this.appCheck),
+        musicAppLauncherProvider.overrideWithValue(musicApp),
         ...extraOverrides,
       ],
       retry: (_, _) => null,
@@ -131,6 +144,10 @@ class GameHarness {
     session.start();
     flush();
   }
+
+  /// OS input clock at harness start: 1000 s of uptime, 400 s of which
+  /// passed before the app process read its anchor.
+  static const defaultAnchorUs = 400000000;
 
   final Clock clock;
   final void Function() flush;
@@ -145,9 +162,8 @@ class GameHarness {
     backend: analyticsBackend,
   );
   final FakePurchasesService purchases = FakePurchasesService();
-  final FakeAppCheckService appCheck = FakeAppCheckService(
-    token: 'limited-use-token-123',
-  );
+  final FakeAppCheckService appCheck;
+  final FakeMusicAppLauncher musicApp = FakeMusicAppLauncher();
   late final WsClient ws;
   late final RoomSession session;
   late final ProviderContainer container;
@@ -163,7 +179,8 @@ class GameHarness {
     flush();
   }
 
-  void welcome({String? me}) => send(Samples.welcome(me: me ?? this.me));
+  void welcome({String? me, RoomSnapshot? room}) =>
+      send(Samples.welcome(me: me ?? this.me, room: room));
 
   List<T> received<T extends ClientMessage>() => server.receivedOf<T>();
 

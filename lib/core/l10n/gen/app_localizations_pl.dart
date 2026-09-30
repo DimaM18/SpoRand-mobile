@@ -761,4 +761,166 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsClockCalibration => 'Kalibracja zegara (dla programistów)';
+
+  @override
+  String get gameDjStarting => 'Prowadzący włącza piosenkę…';
+
+  @override
+  String get gameDjCueTitle => 'Włącz tę piosenkę w swojej aplikacji muzycznej';
+
+  @override
+  String get gameDjCueSecret => 'Tytuł widzisz tylko ty — nie pokazuj ekranu';
+
+  @override
+  String get gameDjOpenApp => 'Otwórz w aplikacji muzycznej';
+
+  @override
+  String get gameDjOpenAppFailed =>
+      'Nie udało się otworzyć aplikacji — znajdź piosenkę ręcznie';
+
+  @override
+  String get gameDjMusicPlaying => 'Muzyka gra!';
+
+  @override
+  String get gameDjMusicPlayingHint => 'Stuknij, gdy tylko piosenka zabrzmi';
+
+  @override
+  String get gameDjWatchingTitle => 'Jesteś DJ-em!';
+
+  @override
+  String get gameDjWatchingHint => 'W tej rundzie odpowiadają goście';
+
+  @override
+  String get gameAnswerRejectedDj => 'DJ nie odpowiada w tej rundzie';
+
+  @override
+  String get gameTextRoundHint => 'Runda bez muzyki: czytaj i zgaduj';
+
+  @override
+  String get gameTextRoundLocked => 'Przygotujcie się…';
+
+  @override
+  String get homeMySongs => 'Moje piosenki';
+
+  @override
+  String get mySongsTitle => 'Moje piosenki';
+
+  @override
+  String get mySongsSearchLabel => 'Piosenka lub wykonawca';
+
+  @override
+  String get mySongsSearchEmpty => 'Nic nie znaleziono';
+
+  @override
+  String get mySongsSearchFailed =>
+      'Wyszukiwanie nie powiodło się. Sprawdź internet.';
+
+  @override
+  String mySongsSelected(int count, int max) {
+    return 'Wybrano $count z $max';
+  }
+
+  @override
+  String mySongsNeedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dodaj jeszcze $count piosenki',
+      many: 'Dodaj jeszcze $count piosenek',
+      few: 'Dodaj jeszcze $count piosenki',
+      one: 'Dodaj jeszcze $count piosenkę',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mySongsFull(int max) {
+    return 'Możesz wybrać najwyżej $max piosenek';
+  }
+
+  @override
+  String get mySongsSave => 'Zapisz';
+
+  @override
+  String get mySongsSaved => 'Piosenki zapisane';
+
+  @override
+  String get mySongsSaveFailed => 'Nie udało się zapisać';
+
+  @override
+  String get mySongsLoadFailed => 'Nie udało się wczytać twoich piosenek';
+
+  @override
+  String mySongsEmpty(int min, int max) {
+    return 'Znajdź od $min do $max ulubionych piosenek — znajomi będą zgadywać, czyje są';
+  }
+
+  @override
+  String get mySongsAdd => 'Dodaj';
+
+  @override
+  String get mySongsRemove => 'Usuń';
+
+  @override
+  String get mySongsPreviewTitle => 'Co zobaczą znajomi';
+
+  @override
+  String get mySongsPreviewBody =>
+      'Jeśli w grze wypadnie twoja piosenka, wszyscy zobaczą jej tytuł, wykonawcę i to, że jest twoja. Całej listy nie zobaczy nikt.';
+
+  @override
+  String get lobbyAddMySongs => 'Dodaj moje piosenki';
+
+  @override
+  String get lobbyUpdateMySongs => 'Zaktualizuj moje piosenki';
+
+  @override
+  String get lobbyOpenMySongs => 'Otwórz Moje piosenki';
+
+  @override
+  String get lobbyPoolConsentBody =>
+      'Te piosenki zostaną pokazane w pokoju jako twoje';
+
+  @override
+  String get lobbyPoolConsentConfirm => 'Potwierdź';
+
+  @override
+  String get lobbyPoolSent => 'Twoje piosenki są w grze';
+
+  @override
+  String get lobbyPoolFailed => 'Nie udało się dodać piosenek';
+
+  @override
+  String lobbyPoolNeedPicks(int min) {
+    return 'Najpierw wybierz co najmniej $min piosenek w Moich piosenkach';
+  }
+
+  @override
+  String lobbyPoolTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count piosenki',
+      many: '$count piosenek',
+      few: '$count piosenki',
+      one: '$count piosenka',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lobbyPoolTooSmall(String name, int min) {
+    return '$name ma mniej niż $min piosenek';
+  }
+
+  @override
+  String get lobbyNeedAnyPool => 'Przynajmniej jeden gracz musi dodać piosenki';
+
+  @override
+  String get lobbyDjHint =>
+      'Jesteś DJ-em: włączaj piosenki w swojej aplikacji muzycznej, głośno na głośniku';
+
+  @override
+  String get mySongsLegacyHint =>
+      'Piosenki ze starego katalogu trzeba zastąpić nowymi';
 }

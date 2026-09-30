@@ -124,9 +124,13 @@ class PaywallController extends Notifier<PaywallState> {
     );
     PurchaseOutcome outcome;
     try {
-      outcome = await ref
-          .read(purchasesServiceProvider)
-          .purchase(package.packageId);
+      final purchases = ref.read(purchasesServiceProvider);
+      // The boot step may have degraded before logIn (brief §4.7).
+      await ensurePurchasesUser(
+        purchases,
+        userId: ref.read(authServiceProvider).currentUserId,
+      );
+      outcome = await purchases.purchase(package.packageId);
     } on Object catch (e) {
       outcome = PurchaseFailed('$e');
     }

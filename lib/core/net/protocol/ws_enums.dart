@@ -4,11 +4,18 @@ library;
 
 import 'package:sporand/core/net/protocol/json_read.dart';
 
-/// Music provider ids (brief §1.3).
+/// Music provider ids (brief §1.3, addendum A2.1).
 enum MusicProviderId implements WireEnum {
   testCatalog('test_catalog'),
   spotifyAppRemote('spotify_app_remote'),
-  licensedClips('licensed_clips');
+  licensedClips('licensed_clips'),
+
+  /// BYOP (A2.1): the DJ phone plays the song in the DJ's own music app; the
+  /// app never streams or plays the song.
+  externalPlayer('external_player'),
+
+  /// Text rounds without audio (A2.1).
+  none('none');
 
   const MusicProviderId(this.wire);
 
@@ -18,8 +25,14 @@ enum MusicProviderId implements WireEnum {
   /// Kept for code written against the part 1 name.
   String get wireName => wire;
 
-  /// Every monetization path is off for Spotify (brief §6 "Principles").
+  /// Fallback when a room snapshot carries no `provider_capabilities`
+  /// (older server). Every monetization path is off for Spotify (brief §6
+  /// "Principles").
   bool get allowsMonetization => this != spotifyAppRemote;
+
+  /// Pools of these providers reference `song_id` (A2.3, protocol
+  /// `SONG_PROVIDER_IDS`) instead of a catalogue track.
+  bool get usesSongIds => this == externalPlayer || this == none;
 }
 
 enum GameMode implements WireEnum {
@@ -27,6 +40,39 @@ enum GameMode implements WireEnum {
   guessTrack('guess_track');
 
   const GameMode(this.wire);
+
+  @override
+  final String wire;
+}
+
+/// `round.prepare.prompt`: the room mode, or `text_round` for provider `none`
+/// (A2.1). In a text round the options keep the room mode's shape. Protocol
+/// name `RoundPrompt` [новое имя — согласовать].
+enum RoundPrompt implements WireEnum {
+  whoseSong('whose_song'),
+  guessTrack('guess_track'),
+  textRound('text_round');
+
+  const RoundPrompt(this.wire);
+
+  @override
+  final String wire;
+}
+
+/// `ProviderCapabilities.audio_source` (docs/LEGAL_PLAYBACK.md): where the
+/// room's audio comes from. Protocol name `AudioSource` [новое имя —
+/// согласовать].
+enum AudioSource implements WireEnum {
+  /// Our player plays a licensed or royalty-free clip.
+  inApp('in_app'),
+
+  /// The DJ's own music app (BYOP, external_player).
+  externalApp('external_app'),
+
+  /// No audio (text rounds).
+  none('none');
+
+  const AudioSource(this.wire);
 
   @override
   final String wire;
@@ -68,10 +114,15 @@ enum RoundKind implements WireEnum {
   final String wire;
 }
 
-/// How the server learns when the audio started (brief §5).
+/// How the server learns when the audio started (brief §5); also
+/// `ProviderCapabilities.playback`.
 enum AudioStartSource implements WireEnum {
   scheduled('scheduled'),
-  hostReported('host_reported');
+  hostReported('host_reported'),
+
+  /// A text round without audio (A2): the answer window opens at
+  /// `start_at_server_ms`, like a scheduled round.
+  none('none');
 
   const AudioStartSource(this.wire);
 
@@ -79,10 +130,15 @@ enum AudioStartSource implements WireEnum {
   final String wire;
 }
 
-/// `round.playback_started.source`.
+/// `round.playback_started.source` (A2.6 adds the BYOP sources).
 enum PlaybackStartSource implements WireEnum {
   scheduled('scheduled'),
-  playerState('player_state');
+  playerState('player_state'),
+
+  /// The DJ tapped «Музыка играет!» (external_player, MVP).
+  djTap('dj_tap'),
+  micOnset('mic_onset'),
+  shazamMatch('shazam_match');
 
   const PlaybackStartSource(this.wire);
 
@@ -212,6 +268,10 @@ enum AnswerValidation implements WireEnum {
   duplicate('duplicate'),
   badNonce('bad_nonce'),
   ownerIneligible('owner_ineligible'),
+
+  /// A2.6: the DJ answered in guess_track while
+  /// `guess_track_dj_can_answer` is false.
+  djIneligible('dj_ineligible'),
   badOption('bad_option');
 
   const AnswerValidation(this.wire);

@@ -31,6 +31,11 @@ class AuthService implements AccessTokenProvider {
 
   AuthSession? get current => _sessions.current;
 
+  /// Our `user_id`: the stored session's, or a new session's when there is
+  /// none yet (network errors propagate).
+  Future<String> currentUserId() async =>
+      (_sessions.current ?? await ensureSession()).userId;
+
   /// Returns a usable session: the restored one, a refreshed one, or a new
   /// guest. Network errors propagate (the `auth` boot step then degrades and
   /// the app retries later); a rejected refresh starts a new guest session.

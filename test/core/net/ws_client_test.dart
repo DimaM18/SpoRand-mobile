@@ -14,12 +14,12 @@ import 'package:sporand/core/platform/app_platform.dart';
 import '../../support/fake_ws.dart';
 import '../../support/protocol_samples.dart';
 
-/// An input clock whose platform channel is broken.
-class _BrokenClock implements InputClock {
+/// An input clock source whose platform channel is broken.
+class _BrokenSource implements InputClockSource {
   int calls = 0;
 
   @override
-  Future<int> nowMicros() async {
+  Future<int> nowOsUs() async {
     calls++;
     throw StateError('input clock unavailable');
   }
@@ -104,11 +104,16 @@ void main() {
     });
   });
 
-  test('answers clock.ping immediately with the input clock as t2', () {
+  test('answers clock.ping immediately with the anchored input clock as '
+      't2', () {
     fakeAsync((async) {
-      final h = _Harness(async)
-        ..connect()
-        ..welcome();
+      final h =
+          _Harness(
+              async,
+              clock: FakeInputClock(startUs: 5000000, anchorUs: 4000000),
+            )
+            ..connect()
+            ..welcome();
       final clock = h.clock as FakeInputClock..nowUs = 777000123;
       final callsBefore = clock.calls;
       h.server.send(
@@ -125,7 +130,7 @@ void main() {
       final pong = sent.whereType<ClockPong>().single;
       expect(pong.pingId, 'ping-9');
       expect(pong.t1ServerUs, 1759212345678901);
-      expect(pong.t2MonoUs, 777000123);
+      expect(pong.t2MonoUs, 777000123 - 4000000, reason: 'OS time - anchor');
       // Pings are answered by the transport, not forwarded to the game.
       expect(h.messages.whereType<ClockPing>(), isEmpty);
       expect(h.messages.last, isA<RoundProgress>());
@@ -136,8 +141,8 @@ void main() {
     // Regression: the t2 read had no error handler, so a broken clock
     // channel raised an uncaught error on every ping.
     fakeAsync((async) {
-      final clock = _BrokenClock();
-      final h = _Harness(async, clock: clock)
+      final source = _BrokenSource();
+      final h = _Harness(async, clock: InputClock(source))
         ..connect()
         ..welcome();
       h.server.send(const ClockPing(pingId: 'ping-1', t1ServerUs: 1));
@@ -146,7 +151,7 @@ void main() {
       );
       async.flushMicrotasks();
 
-      expect(clock.calls, 1);
+      expect(source.calls, 1);
       expect(h.server.current.sent<ClockPong>(), isEmpty);
       expect(h.messages.last, isA<RoundProgress>());
       expect(h.client.isConnected, isTrue);

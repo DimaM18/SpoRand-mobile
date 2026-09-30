@@ -104,6 +104,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               icon: const Icon(Icons.add_rounded),
               label: Text(l10n.homeCreateRoom),
             ),
+            const SizedBox(height: Spacing.sm),
+            OutlinedButton.icon(
+              onPressed: () => context.push(Routes.mySongs),
+              icon: const Icon(Icons.queue_music_rounded),
+              label: Text(l10n.homeMySongs),
+            ),
             const SizedBox(height: Spacing.lg),
             Card(
               child: Padding(

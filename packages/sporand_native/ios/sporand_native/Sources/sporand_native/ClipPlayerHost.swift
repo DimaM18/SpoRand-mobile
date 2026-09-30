@@ -64,7 +64,7 @@ final class ClipPlayerHost: ClipPlayerApi {
       ok: errorCode == nil, preloadMs: elapsedMs(since: started), errorCode: errorCode)
   }
 
-  func playAt(startAtMonoUs: Int64) async throws -> PlaybackStartedMessage {
+  func playAt(startAtOsUs: Int64) async throws -> PlaybackStartedMessage {
     let (startUs, lead) = try await MainActor.run { () throws -> (Int64, TimeInterval) in
       guard let player = self.player else {
         throw NativeBridgeError(code: "not_prepared", message: "prepare() was not called", details: nil)
@@ -72,14 +72,14 @@ final class ClipPlayerHost: ClipPlayerApi {
       // systemUptime (the input clock) and the player's deviceCurrentTime
       // advance at the same rate, so the remaining delay maps 1:1.
       let now = ProcessInfo.processInfo.systemUptime
-      let delay = Double(startAtMonoUs) / 1_000_000 - now
+      let delay = Double(startAtOsUs) / 1_000_000 - now
       let lead = max(delay, 0)
       guard player.play(atTime: player.deviceCurrentTime + lead) else {
         throw NativeBridgeError(code: "player_error", message: "play(atTime:) failed", details: nil)
       }
       self.scheduleStop(after: lead + self.snippetDuration)
       // A late call starts immediately; report the real start.
-      let startUs = delay >= 0 ? startAtMonoUs : Int64((now * 1_000_000).rounded())
+      let startUs = delay >= 0 ? startAtOsUs : Int64((now * 1_000_000).rounded())
       return (startUs, lead)
     }
     if lead > 0 {
@@ -87,7 +87,8 @@ final class ClipPlayerHost: ClipPlayerApi {
     }
     return await MainActor.run { () -> PlaybackStartedMessage in
       PlaybackStartedMessage(
-        audioStartMonoUs: startUs,
+        // Raw OS time: the Dart InputClock subtracts the process anchor.
+        audioStartOsUs: startUs,
         // Under-reports Bluetooth latency (brief §5); common to all players.
         outputLatencyMs: Int64((AVAudioSession.sharedInstance().outputLatency * 1000).rounded()),
         outputRoute: self.currentRoute())

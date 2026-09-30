@@ -1,8 +1,8 @@
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 
-/// The playback device's (host's) half of a round (brief §5 "When the audio
-/// started"): prefetch, prepare, start at `start_at_mono_us`, and report
+/// The playback device's (host's) half of a clip round (brief §5 "When the
+/// audio started"): prefetch, prepare, start at `start_at`, and report
 /// `round.preloaded` / `round.playback_started` / `round.playback_failed`.
 class HostPlaybackCoordinator {
   HostPlaybackCoordinator({
@@ -41,7 +41,14 @@ class HostPlaybackCoordinator {
 
   /// Prepares and starts this round's clip. Returns the start report, or
   /// null when playback failed or a newer round superseded this one.
-  Future<PlaybackStarted?> playRound(RoundPrepare message) async {
+  ///
+  /// [startAtMonoUs] resolves `start_at` right before the player is
+  /// scheduled (the controller converts `start_at_server_ms` with the
+  /// latest clock offset); defaults to the server's `start_at_mono_us`.
+  Future<PlaybackStarted?> playRound(
+    RoundPrepare message, {
+    int Function()? startAtMonoUs,
+  }) async {
     final clip = message.clip;
     if (clip == null || _disposed) return null;
     final roundId = message.roundId;
@@ -67,7 +74,9 @@ class HostPlaybackCoordinator {
     }
 
     try {
-      final started = await _adapter.playAt(message.startAtMonoUs);
+      final started = await _adapter.playAt(
+        startAtMonoUs?.call() ?? message.startAtMonoUs,
+      );
       if (!_isCurrent(roundId)) return null;
       _send(
         RoundPlaybackStarted(

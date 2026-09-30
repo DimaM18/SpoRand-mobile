@@ -143,7 +143,125 @@ final class PlayerSnapshot {
   };
 }
 
-/// Full room snapshot: `room.state` payload and `welcome.room`.
+/// `RoomSnapshot.provider_capabilities` (addendum A2): what the room's
+/// provider can do. Clients branch on these, never on the provider id.
+/// Protocol name `ProviderCapabilities` [новое имя — согласовать].
+final class ProviderCapabilities {
+  const ProviderCapabilities({
+    required this.playback,
+    required this.audioSource,
+    required this.allowsMonetization,
+    required this.allowsPrefetch,
+    required this.allowsCustomOffset,
+    required this.revealsMetadataDuringPlay,
+    required this.licensedTerritories,
+    required this.requiresPremiumHost,
+    required this.supportsSearch,
+    this.maxClipMs,
+  });
+
+  factory ProviderCapabilities.fromJson(JsonMap json) => ProviderCapabilities(
+    playback: json.wire('playback', AudioStartSource.values),
+    audioSource: json.wire('audio_source', AudioSource.values),
+    allowsMonetization: json.boolean('allows_monetization'),
+    allowsPrefetch: json.boolean('allows_prefetch'),
+    allowsCustomOffset: json.boolean('allows_custom_offset'),
+    maxClipMs: json.optInt('max_clip_ms'),
+    revealsMetadataDuringPlay: json.boolean('reveals_metadata_during_play'),
+    licensedTerritories: json.list('licensed_territories', asString),
+    requiresPremiumHost: json.boolean('requires_premium_host'),
+    supportsSearch: json.boolean('supports_search'),
+  );
+
+  /// For a snapshot without `provider_capabilities` (a server older than
+  /// A2): the design doc's capability matrix (S2.4.2) for [provider].
+  factory ProviderCapabilities.fallbackFor(MusicProviderId provider) =>
+      switch (provider) {
+        MusicProviderId.testCatalog ||
+        MusicProviderId.licensedClips => ProviderCapabilities(
+          playback: AudioStartSource.scheduled,
+          audioSource: AudioSource.inApp,
+          allowsMonetization: provider == MusicProviderId.testCatalog,
+          allowsPrefetch: true,
+          allowsCustomOffset: true,
+          maxClipMs: 30000,
+          revealsMetadataDuringPlay: false,
+          licensedTerritories: const ['*'],
+          requiresPremiumHost: false,
+          supportsSearch: true,
+        ),
+        MusicProviderId.spotifyAppRemote => const ProviderCapabilities(
+          playback: AudioStartSource.hostReported,
+          audioSource: AudioSource.inApp,
+          allowsMonetization: false,
+          allowsPrefetch: false,
+          allowsCustomOffset: true,
+          maxClipMs: 30000,
+          revealsMetadataDuringPlay: true,
+          licensedTerritories: [],
+          requiresPremiumHost: true,
+          supportsSearch: false,
+        ),
+        MusicProviderId.externalPlayer => const ProviderCapabilities(
+          playback: AudioStartSource.hostReported,
+          audioSource: AudioSource.externalApp,
+          allowsMonetization: true,
+          allowsPrefetch: false,
+          allowsCustomOffset: false,
+          revealsMetadataDuringPlay: true,
+          licensedTerritories: ['*'],
+          requiresPremiumHost: false,
+          supportsSearch: true,
+        ),
+        MusicProviderId.none => const ProviderCapabilities(
+          playback: AudioStartSource.none,
+          audioSource: AudioSource.none,
+          allowsMonetization: true,
+          allowsPrefetch: false,
+          allowsCustomOffset: false,
+          revealsMetadataDuringPlay: false,
+          licensedTerritories: ['*'],
+          requiresPremiumHost: false,
+          supportsSearch: true,
+        ),
+      };
+
+  final AudioStartSource playback;
+  final AudioSource audioSource;
+  final bool allowsMonetization;
+  final bool allowsPrefetch;
+  final bool allowsCustomOffset;
+
+  /// Absent when unlimited or not applicable (external_player, none).
+  final int? maxClipMs;
+
+  /// Consumer music apps show title and artist while playing.
+  final bool revealsMetadataDuringPlay;
+
+  /// ISO 3166-1 alpha-2 codes, or `["*"]` for everywhere.
+  final List<String> licensedTerritories;
+  final bool requiresPremiumHost;
+  final bool supportsSearch;
+
+  /// BYOP: the DJ plays the song in their own music app (A2.2).
+  bool get isExternalApp => audioSource == AudioSource.externalApp;
+
+  JsonMap toJson() => {
+    'playback': playback.wire,
+    'audio_source': audioSource.wire,
+    'allows_monetization': allowsMonetization,
+    'allows_prefetch': allowsPrefetch,
+    'allows_custom_offset': allowsCustomOffset,
+    'max_clip_ms': ?maxClipMs,
+    'reveals_metadata_during_play': revealsMetadataDuringPlay,
+    'licensed_territories': licensedTerritories,
+    'requires_premium_host': requiresPremiumHost,
+    'supports_search': supportsSearch,
+  };
+}
+
+/// Full room snapshot: `room.state` payload, `welcome.room` and
+/// `GET /v1/rooms/{room_id}`.
 final class RoomSnapshot {
   const RoomSnapshot({
     required this.state,
@@ -153,6 +271,7 @@ final class RoomSnapshot {
     required this.mode,
     required this.provider,
     required this.audioMode,
+    this.providerCapabilities,
     this.roomId,
     this.roomCode,
     this.hostTier = HostTier.free,
@@ -160,23 +279,29 @@ final class RoomSnapshot {
     this.currentGameId,
   });
 
-  factory RoomSnapshot.fromJson(JsonMap json) => RoomSnapshot(
-    roomId: json.optStr('room_id'),
-    roomCode: json.optStr('room_code'),
-    state: json.wire('state', RoomState.values),
-    hostPlayerId: json.str('host_player_id'),
-    players: json.list(
-      'players',
-      (item) => PlayerSnapshot.fromJson(asObject(item)),
-    ),
-    settings: RoomSettings.fromJson(json.obj('settings')),
-    mode: json.wire('mode', GameMode.values),
-    provider: json.wire('provider', MusicProviderId.values),
-    audioMode: json.wire('audio_mode', AudioMode.values),
-    hostTier: json.optWire('host_tier', HostTier.values) ?? HostTier.free,
-    locked: json.optBool('locked') ?? false,
-    currentGameId: json.optStr('current_game_id'),
-  );
+  factory RoomSnapshot.fromJson(JsonMap json) {
+    final capabilities = json.optObj('provider_capabilities');
+    return RoomSnapshot(
+      roomId: json.optStr('room_id'),
+      roomCode: json.optStr('room_code'),
+      state: json.wire('state', RoomState.values),
+      hostPlayerId: json.str('host_player_id'),
+      players: json.list(
+        'players',
+        (item) => PlayerSnapshot.fromJson(asObject(item)),
+      ),
+      settings: RoomSettings.fromJson(json.obj('settings')),
+      mode: json.wire('mode', GameMode.values),
+      provider: json.wire('provider', MusicProviderId.values),
+      providerCapabilities: capabilities == null
+          ? null
+          : ProviderCapabilities.fromJson(capabilities),
+      audioMode: json.wire('audio_mode', AudioMode.values),
+      hostTier: json.optWire('host_tier', HostTier.values) ?? HostTier.free,
+      locked: json.optBool('locked') ?? false,
+      currentGameId: json.optStr('current_game_id'),
+    );
+  }
 
   final String? roomId;
   final String? roomCode;
@@ -186,10 +311,19 @@ final class RoomSnapshot {
   final RoomSettings settings;
   final GameMode mode;
   final MusicProviderId provider;
+
+  /// Required by packages/protocol since A2; null only from an older server
+  /// (see [capabilities]).
+  final ProviderCapabilities? providerCapabilities;
   final AudioMode audioMode;
   final HostTier hostTier;
   final bool locked;
   final String? currentGameId;
+
+  /// What the provider can do; derived from [provider] when the server did
+  /// not send `provider_capabilities`.
+  ProviderCapabilities get capabilities =>
+      providerCapabilities ?? ProviderCapabilities.fallbackFor(provider);
 
   PlayerSnapshot? player(String playerId) {
     for (final p in players) {
@@ -207,6 +341,7 @@ final class RoomSnapshot {
     settings: settings,
     mode: mode,
     provider: provider,
+    providerCapabilities: providerCapabilities,
     audioMode: audioMode,
     hostTier: hostTier,
     locked: locked,
@@ -222,6 +357,7 @@ final class RoomSnapshot {
     'settings': settings.toJson(),
     'mode': mode.wire,
     'provider': provider.wire,
+    'provider_capabilities': ?providerCapabilities?.toJson(),
     'audio_mode': audioMode.wire,
     'host_tier': hostTier.wire,
     'locked': locked,
@@ -349,6 +485,50 @@ final class SpotifyRoundClip extends RoundClip {
     'snippet_start_ms': snippetStartMs,
     'snippet_duration_ms': snippetDurationMs,
   };
+}
+
+/// `round.prepare.cue` (A2.2, A2.6): sent only to the DJ of an
+/// `external_player` room instead of a clip. The app never plays the song:
+/// the DJ starts it in their own music app. Protocol schema title
+/// `RoundCue` [новое имя — согласовать].
+final class RoundCue {
+  const RoundCue({required this.title, required this.artists, this.hintUrl});
+
+  factory RoundCue.fromJson(JsonMap json) => RoundCue(
+    title: json.str('title'),
+    artists: json.list('artists', asString),
+    hintUrl: json.optStr('hint_url'),
+  );
+
+  final String title;
+  final List<String> artists;
+
+  /// A search or share link the DJ may open (iOS: the only way to hand the
+  /// song to a music app).
+  final String? hintUrl;
+
+  JsonMap toJson() => {
+    'title': title,
+    'artists': artists,
+    'hint_url': ?hintUrl,
+  };
+}
+
+/// `round.prepare.text_prompt`: the song every player reads in a
+/// whose_song text round (provider `none`). Protocol name
+/// `RoundTextPrompt` [новое имя — согласовать].
+final class RoundTextPrompt {
+  const RoundTextPrompt({required this.title, required this.artists});
+
+  factory RoundTextPrompt.fromJson(JsonMap json) => RoundTextPrompt(
+    title: json.str('title'),
+    artists: json.list('artists', asString),
+  );
+
+  final String title;
+  final List<String> artists;
+
+  JsonMap toJson() => {'title': title, 'artists': artists};
 }
 
 /// `game.starting.prefetch[]`.
@@ -514,6 +694,17 @@ final class RoomConfig {
   int get revealDurationMs => _int('reveal_duration_ms', 5000);
   int get startingCountdownMs => _int('starting_countdown_ms', 3000);
   int get playbackStartTimeoutMs => _int('playback_start_timeout_ms', 5000);
+
+  /// A2.2: how long the DJ has to start the song before the round is voided.
+  int get byopStartTimeoutMs => _int('byop_start_timeout_ms', 20000);
+
+  /// A2.2: whether the DJ of an external_player room may answer in
+  /// guess_track (otherwise the server rejects with `dj_ineligible`).
+  bool get guessTrackDjCanAnswer => _bool('guess_track_dj_can_answer', false);
+  int get poolMinTracksPerContributor =>
+      _int('pool_min_tracks_per_contributor', 5);
+  int get poolMaxTracksPerContributor =>
+      _int('pool_max_tracks_per_contributor', 50);
   bool get monetizationEnabled => _bool('monetization_enabled', true);
   bool get rewardedEnabled => _bool('rewarded_enabled', true);
   bool get interstitialEnabled => _bool('interstitial_enabled', true);

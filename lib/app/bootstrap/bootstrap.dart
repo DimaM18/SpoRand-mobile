@@ -60,6 +60,21 @@ Future<void> bootstrap() async {
           child: const SporandApp(),
         ),
       );
+      // The process anchor of the input clock (brief §5): read once, before
+      // the boot pipeline, so every `*_mono_us` on the wire is relative to it
+      // and raw uptime never leaves the device (Apple reason 35F9.1).
+      // Bounded: a stuck platform channel must not hold up the boot.
+      try {
+        await container
+            .read(inputClockProvider)
+            .init()
+            .timeout(const Duration(milliseconds: 500));
+      } on Object catch (error, stack) {
+        // The first converted timestamp becomes the anchor instead.
+        crashGate
+            .recordError(error, stack, reason: 'input clock anchor')
+            .ignore();
+      }
       unawaited(container.read(bootControllerProvider.notifier).start());
     },
     (error, stack) => crashGate.recordError(error, stack, fatal: true).ignore(),

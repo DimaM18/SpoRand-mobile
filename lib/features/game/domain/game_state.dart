@@ -38,26 +38,53 @@ final class RoundView {
     required this.youAreOwner,
     required this.answerWindowMs,
     required this.audioStartSource,
+    this.mode,
+    this.cue,
+    this.textPrompt,
+    this.externalAudio = false,
+    this.djMayAnswer = true,
+    this.position,
   });
 
-  factory RoundView.fromPrepare(RoundPrepare m, {required int roundsTotal}) =>
-      RoundView(
-        roundId: m.roundId,
-        roundIndex: m.roundIndex,
-        roundsTotal: roundsTotal,
-        kind: m.kind,
-        prompt: m.prompt,
-        options: m.options,
-        youAreOwner: m.youAreOwner,
-        answerWindowMs: m.answerWindowMs,
-        audioStartSource: m.audioStartSource,
-      );
+  /// [mode] is the room mode (the question of a text round); [externalAudio]
+  /// is true when the room's audio comes from the DJ's own music app
+  /// (`provider_capabilities.audio_source` = external_app);
+  /// [guessTrackDjCanAnswer] is the room config key.
+  factory RoundView.fromPrepare(
+    RoundPrepare m, {
+    required int roundsTotal,
+    GameMode? mode,
+    bool externalAudio = false,
+    bool guessTrackDjCanAnswer = false,
+    int? position,
+  }) => RoundView(
+    roundId: m.roundId,
+    roundIndex: m.roundIndex,
+    roundsTotal: roundsTotal,
+    kind: m.kind,
+    prompt: m.prompt,
+    mode: mode,
+    options: m.options,
+    youAreOwner: m.youAreOwner,
+    answerWindowMs: m.answerWindowMs,
+    audioStartSource: m.audioStartSource,
+    cue: m.cue,
+    textPrompt: m.textPrompt,
+    externalAudio: externalAudio,
+    // A2.2: in whose_song hearing the song tells the DJ nothing about whose
+    // it is; in guess_track the DJ knows the answer (dj_ineligible).
+    djMayAnswer: m.prompt != RoundPrompt.guessTrack || guessTrackDjCanAnswer,
+    position: position,
+  );
 
   final String roundId;
   final int roundIndex;
   final int roundsTotal;
   final RoundKind kind;
-  final GameMode prompt;
+  final RoundPrompt prompt;
+
+  /// The room mode, when known (a text round keeps its shape).
+  final GameMode? mode;
 
   /// In the server's per-player order; never re-sorted.
   final List<RoundOption> options;
@@ -65,8 +92,38 @@ final class RoundView {
   final int answerWindowMs;
   final AudioStartSource audioStartSource;
 
-  int get number => roundIndex + 1;
+  /// DJ only (external_player): the song to start in their music app.
+  final RoundCue? cue;
+
+  /// whose_song text round: the song everyone reads.
+  final RoundTextPrompt? textPrompt;
+
+  /// The room's audio plays from the DJ's own music app.
+  final bool externalAudio;
+
+  /// Whether the DJ may answer this round (see [RoundView.fromPrepare]).
+  final bool djMayAnswer;
+
+  /// 1-based place in the game as played (set by `GameController`).
+  /// `round_index` is the plan index: a spare that replaces a voided round
+  /// and a bonus round have indices after every regular round.
+  final int? position;
+
+  /// «Раунд N из M».
+  int get number => position ?? roundIndex + 1;
   bool get isBonus => kind == RoundKind.bonus;
+
+  /// This device is the round's DJ (it got the cue, A2.2).
+  bool get isDj => cue != null;
+
+  /// A round without audio (provider `none`).
+  bool get isTextRound => prompt == RoundPrompt.textRound;
+
+  /// A guest of an external_player round: the DJ has not started the song.
+  bool get waitsForDj =>
+      externalAudio &&
+      !isDj &&
+      audioStartSource == AudioStartSource.hostReported;
 }
 
 sealed class RoundPhase {
@@ -115,6 +172,19 @@ final class RoundTimeUp extends RoundPhase {
   const RoundTimeUp();
 }
 
+/// The DJ (external_player) must start the song in their own music app and
+/// tap «Музыка играет!» (A2.2). [новое имя — согласовать]
+final class RoundDjCue extends RoundPhase {
+  const RoundDjCue();
+}
+
+/// The DJ started the song but may not answer this round (guess_track with
+/// `guess_track_dj_can_answer` = false, `dj_ineligible`).
+/// [новое имя — согласовать]
+final class RoundDjWatching extends RoundPhase {
+  const RoundDjWatching();
+}
+
 final class GameRoundState extends GameUiState {
   const GameRoundState({
     required this.round,
@@ -132,7 +202,12 @@ final class GameRoundState extends GameUiState {
   /// Host only: AirPlay adds ~2 s of latency (brief §5).
   final bool airplayWarning;
 
-  bool get showsButtons => !round.youAreOwner;
+  /// No buttons for the track's owner or for a DJ who may not answer; the
+  /// DJ sees the cue card instead until the song plays.
+  bool get showsButtons =>
+      !round.youAreOwner &&
+      phase is! RoundDjCue &&
+      !(round.isDj && !round.djMayAnswer);
   bool get buttonsEnabled => phase is RoundOpen;
 
   GameRoundState copyWith({

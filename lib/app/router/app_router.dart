@@ -17,6 +17,7 @@ import 'package:sporand/features/game/presentation/game_page.dart';
 import 'package:sporand/features/home/presentation/home_page.dart';
 import 'package:sporand/features/lobby/presentation/join_room_page.dart';
 import 'package:sporand/features/lobby/presentation/lobby_page.dart';
+import 'package:sporand/features/my_songs/presentation/my_songs_page.dart';
 import 'package:sporand/features/onboarding/presentation/onboarding_controller.dart';
 import 'package:sporand/features/onboarding/presentation/onboarding_pages.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
@@ -131,6 +132,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       _route(Routes.settings, (_) => const SettingsPage()),
+      _route(Routes.mySongs, (_) => const MySongsPage()),
       _route(Routes.forceUpdate, (_) => const ForceUpdatePage()),
       _route(Routes.maintenance, (_) => const MaintenancePage()),
       _route(Routes.debugClock, (_) => const ClockCalibrationPage()),

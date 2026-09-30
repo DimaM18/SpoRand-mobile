@@ -13,6 +13,7 @@ final class RevenueCatPurchasesService implements PurchasesService {
 
   final String? _apiKey;
   bool _configured = false;
+  String? _appUserId;
   Entitlements _entitlements = Entitlements.none;
   final Map<String, rc.Package> _packages = {};
   final StreamController<Entitlements> _changes =
@@ -53,8 +54,12 @@ final class RevenueCatPurchasesService implements PurchasesService {
   @override
   Future<void> logIn(String userId) async {
     final result = await rc.Purchases.logIn(userId);
+    _appUserId = userId;
     _onCustomerInfo(result.customerInfo);
   }
+
+  @override
+  String? get appUserId => _appUserId;
 
   @override
   Future<List<PaywallPackage>> loadPaywallPackages() async {

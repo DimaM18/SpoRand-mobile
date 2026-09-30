@@ -228,13 +228,15 @@ class PreloadResultMessage {
 
 class PlaybackStartedMessage {
   PlaybackStartedMessage({
-    required this.audioStartMonoUs,
+    required this.audioStartOsUs,
     required this.outputLatencyMs,
     required this.outputRoute,
   });
 
-  /// When the audio started, on the input clock (InputClockApi base).
-  int audioStartMonoUs;
+  /// When the audio started: a raw OS input-clock value (InputClockApi
+  /// base). Native code never knows the process anchor; the Dart side
+  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  int audioStartOsUs;
 
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.
   int outputLatencyMs;
@@ -243,7 +245,7 @@ class PlaybackStartedMessage {
 
   List<Object?> _toList() {
     return <Object?>[
-      audioStartMonoUs,
+      audioStartOsUs,
       outputLatencyMs,
       outputRoute,
     ];
@@ -255,7 +257,7 @@ class PlaybackStartedMessage {
   static PlaybackStartedMessage decode(Object result) {
     result as List<Object?>;
     return PlaybackStartedMessage(
-      audioStartMonoUs: result[0]! as int,
+      audioStartOsUs: result[0]! as int,
       outputLatencyMs: result[1]! as int,
       outputRoute: result[2]! as OutputRouteMessage,
     );
@@ -270,7 +272,7 @@ class PlaybackStartedMessage {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(audioStartMonoUs, other.audioStartMonoUs) && _deepEquals(outputLatencyMs, other.outputLatencyMs) && _deepEquals(outputRoute, other.outputRoute);
+    return _deepEquals(audioStartOsUs, other.audioStartOsUs) && _deepEquals(outputLatencyMs, other.outputLatencyMs) && _deepEquals(outputRoute, other.outputRoute);
   }
 
   @override
@@ -279,7 +281,7 @@ class PlaybackStartedMessage {
 
   @override
   String toString() {
-    return 'PlaybackStartedMessage(audioStartMonoUs: $audioStartMonoUs, outputLatencyMs: $outputLatencyMs, outputRoute: $outputRoute)';
+    return 'PlaybackStartedMessage(audioStartOsUs: $audioStartOsUs, outputLatencyMs: $outputLatencyMs, outputRoute: $outputRoute)';
   }
 }
 
@@ -385,18 +387,19 @@ class ClipPlayerApi {
     return pigeonVar_replyValue! as PreloadResultMessage;
   }
 
-  /// Starts the prepared clip at [startAtMonoUs] on the input clock and
-  /// completes once playback has started. Plays at most the snippet.
+  /// Starts the prepared clip at [startAtOsUs] (raw OS input clock; the Dart
+  /// side adds the process anchor with `InputClock.toOsUs`) and completes
+  /// once playback has started. Plays at most the snippet.
   /// iOS: `AVAudioPlayer.play(atTime:)` mapped through `deviceCurrentTime`.
   /// Android: `Handler.postAtTime` on the uptime clock, then `play()`.
-  Future<PlaybackStartedMessage> playAt(int startAtMonoUs) async {
+  Future<PlaybackStartedMessage> playAt(int startAtOsUs) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.sporand_native.ClipPlayerApi.playAt$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[startAtMonoUs]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[startAtOsUs]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(

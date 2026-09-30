@@ -1,5 +1,7 @@
 import 'package:sporand/app/flavors/flavor.dart';
 import 'package:sporand/core/ads/ads_service.dart';
+import 'package:sporand/core/net/protocol/json_read.dart';
+import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/platform/app_platform.dart';
 
 /// Everything that differs between builds. Values come from `--dart-define`
@@ -15,6 +17,8 @@ import 'package:sporand/core/platform/app_platform.dart';
 /// - `REVENUECAT_API_KEY_IOS`, `REVENUECAT_API_KEY_ANDROID`: public SDK keys.
 /// - `ADMOB_INTERSTITIAL_IOS|ANDROID`, `ADMOB_REWARDED_IOS|ANDROID`.
 /// - `STORE_URL_IOS`, `STORE_URL_ANDROID`, `TERMS_URL`, `PRIVACY_URL`.
+/// - `ROOM_PROVIDER`: the provider new rooms request (a `MusicProviderId`
+///   wire value), for QA; defaults per flavor (see [roomProvider]).
 final class AppEnv {
   const AppEnv({
     required this.flavor,
@@ -27,6 +31,7 @@ final class AppEnv {
     this.storeUrl,
     this.termsUrl,
     this.privacyUrl,
+    this._roomProvider,
   });
 
   factory AppEnv.fromEnvironment({required AppPlatform platform}) {
@@ -50,6 +55,7 @@ final class AppEnv {
     const storeAndroid = String.fromEnvironment('STORE_URL_ANDROID');
     const terms = String.fromEnvironment('TERMS_URL');
     const privacy = String.fromEnvironment('PRIVACY_URL');
+    const roomProviderRaw = String.fromEnvironment('ROOM_PROVIDER');
 
     final flavor = Flavor.parse(flavorRaw);
     final firebaseEnabled = switch (firebaseRaw.toLowerCase()) {
@@ -80,6 +86,13 @@ final class AppEnv {
       storeUrl: _parseUri(isIos ? storeIos : storeAndroid),
       termsUrl: _parseUri(terms),
       privacyUrl: _parseUri(privacy),
+      roomProvider: roomProviderRaw.isEmpty
+          ? null
+          : parseWire(
+              MusicProviderId.values,
+              roomProviderRaw,
+              fallback: MusicProviderId.externalPlayer,
+            ),
     );
   }
 
@@ -97,6 +110,20 @@ final class AppEnv {
   final Uri? storeUrl;
   final Uri? termsUrl;
   final Uri? privacyUrl;
+  final MusicProviderId? _roomProvider;
+
+  /// The provider `POST /v1/rooms` asks for; the server may still fall back
+  /// to its `default_provider` when this one is not enabled for the host's
+  /// country (addendum A2.5). spotifyProto keeps the frozen Spotify
+  /// prototype, dev keeps the `test_catalog` clips, and staging/prod request
+  /// `external_player` (BYOP), A2.1's recommended default for public launch.
+  MusicProviderId get roomProvider =>
+      _roomProvider ??
+      switch (flavor) {
+        Flavor.spotifyProto => MusicProviderId.spotifyAppRemote,
+        Flavor.dev => MusicProviderId.testCatalog,
+        Flavor.staging || Flavor.prod => MusicProviderId.externalPlayer,
+      };
 
   bool get monetizationAllowed => flavor.allowsMonetization;
 

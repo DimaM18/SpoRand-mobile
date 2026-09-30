@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/router/routes.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
@@ -12,6 +13,8 @@ import 'package:sporand/core/net/ws_client.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/domain/room_session.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
+import 'package:sporand/features/my_songs/domain/picks_limits.dart';
+import 'package:sporand/features/my_songs/presentation/my_songs_controller.dart';
 
 final class LobbyPlayer {
   const LobbyPlayer({
@@ -55,6 +58,51 @@ final class NeedMorePlayers extends StartBlocker {
   final int minimum;
 }
 
+/// whose_song: fewer than `whose_song_min_contributors` players have a pool
+/// of at least `pool_min_tracks_per_contributor` songs.
+final class NeedContributors extends StartBlocker {
+  const NeedContributors(this.missing);
+
+  final int missing;
+}
+
+/// A contributor's pool is below `pool_min_tracks_per_contributor`
+/// («У Ани меньше 5 треков», design doc S1.8.4).
+final class PoolTooSmall extends StartBlocker {
+  const PoolTooSmall({required this.name, required this.minimum});
+
+  final String name;
+  final int minimum;
+}
+
+/// guess_track from player pools: nobody has added songs yet.
+final class NeedAnyPool extends StartBlocker {
+  const NeedAnyPool();
+}
+
+/// What «Добавить мои песни» found in «Мои песни» for this room.
+sealed class PoolDraft {
+  const PoolDraft();
+}
+
+/// Ready for the consent step: exactly these picks become the pool.
+final class PoolReady extends PoolDraft {
+  const PoolReady(this.picks);
+
+  final List<CatalogPick> picks;
+}
+
+/// Fewer than [minimum] usable picks: open «Мои песни» first.
+final class PoolNeedsPicks extends PoolDraft {
+  const PoolNeedsPicks(this.minimum);
+
+  final int minimum;
+}
+
+final class PoolUnavailable extends PoolDraft {
+  const PoolUnavailable();
+}
+
 final class LobbyView {
   const LobbyView({
     required this.roomCode,
@@ -69,6 +117,10 @@ final class LobbyView {
     required this.reconnecting,
     required this.contributorsNeeded,
     this.startBlocker,
+    this.collectsPools = false,
+    this.myPoolTrackCount = 0,
+    this.poolMinTracks = 5,
+    this.isDjHost = false,
   });
 
   final String roomCode;
@@ -87,6 +139,19 @@ final class LobbyView {
   /// whose_song: contributors still missing (0 when enough).
   final int contributorsNeeded;
   final StartBlocker? startBlocker;
+
+  /// The room plays players' own songs (`catalog_picks`): show «Добавить мои
+  /// песни».
+  final bool collectsPools;
+
+  /// Songs of this player's pool in the room (`pool_track_count`).
+  final int myPoolTrackCount;
+
+  /// `pool_min_tracks_per_contributor`.
+  final int poolMinTracks;
+
+  /// The host of an external_player room is the DJ (A2.2).
+  final bool isDjHost;
 
   bool get canStart => isHost && startBlocker == null;
 
@@ -168,13 +233,37 @@ class LobbyController extends Notifier<LobbyUiState> {
     ]..sort((a, b) => a.isHost == b.isHost ? 0 : (a.isHost ? -1 : 1));
     final present = players
         .where((p) => p.connection != PlayerConnection.left)
-        .length;
+        .toList();
     // Brief §2: guess_track needs 2 players; whose_song needs 3
-    // contributors (checked by the server against their pools).
+    // contributors. A client hint only: the server checks the pools.
     final minPlayers = room.mode == GameMode.whoseSong
         ? config.whoseSongMinContributors
         : 2;
-    final contributors = players.where((p) => p.isContributor).length;
+    final poolMin = config.poolMinTracksPerContributor;
+    final collectsPools = room.settings.poolSources.contains(
+      PoolSource.catalogPicks,
+    );
+    final contributors = present
+        .where((p) => p.poolTrackCount >= poolMin)
+        .length;
+    final tooSmall = present
+        .where((p) => p.poolTrackCount > 0 && p.poolTrackCount < poolMin)
+        .toList();
+    final contributorsNeeded = room.mode == GameMode.whoseSong
+        ? (config.whoseSongMinContributors - contributors).clamp(0, 99)
+        : 0;
+    final StartBlocker? blocker = present.length < minPlayers
+        ? NeedMorePlayers(minPlayers)
+        : contributorsNeeded > 0
+        ? (tooSmall.isEmpty
+              ? NeedContributors(contributorsNeeded)
+              : PoolTooSmall(name: tooSmall.first.name, minimum: poolMin))
+        : room.mode == GameMode.guessTrack &&
+              collectsPools &&
+              !room.settings.poolSources.contains(PoolSource.catalogPack) &&
+              contributors == 0
+        ? const NeedAnyPool()
+        : null;
     final code = session.roomCode ?? room.roomCode ?? '';
     final linkHosts = ref.read(appEnvProvider).linkHosts;
     return LobbyLoaded(
@@ -195,10 +284,12 @@ class LobbyController extends Notifier<LobbyUiState> {
         roundChoices: choices,
         hostTier: room.hostTier,
         reconnecting: session.ws.state is! WsConnected,
-        contributorsNeeded: room.mode == GameMode.whoseSong
-            ? (config.whoseSongMinContributors - contributors).clamp(0, 99)
-            : 0,
-        startBlocker: present < minPlayers ? NeedMorePlayers(minPlayers) : null,
+        contributorsNeeded: contributorsNeeded,
+        startBlocker: blocker,
+        collectsPools: collectsPools,
+        myPoolTrackCount: room.player(me)?.poolTrackCount ?? 0,
+        poolMinTracks: poolMin,
+        isDjHost: session.isHost && room.capabilities.isExternalApp,
       ),
     );
   }
@@ -259,6 +350,63 @@ class LobbyController extends Notifier<LobbyUiState> {
 
   void startGame() {
     if (_view?.canStart ?? false) _session?.send(const GameStart());
+  }
+
+  /// «Добавить мои песни», step 1: the picks of «Мои песни» this room can
+  /// use (song picks for external_player / none, legacy catalogue picks for
+  /// catalogue providers), for the «Что увидят друзья» consent step.
+  Future<PoolDraft> preparePool() async {
+    final session = _session;
+    final room = session?.room;
+    if (session == null || room == null) return const PoolUnavailable();
+    final limits = PicksLimits.of(session.config);
+    final List<CatalogPick> picks;
+    try {
+      picks = await ref.read(mySongsApiProvider).picks();
+    } on Object {
+      return const PoolUnavailable();
+    }
+    final usable = [
+      for (final pick in picks)
+        if (room.provider.usesSongIds
+            ? pick is SongPick
+            : pick is LegacyCatalogPick)
+          pick,
+    ].take(limits.max).toList();
+    if (usable.length < limits.min) return PoolNeedsPicks(limits.min);
+    return PoolReady(usable);
+  }
+
+  /// Step 2, after the player confirmed «Эти песни будут показаны комнате
+  /// как ваши»: `PUT /v1/rooms/{room_id}/pool`. The server then updates
+  /// `pool_track_count` with `room.player_updated`.
+  Future<bool> submitPool(PoolReady draft) async {
+    final session = _session;
+    if (session == null) return false;
+    final pool = PoolPutRequest(
+      poolSource: PoolSource.catalogPicks,
+      tracks: [
+        for (final (index, pick) in draft.picks.indexed)
+          switch (pick) {
+            SongPick(:final song) => SongPoolTrack(
+              songId: song.songId,
+              rank: index + 1,
+            ),
+            LegacyCatalogPick(:final track) => CatalogPoolTrack(
+              catalogTrackId: track.catalogTrackId,
+              rank: index + 1,
+            ),
+          },
+      ],
+    );
+    try {
+      await ref
+          .read(roomsApiProvider)
+          .submitPool(roomId: session.roomId, pool: pool);
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   void kick(String playerId) {

@@ -101,7 +101,11 @@ class InputClockApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol InputClockApi {
-  /// Microseconds on the device input clock.
+  /// Microseconds on the device input clock: a raw OS value (`os_us`).
+  ///
+  /// Never sent off-device (Apple required-reason API 35F9.1): the Dart
+  /// `InputClock` subtracts the process anchor before any value reaches the
+  /// protocol (brief §5 "process anchor").
   ///
   /// - iOS: `ProcessInfo.processInfo.systemUptime * 1e6`, the base of
   ///   `UITouch.timestamp` (stops while the device sleeps).
@@ -116,7 +120,11 @@ class InputClockApiSetup {
   /// Sets up an instance of `InputClockApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: InputClockApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    /// Microseconds on the device input clock.
+    /// Microseconds on the device input clock: a raw OS value (`os_us`).
+    ///
+    /// Never sent off-device (Apple required-reason API 35F9.1): the Dart
+    /// `InputClock` subtracts the process anchor before any value reaches the
+    /// protocol (brief §5 "process anchor").
     ///
     /// - iOS: `ProcessInfo.processInfo.systemUptime * 1e6`, the base of
     ///   `UITouch.timestamp` (stops while the device sleeps).

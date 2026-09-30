@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:clock/clock.dart';
 
 import 'package:sporand/core/net/api_client.dart';
+import 'package:sporand/core/net/protocol/json_read.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/platform/app_platform.dart';
 import 'package:sporand/core/security/session_repository.dart';
 
@@ -48,12 +50,12 @@ final class HttpAuthApi implements AuthApi {
   Future<AuthSession> createGuest(GuestRegistration registration) async {
     final json = await _client.post(
       '/v1/auth/guest',
-      body: {
-        'platform': registration.platform.wireName,
-        'app_version': registration.appVersion,
-        'os_version': registration.osVersion,
-        'locale': registration.locale,
-      },
+      body: GuestAuthRequest(
+        platform: registration.platform,
+        appVersion: registration.appVersion,
+        osVersion: registration.osVersion,
+        locale: registration.locale,
+      ).toJson(),
       authenticated: false,
       appCheck: AppCheckUse.limitedUse,
     );
@@ -64,42 +66,40 @@ final class HttpAuthApi implements AuthApi {
   Future<AuthSession> refresh(String refreshToken) async {
     final json = await _client.post(
       '/v1/auth/refresh',
-      body: {'refresh_token': refreshToken},
+      body: RefreshTokenRequest(refreshToken).toJson(),
       authenticated: false,
     );
     return _parse(json);
   }
 
   static AuthSession _parse(Map<String, Object?> json) {
-    final access = json['access_token'];
-    final refresh = json['refresh_token'];
-    final user = json['user'];
-    final userId = user is Map<String, Object?> ? user['user_id'] : null;
-    final analyticsUid = user is Map<String, Object?>
-        ? user['analytics_uid']
-        : null;
-    if (access is! String || refresh is! String) {
+    final AuthTokensResponse tokens;
+    try {
+      tokens = AuthTokensResponse.fromJson(json);
+    } on ProtocolFormatException {
       throw const ApiError(code: ApiError.invalidResponse);
     }
-    final ttlMs = json['access_token_ttl_ms'];
+    final access = tokens.accessToken;
+    final ttlMs = tokens.accessTokenTtlMs;
+    // Not in the contract; tolerated from OAuth-style servers.
     final expiresIn = json['expires_in'];
-    final expiresAt = ttlMs is int
+    final expiresAt = ttlMs != null
         ? clock.now().add(Duration(milliseconds: ttlMs))
         : expiresIn is int
         ? clock.now().add(Duration(seconds: expiresIn))
         : _jwtExpiry(access) ?? clock.now().add(_defaultAccessTtl);
     // `/v1/auth/refresh` returns only the token pair; the user id then
     // comes from the JWT `sub`.
-    final resolvedUserId = userId is String ? userId : _jwtSubject(access);
+    final resolvedUserId = tokens.user?.userId ?? _jwtSubject(access);
     if (resolvedUserId == null) {
       throw const ApiError(code: ApiError.invalidResponse);
     }
     return AuthSession(
       userId: resolvedUserId,
       accessToken: access,
-      refreshToken: refresh,
+      refreshToken: tokens.refreshToken,
       accessTokenExpiresAt: expiresAt,
-      analyticsUid: analyticsUid is String ? analyticsUid : null,
+      analyticsUid: tokens.user?.analyticsUid,
     );
   }
 

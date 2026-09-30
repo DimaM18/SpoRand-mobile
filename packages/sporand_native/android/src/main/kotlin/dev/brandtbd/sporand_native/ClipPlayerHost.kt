@@ -104,7 +104,7 @@ class ClipPlayerHost(private val context: Context) : ClipPlayerApi {
         )
     }
 
-    override suspend fun playAt(startAtMonoUs: Long): PlaybackStartedMessage {
+    override suspend fun playAt(startAtOsUs: Long): PlaybackStartedMessage {
         val exo = player ?: throw NativeBridgeError("not_prepared", "prepare() was not called")
         val startedUs = suspendCancellableCoroutine<Long> { cont ->
             val start = Runnable {
@@ -118,11 +118,12 @@ class ClipPlayerHost(private val context: Context) : ClipPlayerApi {
             pendingContinuation = cont
             // postAtTime is scheduled on SystemClock.uptimeMillis(), the same
             // clock as InputClockApi; a time in the past runs immediately.
-            mainHandler.postAtTime(start, startAtMonoUs / 1000L)
+            mainHandler.postAtTime(start, startAtOsUs / 1000L)
             cont.invokeOnCancellation { mainHandler.removeCallbacks(start) }
         }
         return PlaybackStartedMessage(
-            audioStartMonoUs = startedUs,
+            // Raw OS time: the Dart InputClock subtracts the process anchor.
+            audioStartOsUs = startedUs,
             // No public API reports the AudioTrack latency; brief §5 allows 0.
             outputLatencyMs = 0L,
             outputRoute = currentRoute(),

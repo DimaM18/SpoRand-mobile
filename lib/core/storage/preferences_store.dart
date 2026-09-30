@@ -32,12 +32,17 @@ abstract final class PrefKeys {
   /// Last display name typed at create/join [новое имя — согласовать].
   static const displayName = 'display_name';
 
+  /// The `user_id` whose server profile already has [ageBand]
+  /// (`PATCH /v1/me`, see `AgeBandSync`) [новое имя — согласовать].
+  static const ageBandSyncedFor = 'age_band_synced_for';
+
   static const all = {
     ageBand,
     ageGateBlocked,
     onboardingCompleted,
     analyticsConsent,
     displayName,
+    ageBandSyncedFor,
   };
 }
 

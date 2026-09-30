@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/theme/tokens.dart';
+import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/clock/input_timestamps.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
@@ -56,9 +58,13 @@ class _AnswerGridState extends ConsumerState<AnswerGrid> {
         if (!mounted) return;
         ref
             .read(gameControllerProvider.notifier)
-            .onAnswerButtonsShown(roundId, currentFrameTimestampUs());
+            .onAnswerButtonsShown(
+              roundId,
+              currentFrameMonoUs(ref.read(inputClockProvider)),
+            );
       });
     }
+    final clock = ref.read(inputClockProvider);
     final chosen = switch (state.phase) {
       RoundAnswered(:final optionId) => optionId,
       _ => null,
@@ -76,6 +82,7 @@ class _AnswerGridState extends ConsumerState<AnswerGrid> {
               enabled: enabled,
               selected: chosen == option.optionId,
               dimmed: chosen != null && chosen != option.optionId,
+              clock: clock,
               onCommit: (tapMonoUs) => _commit(option.optionId, tapMonoUs),
             ),
           ),
@@ -95,6 +102,7 @@ class AnswerButton extends StatelessWidget {
     required this.enabled,
     required this.selected,
     required this.dimmed,
+    required this.clock,
     required this.onCommit,
   });
 
@@ -110,6 +118,9 @@ class AnswerButton extends StatelessWidget {
   final bool enabled;
   final bool selected;
   final bool dimmed;
+
+  /// Converts the OS touch time to `tap_mono_us` (process anchor).
+  final InputClock clock;
 
   /// Returns true when the tap committed the answer.
   final bool Function(int? tapMonoUs) onCommit;
@@ -131,7 +142,7 @@ class AnswerButton extends StatelessWidget {
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: enabled
-            ? (event) => onCommit(tapMonoUsFromPointer(event))
+            ? (event) => onCommit(tapMonoUsFromPointer(clock, event))
             : null,
         child: AnimatedOpacity(
           duration: Motion.fast,

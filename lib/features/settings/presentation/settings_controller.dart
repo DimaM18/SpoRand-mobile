@@ -11,6 +11,7 @@ import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/consent/consent_policy.dart';
 import 'package:sporand/core/platform/app_info.dart';
 import 'package:sporand/core/purchases/entitlement_sync_api.dart';
+import 'package:sporand/core/purchases/purchases_service.dart';
 
 final appInfoProvider = FutureProvider<AppInfo>(
   (ref) => ref.watch(appInfoSourceProvider).load(),
@@ -116,7 +117,12 @@ class SettingsController extends Notifier<SettingsState> {
     RestoreOutcome outcome;
     try {
       final purchases = ref.read(purchasesServiceProvider);
-      if (!purchases.isConfigured) await purchases.configure();
+      // Restore under our user_id even if the boot step degraded before
+      // logIn (brief §4.7).
+      await ensurePurchasesUser(
+        purchases,
+        userId: ref.read(authServiceProvider).currentUserId,
+      );
       final entitlements = await purchases.restore();
       outcome = entitlements.adsRemoved
           ? RestoreOutcome.restored

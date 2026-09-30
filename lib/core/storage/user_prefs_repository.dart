@@ -21,6 +21,13 @@ class UserPrefsRepository {
 
   String? get displayName => _store.getString(PrefKeys.displayName);
 
+  /// The account (`user_id`) whose server profile already has [ageBand];
+  /// null until the first `PATCH /v1/me` succeeds.
+  String? get ageBandSyncedFor => _store.getString(PrefKeys.ageBandSyncedFor);
+
+  Future<void> markAgeBandSynced(String userId) =>
+      _store.setString(PrefKeys.ageBandSyncedFor, userId);
+
   Future<void> saveDisplayName(String name) =>
       _store.setString(PrefKeys.displayName, name);
 

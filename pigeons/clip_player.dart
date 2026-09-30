@@ -59,13 +59,15 @@ class PreloadResultMessage {
 
 class PlaybackStartedMessage {
   PlaybackStartedMessage({
-    required this.audioStartMonoUs,
+    required this.audioStartOsUs,
     required this.outputLatencyMs,
     required this.outputRoute,
   });
 
-  /// When the audio started, on the input clock (InputClockApi base).
-  int audioStartMonoUs;
+  /// When the audio started: a raw OS input-clock value (InputClockApi
+  /// base). Native code never knows the process anchor; the Dart side
+  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  int audioStartOsUs;
 
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.
   int outputLatencyMs;
@@ -84,12 +86,13 @@ abstract class ClipPlayerApi {
   @async
   PreloadResultMessage prepare(ClipSourceMessage clip);
 
-  /// Starts the prepared clip at [startAtMonoUs] on the input clock and
-  /// completes once playback has started. Plays at most the snippet.
+  /// Starts the prepared clip at [startAtOsUs] (raw OS input clock; the Dart
+  /// side adds the process anchor with `InputClock.toOsUs`) and completes
+  /// once playback has started. Plays at most the snippet.
   /// iOS: `AVAudioPlayer.play(atTime:)` mapped through `deviceCurrentTime`.
   /// Android: `Handler.postAtTime` on the uptime clock, then `play()`.
   @async
-  PlaybackStartedMessage playAt(int startAtMonoUs);
+  PlaybackStartedMessage playAt(int startAtOsUs);
 
   /// Stops playback and releases the prepared clip.
   void stop();

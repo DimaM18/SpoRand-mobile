@@ -1,4 +1,6 @@
 import 'package:sporand/core/net/api_client.dart';
+import 'package:sporand/core/net/protocol/json_read.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/net/ws_client.dart';
@@ -64,6 +66,13 @@ abstract interface class RoomsApi {
     required String playerId,
     required ReportReason reason,
   });
+
+  /// `PUT /v1/rooms/{room_id}/pool`: this player's pool for the room
+  /// (replaces an earlier one). The server answers with what it stored.
+  Future<PoolContributionView> submitPool({
+    required String roomId,
+    required PoolPutRequest pool,
+  });
 }
 
 final class HttpRoomsApi implements RoomsApi {
@@ -79,20 +88,20 @@ final class HttpRoomsApi implements RoomsApi {
   }) async {
     final json = await _client.post(
       '/v1/rooms',
-      body: {
-        'mode': mode.wire,
-        'provider': provider.wire,
-        'display_name': ?displayName,
-      },
+      body: RoomCreateRequest(
+        mode: mode,
+        provider: provider,
+        displayName: displayName,
+      ).toJson(),
       appCheck: AppCheckUse.limitedUse,
     );
-    final config = json['config_snapshot'];
+    final created = _parse(json, RoomCreateResponse.fromJson);
     return CreatedRoom(
-      roomId: _str(json, 'room_id'),
-      roomCode: _str(json, 'room_code'),
-      playerId: _str(json, 'player_id'),
-      config: RoomConfig(config is Map<String, Object?> ? config : const {}),
-      configVersion: _str(json, 'config_version'),
+      roomId: created.roomId,
+      roomCode: created.roomCode,
+      playerId: created.playerId,
+      config: created.config,
+      configVersion: created.configVersion,
     );
   }
 
@@ -103,12 +112,13 @@ final class HttpRoomsApi implements RoomsApi {
   }) async {
     final json = await _client.post(
       '/v1/rooms/join',
-      body: {'room_code': roomCode, 'display_name': displayName},
+      body: RoomJoinRequest(
+        roomCode: roomCode,
+        displayName: displayName,
+      ).toJson(),
     );
-    return JoinedRoom(
-      roomId: _str(json, 'room_id'),
-      playerId: _str(json, 'player_id'),
-    );
+    final joined = _parse(json, RoomJoinResponse.fromJson);
+    return JoinedRoom(roomId: joined.roomId, playerId: joined.playerId);
   }
 
   @override
@@ -116,10 +126,11 @@ final class HttpRoomsApi implements RoomsApi {
     final json = await _client.post(
       '/v1/rooms/${Uri.encodeComponent(roomId)}/ws-ticket',
     );
-    final wsUrl = json['ws_url'];
+    final ticket = _parse(json, WsTicketResponse.fromJson);
+    final wsUrl = ticket.wsUrl;
     return WsTicket(
-      ticket: _str(json, 'ticket'),
-      wsUrl: wsUrl is String ? Uri.tryParse(wsUrl) : null,
+      ticket: ticket.ticket,
+      wsUrl: wsUrl == null ? null : Uri.tryParse(wsUrl),
     );
   }
 
@@ -131,13 +142,31 @@ final class HttpRoomsApi implements RoomsApi {
   }) async {
     await _client.post(
       '/v1/rooms/${Uri.encodeComponent(roomId)}/reports',
-      body: {'reported_player_id': playerId, 'reason': reason.wire},
+      body: ReportCreateRequest(
+        reportedPlayerId: playerId,
+        reason: reason.wire,
+      ).toJson(),
     );
   }
 
-  static String _str(Map<String, Object?> json, String key) {
-    final value = json[key];
-    if (value is String) return value;
+  @override
+  Future<PoolContributionView> submitPool({
+    required String roomId,
+    required PoolPutRequest pool,
+  }) async {
+    final json = await _client.put(
+      '/v1/rooms/${Uri.encodeComponent(roomId)}/pool',
+      body: pool.toJson(),
+    );
+    return _parse(json, PoolContributionView.fromJson);
+  }
+}
+
+/// A 2xx body that does not match the contract is an invalid response.
+T _parse<T>(JsonMap json, T Function(JsonMap json) fromJson) {
+  try {
+    return fromJson(json);
+  } on ProtocolFormatException {
     throw const ApiError(code: ApiError.invalidResponse);
   }
 }
@@ -154,6 +183,10 @@ final class FakeRoomsApi implements RoomsApi {
   final List<({String roomId, String playerId, ReportReason reason})> reports =
       [];
   ({String roomCode, String displayName})? lastJoin;
+  final List<({String roomId, PoolPutRequest pool})> pools = [];
+
+  /// Thrown by [submitPool].
+  Object? poolFailWith;
 
   @override
   Future<CreatedRoom> createRoom({
@@ -197,5 +230,35 @@ final class FakeRoomsApi implements RoomsApi {
     required ReportReason reason,
   }) async {
     reports.add((roomId: roomId, playerId: playerId, reason: reason));
+  }
+
+  @override
+  Future<PoolContributionView> submitPool({
+    required String roomId,
+    required PoolPutRequest pool,
+  }) async {
+    final error = poolFailWith;
+    if (error != null) throw error;
+    pools.add((roomId: roomId, pool: pool));
+    return PoolContributionView(
+      poolId: 'pool-${pools.length}',
+      roomId: roomId,
+      playerId: 'p-me',
+      provider: MusicProviderId.externalPlayer,
+      poolSource: pool.poolSource,
+      entries: [
+        for (final (index, track) in pool.tracks.indexed)
+          PoolEntry(
+            trackRefId: 'ref-$index',
+            rank: track.rank ?? index + 1,
+            title: 'Track ${index + 1}',
+            artists: const ['Artist'],
+            primaryArtist: 'Artist',
+          ),
+      ],
+      hiddenTrackRefIds: const [],
+      submittedAt: '2026-09-30T11:00:00Z',
+      expiresAt: '2026-09-30T14:00:00Z',
+    );
   }
 }

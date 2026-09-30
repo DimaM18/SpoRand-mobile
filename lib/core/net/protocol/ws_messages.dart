@@ -305,16 +305,23 @@ final class RoundPrepare extends ServerMessage {
     required this.audioStartSource,
     required this.commitHash,
     this.clip,
+    this.cue,
+    this.textPrompt,
   });
 
+  /// Also enforces the protocol's cross-field rules (packages/protocol
+  /// `roundPrepareIssues`), so a malformed prepare is dropped like any other
+  /// bad frame instead of reaching the game.
   factory RoundPrepare.fromJson(JsonMap json) {
     final clip = json.optObj('clip');
-    return RoundPrepare(
+    final cue = json.optObj('cue');
+    final textPrompt = json.optObj('text_prompt');
+    final message = RoundPrepare(
       roundId: json.str('round_id'),
       roundIndex: json.integer('round_index'),
       kind: json.wire('kind', RoundKind.values),
       nonce: json.str('nonce'),
-      prompt: json.wire('prompt', GameMode.values),
+      prompt: json.wire('prompt', RoundPrompt.values),
       options: json.list(
         'options',
         (item) => RoundOption.fromJson(asObject(item)),
@@ -329,28 +336,71 @@ final class RoundPrepare extends ServerMessage {
       ),
       commitHash: json.str('commit_hash'),
       clip: clip == null ? null : RoundClip.fromJson(clip),
+      cue: cue == null ? null : RoundCue.fromJson(cue),
+      textPrompt: textPrompt == null
+          ? null
+          : RoundTextPrompt.fromJson(textPrompt),
     );
+    final issue = message.crossFieldIssue;
+    if (issue != null) throw ProtocolFormatException(issue);
+    return message;
   }
 
   final String roundId;
   final int roundIndex;
   final RoundKind kind;
   final String nonce;
-  final GameMode prompt;
+
+  /// The room mode, or [RoundPrompt.textRound] for provider `none`.
+  final RoundPrompt prompt;
 
   /// Already shuffled for this player; shown in this order.
   final List<RoundOption> options;
   final bool youAreOwner;
   final int startAtServerMs;
 
-  /// [startAtServerMs] converted by the server to this device's input clock.
+  /// [startAtServerMs] converted by the server with this device's clock
+  /// offset at send time (anchored input clock, brief §5). The client
+  /// prefers its own conversion with the latest `clock.result`.
   final int startAtMonoUs;
   final int answerWindowMs;
   final AudioStartSource audioStartSource;
   final String commitHash;
 
-  /// Playback device only.
+  /// Playback device only (`test_catalog`, `licensed_clips`, Spotify).
   final RoundClip? clip;
+
+  /// DJ only (`external_player`, A2.2): the song to start in the DJ's own
+  /// music app. Never together with [clip].
+  final RoundCue? cue;
+
+  /// whose_song text rounds (provider `none`): the song everyone reads.
+  final RoundTextPrompt? textPrompt;
+
+  bool get isTextRound => prompt == RoundPrompt.textRound;
+
+  /// The first violated rule of packages/protocol `roundPrepareIssues`
+  /// (A2.1, A2.6), or null.
+  String? get crossFieldIssue {
+    final silent = audioStartSource == AudioStartSource.none;
+    if (clip != null && cue != null) {
+      return 'round.prepare: clip and cue are mutually exclusive';
+    }
+    if (cue != null && audioStartSource != AudioStartSource.hostReported) {
+      return 'round.prepare: a cue needs audio_start_source host_reported';
+    }
+    if (isTextRound != silent) {
+      return 'round.prepare: prompt text_round goes with audio_start_source '
+          'none, and only with it';
+    }
+    if (silent && (clip != null || cue != null)) {
+      return 'round.prepare: a round without audio carries no clip or cue';
+    }
+    if (textPrompt != null && !isTextRound) {
+      return 'round.prepare: text_prompt is only sent in a text round';
+    }
+    return null;
+  }
 
   @override
   String get type => WsServerMessage.roundPrepare;
@@ -370,6 +420,8 @@ final class RoundPrepare extends ServerMessage {
     'audio_start_source': audioStartSource.wire,
     'commit_hash': commitHash,
     'clip': ?clip?.toJson(),
+    'cue': ?cue?.toJson(),
+    'text_prompt': ?textPrompt?.toJson(),
   };
 }
 
@@ -811,7 +863,9 @@ sealed class ClientMessage {
   WsEnvelope toEnvelope(int seq) =>
       WsEnvelope(type: type, seq: seq, payload: toJson());
 
-  /// Used by tests and tools that play the server's side.
+  /// Used by tests and tools that play the server's side. Strict like the
+  /// server: unknown fields, explicit nulls and negative `*_mono_us` are
+  /// [ProtocolFormatException]s.
   static ClientMessage fromJson(String type, JsonMap payload) => switch (type) {
     WsClientMessage.hello => Hello.fromJson(payload),
     WsClientMessage.clockPong => ClockPong.fromJson(payload),
@@ -821,7 +875,7 @@ sealed class ClientMessage {
       payload,
     ),
     WsClientMessage.lobbyKick => LobbyKick.fromJson(payload),
-    WsClientMessage.gameStart => const GameStart(),
+    WsClientMessage.gameStart => _empty(payload, const GameStart()),
     WsClientMessage.roundPreloaded => RoundPreloaded.fromJson(payload),
     WsClientMessage.roundPlaybackStarted => RoundPlaybackStarted.fromJson(
       payload,
@@ -835,13 +889,18 @@ sealed class ClientMessage {
     WsClientMessage.adInterstitialResult => AdInterstitialResult.fromJson(
       payload,
     ),
-    WsClientMessage.gamePlayAgain => const GamePlayAgain(),
-    WsClientMessage.roomLeave => const RoomLeave(),
+    WsClientMessage.gamePlayAgain => _empty(payload, const GamePlayAgain()),
+    WsClientMessage.roomLeave => _empty(payload, const RoomLeave()),
     _ => throw ProtocolFormatException('unknown client message "$type"'),
   };
 
   static ClientMessage fromEnvelope(WsEnvelope envelope) =>
       fromJson(envelope.type, envelope.payload);
+
+  static ClientMessage _empty(JsonMap payload, ClientMessage message) {
+    payload.expectOnly(const {});
+    return message;
+  }
 }
 
 final class Hello extends ClientMessage {
@@ -853,7 +912,7 @@ final class Hello extends ClientMessage {
   });
 
   factory Hello.fromJson(JsonMap json) => Hello(
-    ticket: json.str('ticket'),
+    ticket: (json..expectOnly(_keys)).str('ticket'),
     appVersion: json.str('app_version'),
     platform: json.wire('platform', AppPlatform.values),
     lastSeq: json.optInt('last_seq'),
@@ -867,6 +926,8 @@ final class Hello extends ClientMessage {
 
   /// Last server seq received; asks the server to replay after it.
   final int? lastSeq;
+
+  static const _keys = {'ticket', 'app_version', 'platform', 'last_seq'};
 
   @override
   String get type => WsClientMessage.hello;
@@ -888,17 +949,20 @@ final class ClockPong extends ClientMessage {
   });
 
   factory ClockPong.fromJson(JsonMap json) => ClockPong(
-    pingId: json.str('ping_id'),
+    pingId: (json..expectOnly(_keys)).str('ping_id'),
     t1ServerUs: json.integer('t1_server_us'),
-    t2MonoUs: json.integer('t2_mono_us'),
+    t2MonoUs: json.monoUs('t2_mono_us'),
   );
+
+  static const _keys = {'ping_id', 't1_server_us', 't2_mono_us'};
 
   final String pingId;
 
   /// Echoed from `clock.ping`.
   final int t1ServerUs;
 
-  /// `InputClockApi.nowMicros()` when the ping arrived.
+  /// `InputClock.nowMicros()` when the ping arrived: the OS input clock
+  /// minus the process anchor (brief §5).
   final int t2MonoUs;
 
   @override
@@ -916,8 +980,9 @@ final class ClockPong extends ClientMessage {
 final class AppStateMessage extends ClientMessage {
   const AppStateMessage(this.state);
 
-  factory AppStateMessage.fromJson(JsonMap json) =>
-      AppStateMessage(json.wire('state', AppStateSignal.values));
+  factory AppStateMessage.fromJson(JsonMap json) => AppStateMessage(
+    (json..expectOnly(const {'state'})).wire('state', AppStateSignal.values),
+  );
 
   final AppStateSignal state;
 
@@ -932,7 +997,7 @@ final class LobbyReady extends ClientMessage {
   const LobbyReady({required this.ready});
 
   factory LobbyReady.fromJson(JsonMap json) =>
-      LobbyReady(ready: json.boolean('ready'));
+      LobbyReady(ready: (json..expectOnly(const {'ready'})).boolean('ready'));
 
   final bool ready;
 
@@ -955,7 +1020,7 @@ final class LobbyUpdateSettings extends ClientMessage {
   });
 
   factory LobbyUpdateSettings.fromJson(JsonMap json) => LobbyUpdateSettings(
-    mode: json.wire('mode', GameMode.values),
+    mode: (json..expectOnly(_keys)).wire('mode', GameMode.values),
     roundsTotal: json.integer('rounds_total'),
     shuffleStrategy: json.optWire('shuffle_strategy', ShuffleStrategy.values),
     explicitFilter: json.boolean('explicit_filter'),
@@ -972,6 +1037,15 @@ final class LobbyUpdateSettings extends ClientMessage {
   final bool explicitFilter;
   final List<PoolSource> poolSources;
   final String? packId;
+
+  static const _keys = {
+    'mode',
+    'rounds_total',
+    'shuffle_strategy',
+    'explicit_filter',
+    'pool_sources',
+    'pack_id',
+  };
 
   @override
   String get type => WsClientMessage.lobbyUpdateSettings;
@@ -990,8 +1064,9 @@ final class LobbyUpdateSettings extends ClientMessage {
 final class LobbyKick extends ClientMessage {
   const LobbyKick({required this.playerId});
 
-  factory LobbyKick.fromJson(JsonMap json) =>
-      LobbyKick(playerId: json.str('player_id'));
+  factory LobbyKick.fromJson(JsonMap json) => LobbyKick(
+    playerId: (json..expectOnly(const {'player_id'})).str('player_id'),
+  );
 
   final String playerId;
 
@@ -1020,7 +1095,9 @@ final class RoundPreloaded extends ClientMessage {
   });
 
   factory RoundPreloaded.fromJson(JsonMap json) => RoundPreloaded(
-    roundId: json.str('round_id'),
+    roundId: (json..expectOnly(const {'round_id', 'ok', 'preload_ms'})).str(
+      'round_id',
+    ),
     ok: json.boolean('ok'),
     preloadMs: json.integer('preload_ms'),
   );
@@ -1046,18 +1123,29 @@ final class RoundPlaybackStarted extends ClientMessage {
   });
 
   factory RoundPlaybackStarted.fromJson(JsonMap json) => RoundPlaybackStarted(
-    roundId: json.str('round_id'),
-    audioStartMonoUs: json.integer('audio_start_mono_us'),
+    roundId: (json..expectOnly(_keys)).str('round_id'),
+    audioStartMonoUs: json.monoUs('audio_start_mono_us'),
     outputLatencyMs: json.integer('output_latency_ms'),
     outputRoute: json.wire('output_route', OutputRoute.values),
     source: json.wire('source', PlaybackStartSource.values),
   );
 
   final String roundId;
+
+  /// When the audio started, on the anchored input clock. For `dj_tap` it is
+  /// the DJ's pointer-down time on «Музыка играет!».
   final int audioStartMonoUs;
   final int outputLatencyMs;
   final OutputRoute outputRoute;
   final PlaybackStartSource source;
+
+  static const _keys = {
+    'round_id',
+    'audio_start_mono_us',
+    'output_latency_ms',
+    'output_route',
+    'source',
+  };
 
   @override
   String get type => WsClientMessage.roundPlaybackStarted;
@@ -1076,7 +1164,7 @@ final class RoundPlaybackFailed extends ClientMessage {
   const RoundPlaybackFailed({required this.roundId, required this.reason});
 
   factory RoundPlaybackFailed.fromJson(JsonMap json) => RoundPlaybackFailed(
-    roundId: json.str('round_id'),
+    roundId: (json..expectOnly(const {'round_id', 'reason'})).str('round_id'),
     reason: json.str('reason'),
   );
 
@@ -1103,21 +1191,31 @@ final class RoundAnswer extends ClientMessage {
   });
 
   factory RoundAnswer.fromJson(JsonMap json) => RoundAnswer(
-    roundId: json.str('round_id'),
+    roundId: (json..expectOnly(_keys)).str('round_id'),
     nonce: json.str('nonce'),
     optionId: json.str('option_id'),
-    tapMonoUs: json.integer('tap_mono_us'),
-    unlockMonoUs: json.integer('unlock_mono_us'),
+    tapMonoUs: json.monoUs('tap_mono_us'),
+    unlockMonoUs: json.monoUs('unlock_mono_us'),
   );
+
+  static const _keys = {
+    'round_id',
+    'nonce',
+    'option_id',
+    'tap_mono_us',
+    'unlock_mono_us',
+  };
 
   final String roundId;
   final String nonce;
   final String optionId;
 
-  /// `PointerDownEvent.timeStamp` of the committing tap (OS touch time).
+  /// `PointerDownEvent.timeStamp` of the committing tap, converted with
+  /// `InputClock.fromOs` (OS touch time minus the process anchor).
   final int tapMonoUs;
 
-  /// Frame timestamp of the first frame that showed enabled buttons.
+  /// Frame timestamp of the first frame that showed enabled buttons, on the
+  /// same anchored clock.
   final int unlockMonoUs;
 
   @override
@@ -1134,23 +1232,28 @@ final class RoundAnswer extends ClientMessage {
 }
 
 final class BonusRequest extends ClientMessage {
-  const BonusRequest({required this.bonusId, required this.appCheckToken});
+  const BonusRequest({required this.bonusId, this.appCheckToken});
 
   factory BonusRequest.fromJson(JsonMap json) => BonusRequest(
-    bonusId: json.str('bonus_id'),
-    appCheckToken: json.str('app_check_token'),
+    bonusId: (json..expectOnly(const {'bonus_id', 'app_check_token'})).str(
+      'bonus_id',
+    ),
+    appCheckToken: json.optStr('app_check_token'),
   );
 
   final String bonusId;
 
-  /// Limited-use App Check token (brief §7 "Attestation").
-  final String appCheckToken;
+  /// Limited-use App Check token (brief §7 "Attestation"). Omitted when the
+  /// device has none; the server then accepts the request only while
+  /// `app_check_mode` is not `enforce`. An empty string (older clients) is
+  /// still valid on the wire.
+  final String? appCheckToken;
 
   @override
   String get type => WsClientMessage.bonusRequest;
 
   @override
-  JsonMap toJson() => {'bonus_id': bonusId, 'app_check_token': appCheckToken};
+  JsonMap toJson() => {'bonus_id': bonusId, 'app_check_token': ?appCheckToken};
 }
 
 /// Informational only; the round is granted only through SSV.
@@ -1158,7 +1261,7 @@ final class BonusAdResult extends ClientMessage {
   const BonusAdResult({required this.bonusId, required this.status});
 
   factory BonusAdResult.fromJson(JsonMap json) => BonusAdResult(
-    bonusId: json.str('bonus_id'),
+    bonusId: (json..expectOnly(const {'bonus_id', 'status'})).str('bonus_id'),
     status: json.wire('status', BonusAdStatus.values),
   );
 
@@ -1180,7 +1283,9 @@ final class AdInterstitialResult extends ClientMessage {
   });
 
   factory AdInterstitialResult.fromJson(JsonMap json) => AdInterstitialResult(
-    gameId: json.str('game_id'),
+    gameId: (json..expectOnly(const {'game_id', 'result', 'wait_ms'})).str(
+      'game_id',
+    ),
     result: json.wire('result', InterstitialWireResult.values),
     waitMs: json.integer('wait_ms'),
   );

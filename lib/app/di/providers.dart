@@ -15,6 +15,7 @@ import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/analytics/firebase_analytics_backend.dart';
+import 'package:sporand/core/auth/age_band_sync.dart';
 import 'package:sporand/core/auth/auth_api.dart';
 import 'package:sporand/core/auth/auth_service.dart';
 import 'package:sporand/core/clock/input_clock.dart';
@@ -31,6 +32,7 @@ import 'package:sporand/core/net/ws_connection.dart';
 import 'package:sporand/core/platform/app_info.dart';
 import 'package:sporand/core/platform/app_platform.dart';
 import 'package:sporand/core/playback/clip_player_adapter.dart';
+import 'package:sporand/core/playback/music_app_launcher.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 import 'package:sporand/core/playback/spotify_remote_playback_adapter.dart';
 import 'package:sporand/core/purchases/entitlement_sync_api.dart';
@@ -222,6 +224,16 @@ final authServiceProvider = Provider<AuthService>(
   ),
 );
 
+/// Sends the age gate's band to the server before a room is created or
+/// joined (`PATCH /v1/me`); a no-op without a backend.
+final ageBandSyncProvider = Provider<AgeBandSync>(
+  (ref) => AgeBandSync(
+    client: ref.watch(apiClientProvider),
+    prefs: ref.watch(userPrefsProvider),
+    currentUserId: () => ref.read(authServiceProvider).currentUserId(),
+  ),
+);
+
 final entitlementSyncProvider = Provider<EntitlementSyncApi>((ref) {
   final client = ref.watch(apiClientProvider);
   return client == null
@@ -229,21 +241,22 @@ final entitlementSyncProvider = Provider<EntitlementSyncApi>((ref) {
       : HttpEntitlementSyncApi(client);
 });
 
-/// The OS input clock (brief §5). Desktop dev runs have no native bridge.
+/// The anchored input clock (brief §5). One per process: its anchor is read
+/// in `bootstrap()`. Desktop dev runs have no native bridge.
 final inputClockProvider = Provider<InputClock>((ref) {
   final platform = ref.watch(appEnvProvider).platform;
-  return platform == AppPlatform.other
-      ? StopwatchInputClock()
-      : PigeonInputClock();
+  return InputClock(
+    platform == AppPlatform.other
+        ? StopwatchInputClockSource()
+        : PigeonInputClockSource(),
+  );
 });
 
-/// Adapter for the flavor's default provider; the boot `music_provider`
-/// step initializes it.
+/// Adapter for the provider new rooms request ([AppEnv.roomProvider]); the
+/// boot `music_provider` step initializes it.
 final playbackAdapterProvider = Provider<PlaybackAdapter>(
   (ref) => ref.watch(playbackAdapterFactoryProvider)(
-    ref.watch(appEnvProvider).flavor == Flavor.spotifyProto
-        ? MusicProviderId.spotifyAppRemote
-        : MusicProviderId.testCatalog,
+    ref.watch(appEnvProvider).roomProvider,
   ),
 );
 
@@ -252,15 +265,26 @@ final playbackAdapterFactoryProvider =
     Provider<PlaybackAdapter Function(MusicProviderId provider)>((ref) {
       final clock = ref.watch(inputClockProvider);
       return (provider) => switch (provider) {
-        MusicProviderId.testCatalog ||
-        MusicProviderId.licensedClips => ClipPlayerAdapter(provider),
+        MusicProviderId.testCatalog || MusicProviderId.licensedClips =>
+          ClipPlayerAdapter(provider, clock: clock),
         // TODO(owner, Q1): a real bridge once SpotifyRemoteApi exists.
         MusicProviderId.spotifyAppRemote => SpotifyRemotePlaybackAdapter(
           bridge: const UnavailableSpotifyRemoteBridge(),
           clock: clock,
         ),
+        // A2: the app never plays audio for these providers.
+        MusicProviderId.externalPlayer ||
+        MusicProviderId.none => NoAudioPlaybackAdapter(provider),
       };
     });
+
+/// Hands the DJ's cue to their own music app (external_player, A2.2).
+final musicAppLauncherProvider = Provider<MusicAppLauncher>(
+  (ref) => NativeMusicAppLauncher(
+    platform: ref.watch(appEnvProvider).platform,
+    links: ref.watch(externalLinkLauncherProvider),
+  ),
+);
 
 final wsConnectorProvider = Provider<WsConnector>(
   (ref) => ChannelWsConnection.connect,
