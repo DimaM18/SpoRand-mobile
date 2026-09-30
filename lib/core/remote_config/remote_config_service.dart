@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
 import 'package:sporand/core/remote_config/remote_config_keys.dart';
 
@@ -124,6 +125,19 @@ class RemoteConfigService {
   bool get rewardedPreloadEnabled => get(RcKeys.rewardedPreloadEnabled);
   Duration get maxAdWait => _ms(RcKeys.maxAdWaitMs);
   String get paywallVariant => get(RcKeys.paywallVariant);
+
+  /// `modes_enabled` (wave 4): the modes the mode picker offers, in
+  /// [GameMode] order.
+  List<GameMode> get modesEnabled {
+    final items = RcKeys.modesEnabled.itemsOf(get(RcKeys.modesEnabled));
+    return [
+      for (final mode in GameMode.values)
+        if (items.contains(mode.wire)) mode,
+    ];
+  }
+
+  /// `youtube_player_min_width_dp`: the target width of the embedded player.
+  int get youtubePlayerMinWidthDp => get(RcKeys.youtubePlayerMinWidthDp);
 
   // Features and territories.
   bool get spotifyProtoEnabled => get(RcKeys.spotifyProtoEnabled);

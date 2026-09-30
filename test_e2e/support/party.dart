@@ -1,4 +1,6 @@
 import 'package:sporand/core/ads/ads_service.dart';
+import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/features/lobby/presentation/lobby_controller.dart';
 
@@ -20,7 +22,17 @@ const List<({int uptimeUs, int anchorUs})> _phoneClocks = [
   (uptimeUs: 3024000000000, anchorUs: 12345),
   // Up for three hours; the app started a second ago.
   (uptimeUs: 10800000000, anchorUs: 10799000000),
+  // Up for two days; the app started an hour after boot.
+  (uptimeUs: 172800000000, anchorUs: 3600000000),
+  // Up for 90 seconds.
+  (uptimeUs: 90000000, anchorUs: 30000000),
 ];
+
+/// A made-up YouTube video id (11 characters): [prefix] (up to 5
+/// characters) plus a zero-padded [n]. Never a real video; nothing in the
+/// suite calls YouTube.
+String e2eVideoId(String prefix, int n) =>
+    '$prefix${'$n'.padLeft(11 - prefix.length, '0')}';
 
 /// Queries a player might type into «Мои песни» (the seed song source).
 const List<String> _songQueries = ['the', 'a', 'e', 'o', 'i', 'n', 'r'];
@@ -33,6 +45,13 @@ final class Party {
   Party._(this.phones, this.audit, this._api, this._provider);
 
   final List<E2ePhone> phones;
+
+  /// «Мои песни» of each phone, as saved.
+  final Map<E2ePhone, List<Song>> picks = {};
+
+  /// song id -> the YouTube video id its owner linked in «Мои песни»
+  /// (only with `videoPrefix`).
+  final Map<String, String> videos = {};
   final ContractAudit audit;
   final Uri _api;
   final MusicProviderId _provider;
@@ -44,8 +63,10 @@ final class Party {
   /// [provider], the others join by code, everyone picks
   /// [picksPerPlayer] songs through the song search and saves them, the
   /// sockets connect and sync their clocks, and everyone adds their songs to
-  /// the room (both skipped when [pools] is false: emoji_quiz). Returns once
-  /// the host's lobby has no start blocker.
+  /// the room (both skipped when [pools] is false: emoji_quiz). With
+  /// [videoPrefix] every pick links a made-up YouTube video
+  /// ([e2eVideoId], `song_picks`), which the room pool carries on. Returns
+  /// once the host's lobby has no start blocker.
   static Future<Party> assemble({
     required Uri api,
     required List<String> names,
@@ -53,7 +74,9 @@ final class Party {
     required MusicProviderId provider,
     required ContractAudit audit,
     Map<int, AdsService> ads = const {},
+    Map<int, ConsentService> consent = const {},
     bool pools = true,
+    String? videoPrefix,
   }) async {
     final phones = [
       for (final (index, name) in names.indexed)
@@ -64,6 +87,7 @@ final class Party {
           anchorUs: _phoneClocks[index].anchorUs,
           roomProvider: provider,
           ads: ads[index],
+          consent: consent[index],
         ),
     ];
     for (final phone in phones) {
@@ -79,21 +103,33 @@ final class Party {
     // players own would be excluded from whose_song).
     final taken = <String>{};
     for (final phone in pools ? phones : const <E2ePhone>[]) {
-      final picks = <String>[];
+      final picks = <Song>[];
       for (final query in _songQueries) {
         for (final song in await phone.searchSongs(query)) {
           if (picks.length < picksPerPlayer &&
               !song.explicit &&
               taken.add(song.songId)) {
-            picks.add(song.songId);
+            picks.add(song);
           }
         }
         if (picks.length == picksPerPlayer) break;
       }
-      final saved = await phone.savePicks(picks);
+      final videos = {
+        if (videoPrefix != null)
+          for (final song in picks)
+            song.songId: e2eVideoId(
+              videoPrefix,
+              party.videos.length + picks.indexOf(song),
+            ),
+      };
+      final saved = await phone.savePicks([
+        for (final song in picks) song.songId,
+      ], videos: videos);
       if (saved.length != picksPerPlayer) {
         throw StateError('${phone.name}: saved ${saved.length} picks');
       }
+      party.picks[phone] = picks;
+      party.videos.addAll(videos);
     }
 
     await party.host.createRoom(mode);
@@ -143,6 +179,16 @@ final class Party {
     await phone.signIn();
     return phone;
   }
+
+  /// The phone whose «Мои песни» hold the song titled [title].
+  E2ePhone ownerOfTitle(String title) => picks.entries
+      .singleWhere((e) => e.value.any((song) => song.title == title))
+      .key;
+
+  /// The song titled [title] among the players' picks.
+  Song songTitled(String title) => picks.values
+      .expand((songs) => songs)
+      .singleWhere((song) => song.title == title);
 
   E2ePhone byPlayerId(String playerId) =>
       phones.firstWhere((p) => p.playerId == playerId);

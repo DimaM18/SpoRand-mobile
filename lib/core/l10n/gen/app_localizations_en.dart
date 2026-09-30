@@ -906,7 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Songs from the old catalogue need to be replaced';
 
   @override
-  String get modeEmojiQuiz => 'Emoji quiz';
+  String get modeEmojiQuiz => 'Guess the song';
 
   @override
   String get modeEmojiQuizHint => 'Guess the song from emoji — no music needed';
@@ -977,4 +977,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lobbyEmojiHint => 'No music: phones are enough';
+
+  @override
+  String get gameYouTubePressPlay =>
+      'Press ▶ in the player. If YouTube shows an ad first, wait for the song';
+
+  @override
+  String get gameYouTubeTapWhenPlaying =>
+      'When the song starts, tap the button below';
+
+  @override
+  String get gameYouTubeConsentTitle => 'Turn on the YouTube player?';
+
+  @override
+  String get gameYouTubeConsentBody =>
+      'The song plays in the official YouTube player. When it loads, YouTube (Google) receives data about your device and may show ads.';
+
+  @override
+  String get gameYouTubeConsentAllow => 'Allow';
+
+  @override
+  String get gameYouTubeConsentDecline => 'No, I\'ll play it myself';
+
+  @override
+  String get gameYouTubeFallback =>
+      'The video won\'t play — start the song yourself';
+
+  @override
+  String get gameYouTubeDeclined =>
+      'Without YouTube: play the song in your own app';
+
+  @override
+  String get mySongsYouTubeAdd => 'YouTube video';
+
+  @override
+  String mySongsYouTubeTitle(String song) {
+    return 'Video for “$song”';
+  }
+
+  @override
+  String get mySongsYouTubeHint =>
+      'Paste a link to the song\'s official video: when you are the DJ, it plays in the YouTube player';
+
+  @override
+  String get mySongsYouTubeField => 'YouTube link';
+
+  @override
+  String get mySongsYouTubePaste => 'Paste';
+
+  @override
+  String get mySongsYouTubeCheck => 'Check';
+
+  @override
+  String get mySongsYouTubeUse => 'Link';
+
+  @override
+  String get mySongsYouTubeCancel => 'Cancel';
+
+  @override
+  String get mySongsYouTubeRemove => 'Remove video';
+
+  @override
+  String get mySongsYouTubeInvalid => 'This is not a YouTube video link';
+
+  @override
+  String get mySongsYouTubeNotFound => 'Video not found or private';
+
+  @override
+  String get mySongsYouTubeNotEmbeddable =>
+      'The owner does not allow this video in apps';
+
+  @override
+  String get mySongsYouTubeFailed => 'Could not check the link';
+
+  @override
+  String get mySongsYouTubeLinked => 'YouTube video linked';
+
+  @override
+  String mySongsYouTubeChannel(String channel) {
+    return 'Channel: $channel';
+  }
 }

@@ -40,6 +40,7 @@ final class RoundView {
     required this.audioStartSource,
     this.mode,
     this.cue,
+    this.video,
     this.textPrompt,
     this.emojiPrompt,
     this.youAreDj = false,
@@ -76,6 +77,7 @@ final class RoundView {
     answerWindowMs: m.answerWindowMs,
     audioStartSource: m.audioStartSource,
     cue: m.cue,
+    video: m.video,
     textPrompt: m.textPrompt,
     emojiPrompt: m.emojiPrompt,
     youAreDj: m.youAreDj,
@@ -110,6 +112,10 @@ final class RoundView {
 
   /// DJ only (external_player): the song to start in their music app.
   final RoundCue? cue;
+
+  /// DJ only (youtube_embed): the video for the embedded player; the [cue]
+  /// is its fallback.
+  final RoundVideo? video;
 
   /// whose_song text round: the song everyone reads.
   final RoundTextPrompt? textPrompt;
@@ -218,6 +224,40 @@ final class RoundDjWatching extends RoundPhase {
   const RoundDjWatching();
 }
 
+/// The DJ's embedded YouTube player in a youtube_embed round
+/// (`round.prepare.video`) [новое имя — согласовать].
+sealed class DjVideoStage {
+  const DjVideoStage();
+}
+
+/// EU/EEA (or region unknown) without consent: ask before the player is
+/// created (YouTube III.E.4.i).
+final class DjVideoConsent extends DjVideoStage {
+  const DjVideoConsent();
+}
+
+/// The official player for [videoId] is on screen; the DJ presses play in
+/// it. [attempt] is 0 for `video_id`, then 1.. for `fallback_video_ids`.
+final class DjVideoPlayer extends DjVideoStage {
+  const DjVideoPlayer({
+    required this.videoId,
+    required this.startS,
+    required this.attempt,
+  });
+
+  final String videoId;
+  final int startS;
+  final int attempt;
+}
+
+/// No playable video (every candidate failed, the screen is too narrow or
+/// consent was declined): the BYOP cue card instead.
+final class DjVideoCueFallback extends DjVideoStage {
+  const DjVideoCueFallback(this.reason);
+
+  final VideoPlaybackFailureReason reason;
+}
+
 final class GameRoundState extends GameUiState {
   const GameRoundState({
     required this.round,
@@ -226,6 +266,7 @@ final class GameRoundState extends GameUiState {
     this.eligibleCount = 0,
     this.airplayWarning = false,
     this.voidNotice,
+    this.djVideo,
   });
 
   final RoundView round;
@@ -239,6 +280,13 @@ final class GameRoundState extends GameUiState {
   /// «Раунд пропущен: <причина>» over a spare round, until `void_notice_ms`
   /// after `round.voided` passed. [новое имя — согласовать]
   final RoundVoidReason? voidNotice;
+
+  /// DJ of a youtube_embed round only: where the embedded player stands.
+  final DjVideoStage? djVideo;
+
+  /// The embedded player is on screen (it stays until the round ends, also
+  /// after «Музыка играет!»).
+  bool get showsVideoPlayer => djVideo is DjVideoPlayer;
 
   /// No buttons for the track's owner or for a DJ who may not answer; the
   /// DJ sees the cue card instead until the song plays.
@@ -254,6 +302,7 @@ final class GameRoundState extends GameUiState {
     int? eligibleCount,
     bool? airplayWarning,
     bool clearVoidNotice = false,
+    DjVideoStage? djVideo,
   }) => GameRoundState(
     round: round,
     phase: phase ?? this.phase,
@@ -261,6 +310,7 @@ final class GameRoundState extends GameUiState {
     eligibleCount: eligibleCount ?? this.eligibleCount,
     airplayWarning: airplayWarning ?? this.airplayWarning,
     voidNotice: clearVoidNotice ? null : voidNotice,
+    djVideo: djVideo ?? this.djVideo,
   );
 }
 

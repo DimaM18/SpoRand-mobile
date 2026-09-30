@@ -23,7 +23,8 @@ flutter run --dart-define=FLAVOR=spotifyProto # no ads, no purchases, no paywall
 | `REVENUECAT_API_KEY_IOS` / `_ANDROID` | RevenueCat public SDK keys (dev without a key shows a demo paywall) |
 | `ADMOB_INTERSTITIAL_*`, `ADMOB_REWARDED_*` | ad units; dev/staging fall back to Google test units, prod never does |
 | `STORE_URL_*`, `TERMS_URL`, `PRIVACY_URL` | force-update target and legal links |
-| `ROOM_PROVIDER` | provider new rooms request (QA); default `test_catalog` in dev, `external_player` in staging/prod, `spotify_app_remote` in spotifyProto. The server may fall back to its `default_provider` (addendum A2.5) |
+| `ROOM_PROVIDER` | provider new rooms request (QA); default `test_catalog` in dev, `youtube_embed` in staging/prod (wave 4), `spotify_app_remote` in spotifyProto. The server may fall back to its `default_provider` (addendum A2.5) |
+| `APP_BUNDLE_ID` | iOS bundle id / Android application id (default: the placeholder `dev.brandtbd.sporand`); the embedded YouTube player identifies the app as `https://<bundle id>` |
 
 Without Firebase config files the app still boots: Firebase-backed services
 use in-memory fakes (dev) or degrade to no-ops (other flavors), and the boot
@@ -107,12 +108,63 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   (Международные / Польские; there is no Russian/CIS market) and the max
   difficulty; emoji rooms need 2 players and no pools. The catalogue itself
   never reaches the app.
+- **YouTube / `youtube_embed`** (wave 4) [новое имя — согласовать]: the
+  round's DJ plays the song in the **official** embedded YouTube player
+  (`lib/core/playback/youtube/`: `YouTubePlayerFactory` /
+  `YouTubeEmbedPlayer`, real `IframeYouTubePlayerFactory` over
+  `youtube_player_iframe` 6.0.2, `FakeYouTubePlayerFactory` in tests: no
+  WebView in `flutter test`). Everyone else sees «<имя> включает песню…» as
+  in BYOP. Rules the code keeps (YouTube API Services policies, checked
+  2026-09-30):
+  - the player (`DjVideoSlot` / `YouTubeRoundPlayer`) is full width at 16:9,
+    pinned above the round's scrolling content, fully visible, with nothing
+    drawn over it (the void notice moves below it); the DJ presses play in
+    the player (no autoplay); «Музыка играет!» (`DjMusicPlayingButton`,
+    `Listener.onPointerDown` + `InputClock`, `source: dj_tap`) sits **below**
+    it. Pre-roll ads are never blocked or skipped; player states are logged
+    in debug builds only, never used for timing;
+  - the wrapper renders the package's WebView itself instead of the
+    package's `YoutubePlayer` widget (that one paints a Flutter thumbnail
+    over the player while loading and lifts the WebView into an app-wide
+    overlay), passes `origin` / `widget_referrer` and the WebView base URL
+    `https://<bundle id>` (a missing identity is error 153), and forwards
+    raw `onError` codes through an extra JavaScript channel because the
+    package reports 153 as `unknown(-1)`;
+  - on an error the controller sends `round.playback_failed{reason, code,
+    video_id}` and tries `fallback_video_ids` in order, then shows the BYOP
+    cue card (`DjVideoCueFallback`). Screens narrower than 356 dp (the
+    YouTube 200 px floor at 16:9) get the cue without a report;
+  - the player is disposed in the frame the round leaves play (reveal,
+    void, pause, ad break) and whenever the app goes to the background
+    (recreated on resume); ads and results never share a screen with it;
+  - consent (`YouTubeConsentGate`, `requires_consent_before_load`): outside
+    the EEA/UK (UMP `notRequired`) the player loads; otherwise the DJ sees a
+    short consent sheet first. «Разрешить» is stored
+    (`youtube_player_consent`); «Нет, включу сам» sends
+    `playback_failed{consent_declined}` and shows the cue, and is not asked
+    again in this app session;
+  - analytics drop `video` / `youtube` parameter names and YouTube-looking
+    values (`AnalyticsService.isYouTubeContentValue`, as in the protocol).
+  - Deviation: `youtube_player_min_width_dp` (default 480) is the target
+    width, but portrait phones are 360–430 dp wide, so the player takes the
+    full width whenever it clears the 356 dp floor (owner question).
+- **Modes** (wave 4): the picker (create-room sheet, lobby) shows only
+  `modes_enabled` (the room's frozen config in the lobby, Remote Config
+  before a room exists; default whose_song and emoji_quiz). The UI calls
+  `emoji_quiz` «Угадай песню»; `guess_track` («Угадай трек») stays in code,
+  hidden unless enabled.
 - **Voided rounds**: «Раунд пропущен: <причина>» stays over the spare round
   until `void_notice_ms` (room config) after `round.voided`; it ignores
   pointers and does not delay the spare.
 - **«Мои песни»** (`lib/features/my_songs/`, route `/my-songs`, A2.3):
   debounced `GET /v1/songs/search`, 5–10 picks saved with `PUT /v1/me/picks`,
-  and «Что увидят друзья». In the lobby, «Добавить мои песни» sends the pool
+  and «Что увидят друзья». Wave 4: «Видео YouTube» on a picked song pastes
+  a link (clipboard; the link is picked out of shared text), resolves it
+  with `POST /v1/songs/youtube/resolve` and shows title and channel as text
+  only (never a thumbnail); saving sends `song_picks` with
+  `youtube_video_id` (plain `song_ids` while no song has a video), and the
+  lobby pool carries the video id. Title and channel stay in memory only.
+  No share-extension target yet. In the lobby, «Добавить мои песни» sends the pool
   with `PUT /v1/rooms/{room_id}/pool` only after the consent «Эти песни будут
   показаны комнате как ваши»; the host's start stays disabled until the
   pools meet `pool_min_tracks_per_contributor` and the mode's minimums.
@@ -213,7 +265,19 @@ Without `API_BASE_URL` (or `E2E_API_BASE_URL`) the suites skip, so a plain
   `dj_ineligible`), `text_round_game_test.dart` (provider none, local unlock
   at `start_at`, lobby settings, ready, kick with 4403, play again),
   `reconnect_resume_test.dart` (`app.state` re-sync, lost frames and socket,
-  resume with `hello.last_seq`).
+  resume with `hello.last_seq`), plus the DJ rotation, emoji quiz and
+  account/consent suites. Wave 4: `youtube_embed_game_test.dart` (video and
+  cue to the DJ only, consent before the player, `embed_disabled` →
+  fallback video without a void, `dj_tap` start; consent declined → cue
+  rounds and a rewarded bonus played as an emoji round) and
+  `modes_enabled_test.dart` (guess_track refused at `/mode` by default).
+- **Two servers.** `scripts/e2e.sh` starts a second server that also enables
+  guess_track; `byop_guess_track_test.dart` runs against it through
+  `E2E_GUESS_TRACK_API_BASE_URL` «[новое имя — согласовать]». The e2e config
+  sets `ssv_optimistic_grant`, so the bonus is granted without a signed SSV
+  callback (the signed path is covered by the server suites only). The suite
+  drives `GameController` the way the YouTube player widget would; the real
+  WebView is not exercised.
 
 ```sh
 scripts/e2e.sh                                          # from the repo root
@@ -222,6 +286,14 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
 
 ## TODO(owner) before a store build
 
+- YouTube (wave 4): run a youtube_embed round on a real iPhone and Android
+  phone: the player loads with `https://<bundle id>` (no error 153), the
+  raw error channel works, nothing overlays the player, audio stops on
+  reveal and in the background. None of this has run on a device.
+- Decide `youtube_player_min_width_dp` (480 does not fit portrait phones;
+  356 is the YouTube floor) and the real `APP_BUNDLE_ID`.
+- Android share intent into «Мои песни» (needs a plugin and an intent
+  filter); today the link is pasted.
 - Firebase: run `flutterfire configure` (adds GoogleService-Info.plist,
   google-services.json and the Google Services Gradle plugin); both files are
   git-ignored.

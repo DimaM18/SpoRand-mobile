@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sporand/app/di/providers.dart';
+import 'package:sporand/core/net/api_client.dart';
 import 'package:sporand/core/net/protocol/rest_models.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/my_songs/data/my_songs_api.dart';
@@ -20,6 +21,44 @@ String pickId(CatalogPick pick) => switch (pick) {
   LegacyCatalogPick(:final track) => track.catalogTrackId,
 };
 
+/// What identifies a saved pick: its id and its linked video.
+String pickKey(CatalogPick pick) => switch (pick) {
+  SongPick(:final song, :final youtubeVideoId) =>
+    '${song.songId}|${youtubeVideoId ?? ''}',
+  LegacyCatalogPick(:final track) => track.catalogTrackId,
+};
+
+/// The first YouTube link in pasted or shared text (a share often adds a
+/// title around it), or null. The server does the real parsing and
+/// normalization (`parseYouTubeUrl`); this only picks the candidate.
+/// [новое имя — согласовать]
+String? extractYouTubeLink(String text) {
+  final match = RegExp(
+    r'(?:https?://)?(?:[a-z0-9-]+\.)*(?:youtube\.com|youtube-nocookie\.com|youtu\.be)/\S+',
+    caseSensitive: false,
+  ).firstMatch(text);
+  return match?.group(0);
+}
+
+/// The result of resolving a pasted YouTube link. [новое имя — согласовать]
+sealed class YouTubeLinkResult {
+  const YouTubeLinkResult();
+}
+
+final class YouTubeLinkResolved extends YouTubeLinkResult {
+  const YouTubeLinkResolved(this.video);
+
+  final YouTubeResolveResponse video;
+}
+
+enum YouTubeLinkError { invalid, notFound, notEmbeddable, failed }
+
+final class YouTubeLinkFailed extends YouTubeLinkResult {
+  const YouTubeLinkFailed(this.error);
+
+  final YouTubeLinkError error;
+}
+
 final class MySongsState {
   const MySongsState({
     required this.limits,
@@ -32,6 +71,7 @@ final class MySongsState {
     this.searching = false,
     this.searchFailed = false,
     this.saving = false,
+    this.videos = const {},
   });
 
   final PicksLimits limits;
@@ -41,13 +81,19 @@ final class MySongsState {
   /// The current selection, in order.
   final List<CatalogPick> picks;
 
-  /// Ids as last loaded or saved (to know whether there is anything to save).
+  /// [pickKey]s as last loaded or saved (to know whether there is anything
+  /// to save).
   final List<String> savedIds;
   final String query;
   final List<Song> results;
   final bool searching;
   final bool searchFailed;
   final bool saving;
+
+  /// Title and channel of videos linked in this session, by song id: shown
+  /// as text only, kept in memory only (nothing of YouTube is stored on the
+  /// device).
+  final Map<String, YouTubeResolveResponse> videos;
 
   int get count => picks.length;
   bool get full => count >= limits.max;
@@ -59,7 +105,7 @@ final class MySongsState {
   bool get dirty {
     if (savedIds.length != picks.length) return true;
     for (var i = 0; i < picks.length; i++) {
-      if (pickId(picks[i]) != savedIds[i]) return true;
+      if (pickKey(picks[i]) != savedIds[i]) return true;
     }
     return false;
   }
@@ -84,6 +130,7 @@ final class MySongsState {
     bool? searching,
     bool? searchFailed,
     bool? saving,
+    Map<String, YouTubeResolveResponse>? videos,
   }) => MySongsState(
     limits: limits,
     loading: loading ?? this.loading,
@@ -95,6 +142,7 @@ final class MySongsState {
     searching: searching ?? this.searching,
     searchFailed: searchFailed ?? this.searchFailed,
     saving: saving ?? this.saving,
+    videos: videos ?? this.videos,
   );
 }
 
@@ -138,7 +186,7 @@ class MySongsController extends Notifier<MySongsState> {
       state = state.copyWith(
         loading: false,
         picks: picks,
-        savedIds: [for (final p in picks) pickId(p)],
+        savedIds: [for (final p in picks) pickKey(p)],
       );
     } on Object {
       if (ref.mounted) state = state.copyWith(loading: false, loadFailed: true);
@@ -202,7 +250,7 @@ class MySongsController extends Notifier<MySongsState> {
       picks: [
         for (final (index, p) in picks.indexed)
           switch (p) {
-            SongPick(:final song) => SongPick(position: index + 1, song: song),
+            SongPick() => p.withPosition(index + 1),
             LegacyCatalogPick(:final track) => LegacyCatalogPick(
               position: index + 1,
               track: track,
@@ -212,19 +260,67 @@ class MySongsController extends Notifier<MySongsState> {
     );
   }
 
+  /// Resolves pasted or shared text with a YouTube link
+  /// (`POST /v1/songs/youtube/resolve`); nothing is linked yet.
+  Future<YouTubeLinkResult> resolveYouTube(String text) async {
+    final link = extractYouTubeLink(text.trim());
+    if (link == null) return const YouTubeLinkFailed(YouTubeLinkError.invalid);
+    try {
+      return YouTubeLinkResolved(await _api.resolveYouTube(link));
+    } on ApiError catch (error) {
+      return YouTubeLinkFailed(switch (error.status) {
+        400 => YouTubeLinkError.invalid,
+        404 => YouTubeLinkError.notFound,
+        409 => YouTubeLinkError.notEmbeddable,
+        _ => YouTubeLinkError.failed,
+      });
+    } on Object {
+      return const YouTubeLinkFailed(YouTubeLinkError.failed);
+    }
+  }
+
+  /// Links [video] to the picked song [songId] (saved with «Сохранить»).
+  void linkVideo(String songId, YouTubeResolveResponse video) =>
+      _setVideo(songId, video);
+
+  void unlinkVideo(String songId) => _setVideo(songId, null);
+
+  void _setVideo(String songId, YouTubeResolveResponse? video) {
+    if (!state.isPicked(songId)) return;
+    state = state.copyWith(
+      picks: [
+        for (final p in state.picks)
+          if (p is SongPick && p.song.songId == songId)
+            p.withVideo(video?.videoId)
+          else
+            p,
+      ],
+      videos: {
+        for (final MapEntry(:key, :value) in state.videos.entries)
+          if (key != songId) key: value,
+        songId: ?video,
+      },
+    );
+  }
+
   /// `PUT /v1/me/picks` with the selection in order. True on success.
   Future<bool> save() async {
     if (!state.canSave) return false;
     state = state.copyWith(saving: true);
     try {
-      final saved = await _api.savePicks([
-        for (final p in state.picks) pickId(p),
-      ]);
+      final saved = await _api.savePicks(
+        [for (final p in state.picks) pickId(p)],
+        videos: {
+          for (final p in state.picks)
+            if (p case SongPick(:final song, :final youtubeVideoId?))
+              song.songId: youtubeVideoId,
+        },
+      );
       if (!ref.mounted) return true;
       state = state.copyWith(
         saving: false,
         picks: saved,
-        savedIds: [for (final p in saved) pickId(p)],
+        savedIds: [for (final p in saved) pickKey(p)],
       );
       return true;
     } on Object {

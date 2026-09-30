@@ -19,6 +19,10 @@ import 'package:sporand/core/platform/app_platform.dart';
 /// - `STORE_URL_IOS`, `STORE_URL_ANDROID`, `TERMS_URL`, `PRIVACY_URL`.
 /// - `ROOM_PROVIDER`: the provider new rooms request (a `MusicProviderId`
 ///   wire value), for QA; defaults per flavor (see [roomProvider]).
+/// - `APP_BUNDLE_ID`: the iOS bundle id / Android application id; the
+///   embedded YouTube player identifies the app as `https://<bundle id>`
+///   (see [youTubePlayerOrigin]). Defaults to the placeholder id of the
+///   native projects.
 final class AppEnv {
   const AppEnv({
     required this.flavor,
@@ -32,7 +36,12 @@ final class AppEnv {
     this.termsUrl,
     this.privacyUrl,
     this._roomProvider,
+    this.bundleId = defaultBundleId,
   });
+
+  /// The placeholder id of `android/app/build.gradle.kts` and the Xcode
+  /// project (TODO(owner): the real one once the brand exists, Q3).
+  static const defaultBundleId = 'dev.brandtbd.sporand';
 
   factory AppEnv.fromEnvironment({required AppPlatform platform}) {
     const flavorRaw = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
@@ -56,6 +65,7 @@ final class AppEnv {
     const terms = String.fromEnvironment('TERMS_URL');
     const privacy = String.fromEnvironment('PRIVACY_URL');
     const roomProviderRaw = String.fromEnvironment('ROOM_PROVIDER');
+    const bundleIdRaw = String.fromEnvironment('APP_BUNDLE_ID');
 
     final flavor = Flavor.parse(flavorRaw);
     final firebaseEnabled = switch (firebaseRaw.toLowerCase()) {
@@ -93,6 +103,7 @@ final class AppEnv {
               roomProviderRaw,
               fallback: MusicProviderId.externalPlayer,
             ),
+      bundleId: bundleIdRaw.isEmpty ? defaultBundleId : bundleIdRaw,
     );
   }
 
@@ -112,17 +123,27 @@ final class AppEnv {
   final Uri? privacyUrl;
   final MusicProviderId? _roomProvider;
 
+  /// iOS bundle id / Android application id.
+  final String bundleId;
+
+  /// The embedded YouTube player's `origin` and Referer: YouTube requires
+  /// embeds in apps to identify themselves as `https://<bundle id>`
+  /// (without it the player fails with error 153).
+  String get youTubePlayerOrigin => 'https://${bundleId.toLowerCase()}';
+
   /// The provider `POST /v1/rooms` asks for; the server may still fall back
   /// to its `default_provider` when this one is not enabled for the host's
   /// country (addendum A2.5). spotifyProto keeps the frozen Spotify
   /// prototype, dev keeps the `test_catalog` clips, and staging/prod request
-  /// `external_player` (BYOP), A2.1's recommended default for public launch.
+  /// `youtube_embed` (wave 4 owner decision: the official embedded player on
+  /// the DJ's phone); the server falls back to its `default_provider`
+  /// (external_player, BYOP) where YouTube is not enabled.
   MusicProviderId get roomProvider =>
       _roomProvider ??
       switch (flavor) {
         Flavor.spotifyProto => MusicProviderId.spotifyAppRemote,
         Flavor.dev => MusicProviderId.testCatalog,
-        Flavor.staging || Flavor.prod => MusicProviderId.externalPlayer,
+        Flavor.staging || Flavor.prod => MusicProviderId.youtubeEmbed,
       };
 
   bool get monetizationAllowed => flavor.allowsMonetization;

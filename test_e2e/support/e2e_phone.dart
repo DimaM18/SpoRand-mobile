@@ -9,6 +9,7 @@ import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/consent/consent_service.dart';
 import 'package:sporand/core/net/api_client.dart';
 import 'package:sporand/core/net/app_signals.dart';
 import 'package:sporand/core/net/protocol/rest_models.dart';
@@ -58,6 +59,7 @@ final class E2ePhone {
     MusicProviderId roomProvider = MusicProviderId.externalPlayer,
     AgeBand ageBand = AgeBand.adult,
     AdsService? ads,
+    ConsentService? consent,
   }) : clock = PhoneClock(uptimeAtZeroUs: uptimeAtZeroUs, anchorUs: anchorUs),
        wire = WireTap(name),
        rest = RestTap(name),
@@ -127,6 +129,9 @@ final class E2ePhone {
           RemoteConfigService(backend: InMemoryRemoteConfigBackend()),
         ),
         musicAppLauncherProvider.overrideWithValue(musicApp),
+        // UMP needs the platform SDK; a suite that needs the consent state
+        // (the YouTube player gate) passes a scripted one.
+        if (consent != null) consentServiceProvider.overrideWithValue(consent),
       ],
       retry: (_, _) => null,
     );
@@ -202,20 +207,27 @@ final class E2ePhone {
   Future<List<Song>> searchSongs(String query, {int limit = 25}) =>
       container.read(mySongsApiProvider).search(query, limit: limit);
 
-  /// «Мои песни» → Save (`PUT /v1/me/picks` with `song_ids`).
-  Future<List<CatalogPick>> savePicks(List<String> songIds) =>
-      container.read(mySongsApiProvider).savePicks(songIds);
+  /// «Мои песни» → Save (`PUT /v1/me/picks` with `song_ids`, or
+  /// `song_picks` when [videos] links YouTube videos).
+  Future<List<CatalogPick>> savePicks(
+    List<String> songIds, {
+    Map<String, String> videos = const {},
+  }) => container.read(mySongsApiProvider).savePicks(songIds, videos: videos);
 
   /// `POST /v1/rooms` (the provider comes from [AppEnv.roomProvider]), then
   /// the WebSocket.
   Future<void> createRoom(GameMode mode) async {
-    final result = await container
-        .read(activeRoomProvider.notifier)
-        .create(mode: mode, displayName: name);
+    final result = await tryCreateRoom(mode);
     if (result is! RoomOpened) {
       throw StateError('$name: create failed: $result');
     }
   }
+
+  /// Like [createRoom], but returns the controller's result (a refused
+  /// create is a [RoomOpenFailed]).
+  Future<RoomOpenResult> tryCreateRoom(GameMode mode) => container
+      .read(activeRoomProvider.notifier)
+      .create(mode: mode, displayName: name);
 
   /// `POST /v1/rooms/join` by code, then the WebSocket.
   Future<void> joinRoom(String roomCode) async {

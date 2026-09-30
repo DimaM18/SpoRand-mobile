@@ -37,6 +37,10 @@ final Map<String, _Codec> _restCodecs = {
   'room_pool_put.response': (j) => PoolContributionView.fromJson(j).toJson(),
   'songs_search.query': (j) => SongSearchQuery.fromJson(j).toJson(),
   'songs_search.response': (j) => SongSearchResponse.fromJson(j).toJson(),
+  'songs_youtube_resolve.request': (j) =>
+      YouTubeResolveRequest.fromJson(j).toJson(),
+  'songs_youtube_resolve.response': (j) =>
+      YouTubeResolveResponse.fromJson(j).toJson(),
   'me_patch.request': (j) => MePatchRequest.fromJson(j).toJson(),
   'me_get.response': (j) => MeResponse.fromJson(j).toJson(),
   'me_consent_put.request': (j) => ConsentUpdateRequest.fromJson(j).toJson(),

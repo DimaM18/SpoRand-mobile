@@ -23,6 +23,7 @@ import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/consent/consent_service.dart';
 import 'package:sporand/core/consent/consent_sync.dart';
 import 'package:sporand/core/consent/ump_consent_service.dart';
+import 'package:sporand/core/consent/youtube_consent.dart';
 import 'package:sporand/core/crash/crash_reporter.dart';
 import 'package:sporand/core/crash/firebase_crash_reporter.dart';
 import 'package:sporand/core/firebase/firebase_core_gate.dart';
@@ -39,6 +40,8 @@ import 'package:sporand/core/playback/clip_player_adapter.dart';
 import 'package:sporand/core/playback/music_app_launcher.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 import 'package:sporand/core/playback/spotify_remote_playback_adapter.dart';
+import 'package:sporand/core/playback/youtube/iframe_youtube_player.dart';
+import 'package:sporand/core/playback/youtube/youtube_player.dart';
 import 'package:sporand/core/purchases/entitlement_sync_api.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
 import 'package:sporand/core/purchases/revenuecat_purchases_service.dart';
@@ -314,10 +317,29 @@ final playbackAdapterFactoryProvider =
           clock: clock,
         ),
         // A2: the app never plays audio for these providers.
+        // youtube_embed: the embedded player on the DJ's round screen plays
+        // the video (YouTubeRoundPlayer), never a PlaybackAdapter.
         MusicProviderId.externalPlayer ||
+        MusicProviderId.youtubeEmbed ||
         MusicProviderId.none => NoAudioPlaybackAdapter(provider),
       };
     });
+
+/// Creates the embedded YouTube player of a youtube_embed round (DJ only).
+/// Tests override it with [FakeYouTubePlayerFactory]: there is no WebView
+/// in `flutter test`.
+final youTubePlayerFactoryProvider = Provider<YouTubePlayerFactory>(
+  (ref) => const IframeYouTubePlayerFactory(),
+);
+
+/// Consent to load the YouTube player where consent applies (EU/EEA,
+/// III.E.4.i) [новое имя — согласовать].
+final youTubeConsentProvider = Provider<YouTubeConsentGate>(
+  (ref) => YouTubeConsentGate(
+    ump: ref.watch(consentServiceProvider),
+    prefs: ref.watch(preferencesStoreProvider),
+  ),
+);
 
 /// Hands the DJ's cue to their own music app (external_player, A2.2).
 final musicAppLauncherProvider = Provider<MusicAppLauncher>(

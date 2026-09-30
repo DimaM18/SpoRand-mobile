@@ -483,7 +483,7 @@ class _SettingsCard extends ConsumerWidget {
               spacing: Spacing.xs,
               runSpacing: Spacing.xs,
               children: [
-                for (final mode in GameMode.values)
+                for (final mode in view.modeChoices)
                   ChoiceChip(
                     key: ValueKey('lobby-mode-${mode.wire}'),
                     label: Text(gameModeLabel(l10n, mode)),

@@ -8,6 +8,7 @@ import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/features/lobby/domain/display_name.dart';
+import 'package:sporand/features/lobby/domain/game_modes.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/lobby/presentation/join_room_page.dart';
 import 'package:sporand/features/lobby/presentation/lobby_page.dart';
@@ -32,7 +33,12 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
   late final TextEditingController _name = TextEditingController(
     text: ref.read(userPrefsProvider).displayName ?? '',
   );
-  GameMode _mode = GameMode.whoseSong;
+
+  /// `modes_enabled` from Remote Config (the server checks it too).
+  late final List<GameMode> _modes = selectableModes(
+    enabled: ref.read(remoteConfigProvider).modesEnabled,
+  );
+  late GameMode _mode = _modes.first;
   bool _busy = false;
   bool _invalidName = false;
   RoomOpenError? _error;
@@ -90,8 +96,9 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
           const SizedBox(height: Spacing.md),
           Text(l10n.createRoomModeLabel, style: theme.textTheme.labelLarge),
           const SizedBox(height: Spacing.xs),
-          for (final mode in GameMode.values)
+          for (final mode in _modes)
             _ModeTile(
+              key: ValueKey('create-mode-${mode.wire}'),
               title: gameModeLabel(l10n, mode),
               subtitle: switch (mode) {
                 GameMode.whoseSong => l10n.modeWhoseSongHint,
@@ -141,6 +148,7 @@ class _CreateRoomSheetState extends ConsumerState<CreateRoomSheet> {
 
 class _ModeTile extends StatelessWidget {
   const _ModeTile({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.selected,

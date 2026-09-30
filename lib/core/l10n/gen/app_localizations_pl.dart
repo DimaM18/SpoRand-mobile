@@ -925,7 +925,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Piosenki ze starego katalogu trzeba zastąpić nowymi';
 
   @override
-  String get modeEmojiQuiz => 'Emoji quiz';
+  String get modeEmojiQuiz => 'Zgadnij piosenkę';
 
   @override
   String get modeEmojiQuizHint =>
@@ -997,4 +997,84 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get lobbyEmojiHint => 'Bez muzyki: wystarczą telefony';
+
+  @override
+  String get gameYouTubePressPlay =>
+      'Naciśnij ▶ w odtwarzaczu. Jeśli YouTube najpierw pokaże reklamę, poczekaj na piosenkę';
+
+  @override
+  String get gameYouTubeTapWhenPlaying =>
+      'Gdy zabrzmi piosenka, naciśnij przycisk poniżej';
+
+  @override
+  String get gameYouTubeConsentTitle => 'Włączyć odtwarzacz YouTube?';
+
+  @override
+  String get gameYouTubeConsentBody =>
+      'Piosenka zagra w oficjalnym odtwarzaczu YouTube. Podczas ładowania YouTube (Google) otrzymuje dane o Twoim urządzeniu i może pokazać reklamę.';
+
+  @override
+  String get gameYouTubeConsentAllow => 'Zezwól';
+
+  @override
+  String get gameYouTubeConsentDecline => 'Nie, włączę sam';
+
+  @override
+  String get gameYouTubeFallback => 'Wideo nie działa — włącz piosenkę sam';
+
+  @override
+  String get gameYouTubeDeclined =>
+      'Bez YouTube: włącz piosenkę w swojej aplikacji';
+
+  @override
+  String get mySongsYouTubeAdd => 'Wideo YouTube';
+
+  @override
+  String mySongsYouTubeTitle(String song) {
+    return 'Wideo do piosenki „$song”';
+  }
+
+  @override
+  String get mySongsYouTubeHint =>
+      'Wklej link do oficjalnego wideo piosenki — gdy będziesz DJ-em, zagra w odtwarzaczu YouTube';
+
+  @override
+  String get mySongsYouTubeField => 'Link do YouTube';
+
+  @override
+  String get mySongsYouTubePaste => 'Wklej';
+
+  @override
+  String get mySongsYouTubeCheck => 'Sprawdź';
+
+  @override
+  String get mySongsYouTubeUse => 'Połącz';
+
+  @override
+  String get mySongsYouTubeCancel => 'Anuluj';
+
+  @override
+  String get mySongsYouTubeRemove => 'Usuń wideo';
+
+  @override
+  String get mySongsYouTubeInvalid => 'To nie jest link do wideo YouTube';
+
+  @override
+  String get mySongsYouTubeNotFound =>
+      'Nie znaleziono wideo albo jest prywatne';
+
+  @override
+  String get mySongsYouTubeNotEmbeddable =>
+      'Autor nie pozwala na odtwarzanie tego wideo w aplikacjach';
+
+  @override
+  String get mySongsYouTubeFailed => 'Nie udało się sprawdzić linku';
+
+  @override
+  String get mySongsYouTubeLinked => 'Połączono wideo YouTube';
+
+  @override
+  String mySongsYouTubeChannel(String channel) {
+    return 'Kanał: $channel';
+  }
 }

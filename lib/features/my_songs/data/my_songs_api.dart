@@ -1,6 +1,7 @@
 import 'package:sporand/core/net/api_client.dart';
 import 'package:sporand/core/net/protocol/json_read.dart';
 import 'package:sporand/core/net/protocol/rest_models.dart';
+import 'package:sporand/core/net/protocol/ws_enums.dart';
 
 /// «Мои песни» endpoints (addendum A2.3): the MusicBrainz-backed song search
 /// and the player's saved picks. [новое имя — согласовать] `MySongsApi`.
@@ -11,9 +12,31 @@ abstract interface class MySongsApi {
   /// `GET /v1/me/picks`, ordered by position.
   Future<List<CatalogPick>> picks();
 
-  /// `PUT /v1/me/picks` with `song_ids` in this order.
-  Future<List<CatalogPick>> savePicks(List<String> songIds);
+  /// `PUT /v1/me/picks` in this order: `song_ids`, or `song_picks` when
+  /// some songs have a linked YouTube video ([videos]: song id -> video id).
+  Future<List<CatalogPick>> savePicks(
+    List<String> songIds, {
+    Map<String, String> videos = const {},
+  });
+
+  /// `POST /v1/songs/youtube/resolve` (wave 4): a pasted YouTube link ->
+  /// the video id with its title and channel. Throws [ApiError]: 400
+  /// validation_failed (not a video link), 404 (removed or private), 409
+  /// (embedding disabled). [новое имя — согласовать]
+  Future<YouTubeResolveResponse> resolveYouTube(String url);
 }
+
+/// The request body of [MySongsApi.savePicks]: `song_ids` while no song has
+/// a video (what every server accepts), `song_picks` otherwise.
+PicksUpdateRequest picksUpdateFor(
+  List<String> songIds,
+  Map<String, String> videos,
+) => videos.isEmpty
+    ? PicksUpdateRequest.songs(songIds)
+    : PicksUpdateRequest.songPicks([
+        for (final id in songIds)
+          SongPickInput(songId: id, youtubeVideoId: videos[id]),
+      ]);
 
 final class HttpMySongsApi implements MySongsApi {
   HttpMySongsApi(this._client);
@@ -35,12 +58,24 @@ final class HttpMySongsApi implements MySongsApi {
   );
 
   @override
-  Future<List<CatalogPick>> savePicks(List<String> songIds) async {
+  Future<List<CatalogPick>> savePicks(
+    List<String> songIds, {
+    Map<String, String> videos = const {},
+  }) async {
     final json = await _client.put(
       '/v1/me/picks',
-      body: PicksUpdateRequest.songs(songIds).toJson(),
+      body: picksUpdateFor(songIds, videos).toJson(),
     );
     return _sorted(_parse(json, PicksResponse.fromJson));
+  }
+
+  @override
+  Future<YouTubeResolveResponse> resolveYouTube(String url) async {
+    final json = await _client.post(
+      '/v1/songs/youtube/resolve',
+      body: YouTubeResolveRequest(url: url).toJson(),
+    );
+    return _parse(json, YouTubeResolveResponse.fromJson);
   }
 
   static List<CatalogPick> _sorted(PicksResponse response) =>
@@ -94,6 +129,14 @@ final class FakeMySongsApi implements MySongsApi {
   List<CatalogPick> _picks;
   final List<String> queries = [];
   final List<List<String>> saved = [];
+  final List<Map<String, String>> savedVideos = [];
+
+  /// Link -> resolved video for [resolveYouTube]; any other link is a 400.
+  final Map<String, YouTubeResolveResponse> youTubeLinks = {};
+  final List<String> resolvedUrls = [];
+
+  /// Thrown by the next [resolveYouTube] calls only.
+  ApiError? resolveError;
 
   /// Thrown by the next calls, e.g. `ApiError(code: ApiError.network)`.
   Object? failWith;
@@ -120,15 +163,28 @@ final class FakeMySongsApi implements MySongsApi {
   }
 
   @override
-  Future<List<CatalogPick>> savePicks(List<String> songIds) async {
+  Future<List<CatalogPick>> savePicks(
+    List<String> songIds, {
+    Map<String, String> videos = const {},
+  }) async {
     final error = failWith;
     if (error != null) throw error;
     saved.add(songIds);
+    savedVideos.add(videos);
     final byId = {for (final s in catalog) s.songId: s};
     return _picks = [
       for (final (index, id) in songIds.indexed)
         if (byId[id] case final song?)
-          SongPick(position: index + 1, song: song),
+          SongPick(position: index + 1, song: song, youtubeVideoId: videos[id]),
     ];
+  }
+
+  @override
+  Future<YouTubeResolveResponse> resolveYouTube(String url) async {
+    resolvedUrls.add(url);
+    final error = resolveError ?? failWith;
+    if (error != null) throw error;
+    return youTubeLinks[url] ??
+        (throw const ApiError(code: ErrorCodes.validationFailed, status: 400));
   }
 }

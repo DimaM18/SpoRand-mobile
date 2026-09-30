@@ -11,6 +11,7 @@ import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/net/ws_client.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
+import 'package:sporand/features/lobby/domain/game_modes.dart';
 import 'package:sporand/features/lobby/domain/room_session.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/my_songs/domain/picks_limits.dart';
@@ -129,6 +130,7 @@ final class LobbyView {
     this.meCanDj = false,
     this.emojiMarkets = EmojiMarket.values,
     this.emojiMaxDifficulty = EmojiDifficulty.defaultMax,
+    this.modeChoices = const [GameMode.whoseSong, GameMode.emojiQuiz],
   });
 
   final String roomCode;
@@ -175,6 +177,10 @@ final class LobbyView {
 
   /// emoji_quiz: `emoji_max_difficulty` (1-3).
   final int emojiMaxDifficulty;
+
+  /// The modes the picker offers: `modes_enabled` (plus the current mode,
+  /// so a room already in a hidden mode still shows it).
+  final List<GameMode> modeChoices;
 
   bool get isEmojiQuiz => mode == GameMode.emojiQuiz;
 
@@ -324,6 +330,12 @@ class LobbyController extends Notifier<LobbyUiState> {
         emojiMarkets: room.settings.emojiMarkets ?? EmojiMarket.values,
         emojiMaxDifficulty:
             room.settings.emojiMaxDifficulty ?? EmojiDifficulty.defaultMax,
+        modeChoices: selectableModes(
+          enabled:
+              config.modesEnabled ??
+              ref.read(remoteConfigProvider).modesEnabled,
+          current: room.settings.mode,
+        ),
       ),
     );
   }
@@ -342,6 +354,8 @@ class LobbyController extends Notifier<LobbyUiState> {
   void setMode(GameMode mode) {
     final room = _session?.room;
     if (room == null || !(_session?.isHost ?? false)) return;
+    // The server rejects a mode outside `modes_enabled` anyway.
+    if (!(_view?.modeChoices.contains(mode) ?? true)) return;
     var sources = room.settings.poolSources;
     // whose_song needs players' own pools, not a curated pack.
     if (mode == GameMode.whoseSong &&
@@ -466,9 +480,12 @@ class LobbyController extends Notifier<LobbyUiState> {
       tracks: [
         for (final (index, pick) in draft.picks.indexed)
           switch (pick) {
-            SongPick(:final song) => SongPoolTrack(
+            // The linked video travels with the song; only youtube_embed
+            // rooms play it.
+            SongPick(:final song, :final youtubeVideoId) => SongPoolTrack(
               songId: song.songId,
               rank: index + 1,
+              youtubeVideoId: youtubeVideoId,
             ),
             LegacyCatalogPick(:final track) => CatalogPoolTrack(
               catalogTrackId: track.catalogTrackId,

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -221,7 +222,7 @@ class _Selection extends ConsumerWidget {
         if (state.picks.isEmpty)
           Text(l10n.mySongsEmpty(state.limits.min, state.limits.max))
         else
-          for (final pick in state.picks)
+          for (final pick in state.picks) ...[
             ListTile(
               key: ValueKey('pick-${pickId(pick)}'),
               contentPadding: EdgeInsets.zero,
@@ -235,6 +236,238 @@ class _Selection extends ConsumerWidget {
                 onPressed: () => controller.remove(pickId(pick)),
               ),
             ),
+            if (pick is SongPick) _PickVideo(pick: pick, state: state),
+          ],
+      ],
+    );
+  }
+}
+
+/// The YouTube video linked to a song pick (wave 4): its title and channel
+/// as plain text (never a thumbnail: no YouTube image is shown outside the
+/// player), or the button to link one.
+class _PickVideo extends ConsumerWidget {
+  const _PickVideo({required this.pick, required this.state});
+
+  final SongPick pick;
+  final MySongsState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final songId = pick.song.songId;
+    final videoId = pick.youtubeVideoId;
+    if (videoId == null) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          key: ValueKey('youtube-link-$songId'),
+          onPressed: () => showYouTubeLinkDialog(context, pick),
+          icon: const Icon(Icons.link_rounded),
+          label: Text(l10n.mySongsYouTubeAdd),
+        ),
+      );
+    }
+    final video = state.videos[songId];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.xs),
+      child: YouTubeVideoText(
+        key: ValueKey('youtube-video-$songId'),
+        title: video?.title ?? l10n.mySongsYouTubeLinked,
+        channel: video?.authorName,
+        trailing: IconButton(
+          key: ValueKey('youtube-unlink-$songId'),
+          tooltip: l10n.mySongsYouTubeRemove,
+          icon: Icon(Icons.link_off_rounded, color: theme.colorScheme.error),
+          onPressed: () =>
+              ref.read(mySongsControllerProvider.notifier).unlinkVideo(songId),
+        ),
+      ),
+    );
+  }
+}
+
+/// A YouTube video as text only: title and channel.
+class YouTubeVideoText extends StatelessWidget {
+  const YouTubeVideoText({
+    super.key,
+    required this.title,
+    this.channel,
+    this.trailing,
+  });
+
+  final String title;
+  final String? channel;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final channel = this.channel;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.sm,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.smart_display_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: Spacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleSmall),
+                  if (channel != null)
+                    Text(
+                      context.l10n.mySongsYouTubeChannel(channel),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Paste a YouTube link, check it with the server, see its title and channel
+/// as text, then link it to [pick]. [новое имя — согласовать]
+Future<void> showYouTubeLinkDialog(BuildContext context, SongPick pick) =>
+    showDialog<void>(
+      context: context,
+      builder: (context) => _YouTubeLinkDialog(pick: pick),
+    );
+
+class _YouTubeLinkDialog extends ConsumerStatefulWidget {
+  const _YouTubeLinkDialog({required this.pick});
+
+  final SongPick pick;
+
+  @override
+  ConsumerState<_YouTubeLinkDialog> createState() => _YouTubeLinkDialogState();
+}
+
+class _YouTubeLinkDialogState extends ConsumerState<_YouTubeLinkDialog> {
+  final TextEditingController _link = TextEditingController();
+  bool _busy = false;
+  YouTubeLinkResult? _result;
+
+  @override
+  void dispose() {
+    _link.dispose();
+    super.dispose();
+  }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (!mounted || text == null || text.isEmpty) return;
+    _link.text = text;
+    await _check();
+  }
+
+  Future<void> _check() async {
+    if (_busy || _link.text.trim().isEmpty) return;
+    setState(() {
+      _busy = true;
+      _result = null;
+    });
+    final result = await ref
+        .read(mySongsControllerProvider.notifier)
+        .resolveYouTube(_link.text);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _result = result;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final result = _result;
+    return AlertDialog(
+      title: Text(l10n.mySongsYouTubeTitle(widget.pick.song.title)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.mySongsYouTubeHint, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: Spacing.sm),
+            TextField(
+              key: const ValueKey('youtube-link-field'),
+              controller: _link,
+              enabled: !_busy,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: l10n.mySongsYouTubeField,
+                suffixIcon: IconButton(
+                  key: const ValueKey('youtube-link-paste'),
+                  tooltip: l10n.mySongsYouTubePaste,
+                  icon: const Icon(Icons.content_paste_rounded),
+                  onPressed: _busy ? null : _paste,
+                ),
+              ),
+              onSubmitted: (_) => _check(),
+            ),
+            const SizedBox(height: Spacing.sm),
+            if (_busy) const LinearProgressIndicator(),
+            if (result case YouTubeLinkResolved(:final video))
+              YouTubeVideoText(title: video.title, channel: video.authorName),
+            if (result case YouTubeLinkFailed(:final error))
+              Text(
+                switch (error) {
+                  YouTubeLinkError.invalid => l10n.mySongsYouTubeInvalid,
+                  YouTubeLinkError.notFound => l10n.mySongsYouTubeNotFound,
+                  YouTubeLinkError.notEmbeddable =>
+                    l10n.mySongsYouTubeNotEmbeddable,
+                  YouTubeLinkError.failed => l10n.mySongsYouTubeFailed,
+                },
+                key: const ValueKey('youtube-link-error'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.mySongsYouTubeCancel),
+        ),
+        if (result is YouTubeLinkResolved)
+          FilledButton(
+            key: const ValueKey('youtube-link-use'),
+            onPressed: () {
+              ref
+                  .read(mySongsControllerProvider.notifier)
+                  .linkVideo(widget.pick.song.songId, result.video);
+              Navigator.of(context).pop();
+            },
+            child: Text(l10n.mySongsYouTubeUse),
+          )
+        else
+          FilledButton(
+            key: const ValueKey('youtube-link-check'),
+            onPressed: _busy ? null : _check,
+            child: Text(l10n.mySongsYouTubeCheck),
+          ),
       ],
     );
   }

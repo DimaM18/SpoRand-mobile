@@ -3,6 +3,8 @@
 /// sends their frozen values in `welcome.config`.
 library;
 
+import 'dart:convert';
+
 /// Who reads the key (brief §4.6 "Reader" column).
 enum RcReader {
   /// Client template only.
@@ -84,6 +86,46 @@ final class StringRcKey extends RcKey<String> {
   }
 }
 
+/// A JSON array of strings from [allowed], kept as its canonical JSON text
+/// (deduplicated, sorted) so it can go to `setDefaults` like any other
+/// value. Unknown items are dropped; fewer than [minItems] valid items is
+/// unusable (the default applies). [новое имя — согласовать]
+final class StringListRcKey extends RcKey<String> {
+  const StringListRcKey(
+    super.name,
+    super.defaultValue,
+    super.reader, {
+    required this.allowed,
+    this.minItems = 1,
+  });
+
+  final Set<String> allowed;
+  final int minItems;
+
+  @override
+  String? parse(String raw) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      return null;
+    }
+    if (decoded is! List<Object?>) return null;
+    final items = {
+      for (final item in decoded)
+        if (item is String && allowed.contains(item)) item,
+    }.toList()..sort();
+    return items.length < minItems ? null : jsonEncode(items);
+  }
+
+  /// The items of [value] (a raw or canonical value; the default's items
+  /// when it is unusable).
+  List<String> itemsOf(String value) {
+    final canonical = parse(value) ?? parse(defaultValue) ?? '[]';
+    return [for (final item in jsonDecode(canonical) as List<Object?>) '$item'];
+  }
+}
+
 /// Canonical key catalogue. Names, types, defaults and ranges are binding
 /// (brief §4.6); do not change them here without changing the brief.
 abstract final class RcKeys {
@@ -119,6 +161,16 @@ abstract final class RcKeys {
     'licensed_provider_enabled',
     false,
     RcReader.both,
+  );
+
+  /// Game modes the lobby offers (wave 4): the mode picker shows only these,
+  /// and the server rejects the others. Default: whose_song and emoji_quiz
+  /// («Угадай песню»); guess_track is hidden [новое имя — согласовать].
+  static const modesEnabled = StringListRcKey(
+    'modes_enabled',
+    '["emoji_quiz","whose_song"]',
+    RcReader.both,
+    allowed: {'whose_song', 'guess_track', 'emoji_quiz'},
   );
 
   // Client-only keys (C).
@@ -177,6 +229,16 @@ abstract final class RcKeys {
     min: 0,
     max: 3000,
   );
+
+  /// Target width of the embedded YouTube player (16:9, logical px; wave 4)
+  /// [новое имя — согласовать].
+  static const youtubePlayerMinWidthDp = IntRcKey(
+    'youtube_player_min_width_dp',
+    480,
+    RcReader.client,
+    min: 356,
+    max: 1200,
+  );
   static const bootMaxTotalMs = IntRcKey(
     'boot_max_total_ms',
     8000,
@@ -192,6 +254,7 @@ abstract final class RcKeys {
     removeAdsUpsellEnabled,
     spotifyProtoEnabled,
     licensedProviderEnabled,
+    modesEnabled,
     maxAdWaitMs,
     rewardedPreloadEnabled,
     paywallVariant,
@@ -202,5 +265,6 @@ abstract final class RcKeys {
     bootConfigTimeoutMs,
     bootMinSplashMs,
     bootMaxTotalMs,
+    youtubePlayerMinWidthDp,
   ];
 }

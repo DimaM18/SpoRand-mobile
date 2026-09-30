@@ -10,10 +10,12 @@ import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/clock/input_timestamps.dart';
+import 'package:sporand/core/consent/youtube_consent.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/net/ws_client.dart';
+import 'package:sporand/core/playback/youtube/youtube_player.dart';
 import 'package:sporand/core/remote_config/remote_config_service.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/domain/host_playback_coordinator.dart';
@@ -83,6 +85,11 @@ final class _RoundRuntime {
 ///   music app and reports `round.playback_started{source: dj_tap}` with the
 ///   pointer-down time of «Музыка играет!» (the DJ is whoever the server
 ///   names with `you_are_dj`, not necessarily the playback device);
+/// - the DJ of a youtube_embed round (wave 4) gets the embedded player
+///   (`DjVideoStage`): consent first where it applies, then `video_id` and
+///   its `fallback_video_ids` in order, each failure reported with
+///   `round.playback_failed`, then the BYOP cue; the start is still the
+///   dj_tap on «Музыка играет!»;
 /// - the first pointer down commits and sends `round.answer` with the OS
 ///   touch time as `tap_mono_us` and the unlock frame time as
 ///   `unlock_mono_us`;
@@ -188,7 +195,9 @@ class GameController extends Notifier<GameUiState> {
         runtime.djTapped ||
         current is! GameRoundState ||
         current.round.roundId != roundId ||
-        current.phase is! RoundDjCue) {
+        current.phase is! RoundDjCue ||
+        // The consent question comes first: nothing can play yet.
+        current.djVideo is DjVideoConsent) {
       return false;
     }
     // Claimed synchronously so a second tap cannot report twice.
@@ -232,6 +241,145 @@ class GameController extends Notifier<GameUiState> {
     );
     // Host-reported: the DJ unlocks on its own start, guests on round.start.
     _unlock(runtime);
+  }
+
+  // --- youtube_embed DJ (wave 4) ---------------------------------------------
+
+  /// The DJ answered the consent sheet shown before the embedded YouTube
+  /// player may load (EU/EEA, YouTube III.E.4.i). Declined: the BYOP cue
+  /// and `round.playback_failed{consent_declined}`.
+  void youTubeConsentAnswered({
+    required String roundId,
+    required bool granted,
+  }) {
+    final runtime = _round;
+    final current = state;
+    if (runtime == null ||
+        runtime.roundId != roundId ||
+        current is! GameRoundState ||
+        current.round.roundId != roundId ||
+        current.djVideo is! DjVideoConsent) {
+      return;
+    }
+    final gate = ref.read(youTubeConsentProvider);
+    if (granted) {
+      unawaited(gate.grant());
+      state = current.copyWith(djVideo: _videoAt(runtime, 0));
+      return;
+    }
+    gate.decline();
+    _reportVideoFailure(runtime, VideoPlaybackFailureReason.consentDeclined);
+    state = current.copyWith(
+      djVideo: const DjVideoCueFallback(
+        VideoPlaybackFailureReason.consentDeclined,
+      ),
+    );
+  }
+
+  /// The embedded player reported an error for [videoId] ([code]: the raw
+  /// IFrame API code, when known). Reports `round.playback_failed` for it,
+  /// then tries the next of `fallback_video_ids`, and after the last one
+  /// falls back to the BYOP cue.
+  void youTubeVideoFailed({
+    required String roundId,
+    required String videoId,
+    int? code,
+  }) {
+    final runtime = _round;
+    final current = state;
+    if (runtime == null ||
+        runtime.roundId != roundId ||
+        current is! GameRoundState ||
+        current.round.roundId != roundId) {
+      return;
+    }
+    final stage = current.djVideo;
+    if (stage is! DjVideoPlayer || stage.videoId != videoId) return;
+    final reason = videoFailureReasonFor(code);
+    _reportVideoFailure(runtime, reason, code: code, videoId: videoId);
+    final next = stage.attempt + 1;
+    final candidates = runtime.prepare.video?.candidates ?? const <String>[];
+    state = current.copyWith(
+      djVideo: next < candidates.length
+          ? _videoAt(runtime, next)
+          : DjVideoCueFallback(reason),
+    );
+  }
+
+  /// The screen cannot show the player at the YouTube minimum size: the DJ
+  /// gets the cue. Not the video's fault, so nothing is reported.
+  void youTubePlayerUnavailable(String roundId) {
+    final current = state;
+    if (current is! GameRoundState ||
+        current.round.roundId != roundId ||
+        current.djVideo is! DjVideoPlayer) {
+      return;
+    }
+    state = current.copyWith(
+      djVideo: const DjVideoCueFallback(VideoPlaybackFailureReason.other),
+    );
+  }
+
+  /// `youtube_player_min_width_dp` (Remote Config).
+  int get youTubePlayerMinWidthDp => _config.youtubePlayerMinWidthDp;
+
+  /// The embedded player's origin / Referer (`https://<bundle id>`).
+  String get youTubePlayerOrigin =>
+      ref.read(appEnvProvider).youTubePlayerOrigin;
+
+  /// The first stage of a DJ's youtube_embed round: the consent question
+  /// where it applies, else the player for `video_id`.
+  DjVideoStage _initialVideoStage(_RoundRuntime runtime) {
+    // Branch on capabilities, never on the provider id; an unknown room
+    // (no snapshot yet) asks, to be safe.
+    final needsConsent =
+        _session?.room?.capabilities.needsConsentBeforeLoad ?? true;
+    if (needsConsent) {
+      switch (ref.read(youTubeConsentProvider).decision) {
+        case YouTubeConsentDecision.allowed:
+          break;
+        case YouTubeConsentDecision.ask:
+          return const DjVideoConsent();
+        case YouTubeConsentDecision.declined:
+          _reportVideoFailure(
+            runtime,
+            VideoPlaybackFailureReason.consentDeclined,
+          );
+          return const DjVideoCueFallback(
+            VideoPlaybackFailureReason.consentDeclined,
+          );
+      }
+    }
+    return _videoAt(runtime, 0);
+  }
+
+  static DjVideoStage _videoAt(_RoundRuntime runtime, int attempt) {
+    final video = runtime.prepare.video!;
+    return DjVideoPlayer(
+      videoId: video.candidates[attempt],
+      startS: video.startS,
+      attempt: attempt,
+    );
+  }
+
+  void _reportVideoFailure(
+    _RoundRuntime runtime,
+    VideoPlaybackFailureReason reason, {
+    int? code,
+    String? videoId,
+  }) {
+    if (kDebugMode) {
+      debugPrint('[youtube] ${runtime.roundId}: ${reason.wire} code=$code');
+    }
+    _session?.send(
+      RoundPlaybackFailed(
+        roundId: runtime.roundId,
+        reason: reason.wire,
+        // The protocol caps the diagnostic code at 99999.
+        code: code != null && code >= 0 && code <= 99999 ? code : null,
+        videoId: videoId,
+      ),
+    );
   }
 
   /// «Открыть в музыкальном приложении»: hands the cue to the DJ's own music
@@ -383,6 +531,9 @@ class GameController extends Notifier<GameUiState> {
           : const RoundLocked(),
       // A spare round starts while the void notice may still be due.
       voidNotice: _voidNotice,
+      djVideo: runtime.isDj && message.video != null
+          ? _initialVideoStage(runtime)
+          : null,
     );
     _maybePreloadAds(message);
 

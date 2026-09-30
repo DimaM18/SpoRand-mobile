@@ -33,6 +33,36 @@ void main() {
       });
     }
 
+    test('rejects YouTube names and values (wave 4)', () {
+      for (final name in ['video_id', 'youtube_url']) {
+        expect(
+          () => analytics.logEvent('room_create', {name: 'x'}),
+          throwsA(isA<AssertionError>()),
+          reason: name,
+        );
+      }
+      for (final value in [
+        'https://youtu.be/tEsTvIdEo01',
+        'www.YouTube.com/watch?v=abc',
+        'tEsTvIdEo01',
+      ]) {
+        expect(AnalyticsService.isYouTubeContentValue(value), isTrue);
+        expect(
+          () => analytics.logEvent('room_create', {'placement': value}),
+          throwsA(isA<AssertionError>()),
+          reason: value,
+        );
+      }
+      for (final value in [
+        'lobby_round',
+        '7KQ2MX',
+        'abcdefghijk',
+        'ad_break',
+      ]) {
+        expect(AnalyticsService.isYouTubeContentValue(value), isFalse);
+      }
+    });
+
     test('allows the canonical track_count_bucket', () {
       expect(AnalyticsService.isAllowedParamName('track_count_bucket'), isTrue);
     });

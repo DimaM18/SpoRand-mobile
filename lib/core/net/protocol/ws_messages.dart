@@ -309,6 +309,7 @@ final class RoundPrepare extends ServerMessage {
     this.djPlayerId,
     this.clip,
     this.cue,
+    this.video,
     this.textPrompt,
     this.emojiPrompt,
   }) : youAreDj = youAreDj ?? cue != null;
@@ -319,6 +320,7 @@ final class RoundPrepare extends ServerMessage {
   factory RoundPrepare.fromJson(JsonMap json) {
     final clip = json.optObj('clip');
     final cue = json.optObj('cue');
+    final video = json.optObj('video');
     final textPrompt = json.optObj('text_prompt');
     final emojiPrompt = json.optObj('emoji_prompt');
     final message = RoundPrepare(
@@ -345,6 +347,7 @@ final class RoundPrepare extends ServerMessage {
       commitHash: json.str('commit_hash'),
       clip: clip == null ? null : RoundClip.fromJson(clip),
       cue: cue == null ? null : RoundCue.fromJson(cue),
+      video: video == null ? null : RoundVideo.fromJson(video),
       textPrompt: textPrompt == null
           ? null
           : RoundTextPrompt.fromJson(textPrompt),
@@ -397,6 +400,10 @@ final class RoundPrepare extends ServerMessage {
   /// the DJ's own music app. Never together with [clip].
   final RoundCue? cue;
 
+  /// The round's DJ only, always with [cue] (youtube_embed, wave 4): the
+  /// video to play in the embedded YouTube player.
+  final RoundVideo? video;
+
   /// whose_song text rounds (provider `none`): the song everyone reads.
   final RoundTextPrompt? textPrompt;
 
@@ -448,6 +455,21 @@ final class RoundPrepare extends ServerMessage {
     if (djPlayerId != null && !hostReported) {
       return 'round.prepare: only a round with a host-reported start has a DJ';
     }
+    final video = this.video;
+    if (video != null) {
+      if (clip != null) {
+        return 'round.prepare: clip and video are mutually exclusive';
+      }
+      if (cue == null) {
+        return 'round.prepare: a video is always sent with the cue, to the '
+            'round DJ only';
+      }
+      if (video.fallbackVideoIds.contains(video.videoId) ||
+          video.fallbackVideoIds.toSet().length !=
+              video.fallbackVideoIds.length) {
+        return 'round.prepare: fallback_video_ids repeat a video';
+      }
+    }
     return null;
   }
 
@@ -472,6 +494,7 @@ final class RoundPrepare extends ServerMessage {
     'commit_hash': commitHash,
     'clip': ?clip?.toJson(),
     'cue': ?cue?.toJson(),
+    'video': ?video?.toJson(),
     'text_prompt': ?textPrompt?.toJson(),
     'emoji_prompt': ?emojiPrompt?.toJson(),
   };
@@ -1266,23 +1289,56 @@ final class RoundPlaybackStarted extends ClientMessage {
 }
 
 final class RoundPlaybackFailed extends ClientMessage {
-  const RoundPlaybackFailed({required this.roundId, required this.reason});
+  const RoundPlaybackFailed({
+    required this.roundId,
+    required this.reason,
+    this.code,
+    this.videoId,
+  });
 
-  factory RoundPlaybackFailed.fromJson(JsonMap json) => RoundPlaybackFailed(
-    roundId: (json..expectOnly(const {'round_id', 'reason'})).str('round_id'),
-    reason: json.str('reason'),
-  );
+  factory RoundPlaybackFailed.fromJson(JsonMap json) {
+    json.expectOnly(const {'round_id', 'reason', 'code', 'video_id'});
+    final videoId = json.optStr('video_id');
+    if (videoId != null && !RegExp(r'^[A-Za-z0-9_-]{11}$').hasMatch(videoId)) {
+      throw const ProtocolFormatException(
+        '"video_id" must be an 11-character YouTube id',
+      );
+    }
+    final code = json.optInt('code');
+    if (code != null && (code < 0 || code > 99999)) {
+      throw const ProtocolFormatException('"code" out of range');
+    }
+    return RoundPlaybackFailed(
+      roundId: json.str('round_id'),
+      reason: json.str('reason'),
+      code: code,
+      videoId: videoId,
+    );
+  }
 
   final String roundId;
 
-  /// snake_case failure code (e.g. `clip_load_failed`, `player_error`).
+  /// snake_case failure code (e.g. `clip_load_failed`, `player_error`; for a
+  /// video one of [VideoPlaybackFailureReason]).
   final String reason;
+
+  /// Raw player error code when known (YouTube IFrame: 2, 5, 100, 101, 150,
+  /// 153); diagnostics only [новое имя — согласовать].
+  final int? code;
+
+  /// The video that failed (`round.prepare.video`) [новое имя — согласовать].
+  final String? videoId;
 
   @override
   String get type => WsClientMessage.roundPlaybackFailed;
 
   @override
-  JsonMap toJson() => {'round_id': roundId, 'reason': reason};
+  JsonMap toJson() => {
+    'round_id': roundId,
+    'reason': reason,
+    'code': ?code,
+    'video_id': ?videoId,
+  };
 }
 
 /// One per player per round; the first one wins.

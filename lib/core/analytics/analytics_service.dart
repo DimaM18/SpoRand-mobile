@@ -81,7 +81,26 @@ class AnalyticsService {
     'title',
     'playlist',
     'spotify',
+    // Wave 4: no YouTube video data either (protocol content name tokens).
+    'video',
+    'youtube',
   ];
+
+  static final _youTubeReference = RegExp(
+    r'youtube\.com|youtu\.be|youtube-nocookie\.com|ytimg\.com|googlevideo\.com',
+    caseSensitive: false,
+  );
+  static final _videoIdShape = RegExp(r'^[A-Za-z0-9_-]{11}$');
+
+  /// A value that looks like YouTube content: a YouTube link, or a mixed-case
+  /// 11-character value shaped like a video id (packages/protocol
+  /// `isYouTubeContentValue`). Such values are never logged (YouTube API
+  /// policy; hard rule 3).
+  static bool isYouTubeContentValue(String value) =>
+      _youTubeReference.hasMatch(value) ||
+      (_videoIdShape.hasMatch(value) &&
+          value.contains(RegExp('[a-z]')) &&
+          value.contains(RegExp('[A-Z]')));
 
   /// `pool_submit.track_count_bucket` is canonical (brief §4.5) and carries
   /// only a count bucket, not track data, so it is explicitly allowed.
@@ -228,6 +247,10 @@ class AnalyticsService {
       );
       if (!isAllowedParamName(key) || value == null) continue;
       if (result.length == maxParams) break;
+      if (value is String && isYouTubeContentValue(value)) {
+        assert(false, 'Analytics parameter "$key" carries YouTube content');
+        continue;
+      }
       result[key] = switch (value) {
         final bool b => b ? 1 : 0,
         final num n => n,

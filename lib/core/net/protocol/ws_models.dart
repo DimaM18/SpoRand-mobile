@@ -198,6 +198,12 @@ final class ProviderCapabilities {
     required this.requiresPremiumHost,
     required this.supportsSearch,
     this.maxClipMs,
+    this.titleVisibleDuringPlay,
+    this.requiresVisiblePlayer,
+    this.requiresConsentBeforeLoad,
+    this.thirdPartyAdsPossible,
+    this.paywallAllowed,
+    this.startAccuracyMs,
   });
 
   factory ProviderCapabilities.fromJson(JsonMap json) => ProviderCapabilities(
@@ -211,6 +217,12 @@ final class ProviderCapabilities {
     licensedTerritories: json.list('licensed_territories', asString),
     requiresPremiumHost: json.boolean('requires_premium_host'),
     supportsSearch: json.boolean('supports_search'),
+    titleVisibleDuringPlay: json.optBool('title_visible_during_play'),
+    requiresVisiblePlayer: json.optBool('requires_visible_player'),
+    requiresConsentBeforeLoad: json.optBool('requires_consent_before_load'),
+    thirdPartyAdsPossible: json.optBool('third_party_ads_possible'),
+    paywallAllowed: json.optBool('paywall_allowed'),
+    startAccuracyMs: json.optInt('start_accuracy_ms'),
   );
 
   /// For a snapshot without `provider_capabilities` (a server older than
@@ -253,6 +265,23 @@ final class ProviderCapabilities {
           requiresPremiumHost: false,
           supportsSearch: true,
         ),
+        MusicProviderId.youtubeEmbed => const ProviderCapabilities(
+          playback: AudioStartSource.hostReported,
+          audioSource: AudioSource.externalApp,
+          allowsMonetization: true,
+          allowsPrefetch: false,
+          allowsCustomOffset: true,
+          revealsMetadataDuringPlay: true,
+          licensedTerritories: ['*'],
+          requiresPremiumHost: false,
+          supportsSearch: true,
+          titleVisibleDuringPlay: true,
+          requiresVisiblePlayer: true,
+          requiresConsentBeforeLoad: true,
+          thirdPartyAdsPossible: true,
+          paywallAllowed: false,
+          startAccuracyMs: 2000,
+        ),
         MusicProviderId.none => const ProviderCapabilities(
           playback: AudioStartSource.none,
           audioSource: AudioSource.none,
@@ -283,8 +312,38 @@ final class ProviderCapabilities {
   final bool requiresPremiumHost;
   final bool supportsSearch;
 
-  /// BYOP: the DJ plays the song in their own music app (A2.2).
+  // Wave 4 flags (optional on the wire; absent = the behaviour before wave
+  // 4, see the getters below) [новое имя — согласовать].
+  final bool? titleVisibleDuringPlay;
+  final bool? requiresVisiblePlayer;
+  final bool? requiresConsentBeforeLoad;
+  final bool? thirdPartyAdsPossible;
+  final bool? paywallAllowed;
+
+  /// Expected error of the start offset; null when exact or not applicable.
+  final int? startAccuracyMs;
+
+  /// The DJ's device plays the song in a third-party player (their own music
+  /// app in BYOP, the embedded YouTube player in youtube_embed).
   bool get isExternalApp => audioSource == AudioSource.externalApp;
+
+  /// The player must stay visible while playing (YouTube III.I.7 / III.I.9):
+  /// never hidden, off-screen or overlaid.
+  bool get needsVisiblePlayer => requiresVisiblePlayer ?? false;
+
+  /// Where consent applies, it must be given before the player is created
+  /// (YouTube III.E.4.i).
+  bool get needsConsentBeforeLoad => requiresConsentBeforeLoad ?? false;
+
+  /// The player may show its own ads, which are never blocked or skipped.
+  bool get mayShowThirdPartyAds => thirdPartyAdsPossible ?? false;
+
+  /// Rounds of this provider may be paid for or unlocked by a rewarded ad.
+  bool get allowsPaywall => paywallAllowed ?? true;
+
+  /// The playing device shows the song title.
+  bool get showsTitleDuringPlay =>
+      titleVisibleDuringPlay ?? revealsMetadataDuringPlay;
 
   JsonMap toJson() => {
     'playback': playback.wire,
@@ -297,6 +356,12 @@ final class ProviderCapabilities {
     'licensed_territories': licensedTerritories,
     'requires_premium_host': requiresPremiumHost,
     'supports_search': supportsSearch,
+    'title_visible_during_play': ?titleVisibleDuringPlay,
+    'requires_visible_player': ?requiresVisiblePlayer,
+    'requires_consent_before_load': ?requiresConsentBeforeLoad,
+    'third_party_ads_possible': ?thirdPartyAdsPossible,
+    'paywall_allowed': ?paywallAllowed,
+    'start_accuracy_ms': ?startAccuracyMs,
   };
 }
 
@@ -554,6 +619,64 @@ final class RoundCue {
   };
 }
 
+/// `round.prepare.video` (wave 4, youtube_embed): the video the round's DJ
+/// plays in the official embedded YouTube player, visible on their screen.
+/// Sent to the DJ only and always with the cue (the BYOP fallback). Protocol
+/// `RoundVideo` [новое имя — согласовать].
+final class RoundVideo {
+  const RoundVideo({
+    required this.videoId,
+    required this.startS,
+    this.fallbackVideoIds = const [],
+  });
+
+  static final _videoId = RegExp(r'^[A-Za-z0-9_-]{11}$');
+
+  factory RoundVideo.fromJson(JsonMap json) {
+    String id(Object? item) {
+      final value = asString(item);
+      if (!_videoId.hasMatch(value)) {
+        throw const ProtocolFormatException(
+          'video ids are 11-character YouTube ids',
+        );
+      }
+      return value;
+    }
+
+    final startS = json.integer('start_s');
+    if (startS < 0) throw const ProtocolFormatException('"start_s" < 0');
+    final video = RoundVideo(
+      videoId: id(json['video_id']),
+      startS: startS,
+      fallbackVideoIds: json.list('fallback_video_ids', id),
+    );
+    if (video.fallbackVideoIds.length > maxFallbacks) {
+      throw const ProtocolFormatException('too many fallback_video_ids');
+    }
+    return video;
+  }
+
+  /// Protocol `ROUND_VIDEO_MAX_FALLBACKS`.
+  static const maxFallbacks = 3;
+
+  final String videoId;
+
+  /// The player's `start` parameter, whole seconds (accuracy about 2 s).
+  final int startS;
+
+  /// Tried in order when [videoId] fails; never repeats it.
+  final List<String> fallbackVideoIds;
+
+  /// [videoId] then [fallbackVideoIds].
+  List<String> get candidates => [videoId, ...fallbackVideoIds];
+
+  JsonMap toJson() => {
+    'video_id': videoId,
+    'start_s': startS,
+    'fallback_video_ids': fallbackVideoIds,
+  };
+}
+
 /// `round.prepare.text_prompt`: the song every player reads in a
 /// whose_song text round (provider `none`). Protocol name
 /// `RoundTextPrompt` [новое имя — согласовать].
@@ -785,6 +908,19 @@ final class RoomConfig {
   bool get rewardedEnabled => _bool('rewarded_enabled', true);
   bool get interstitialEnabled => _bool('interstitial_enabled', true);
   bool get removeAdsUpsellEnabled => _bool('remove_ads_upsell_enabled', true);
+
+  /// `modes_enabled` (wave 4, reader B): the modes this room accepts, in
+  /// [GameMode] order; null when the snapshot does not carry the key (an
+  /// older server), so the caller falls back to Remote Config.
+  List<GameMode>? get modesEnabled {
+    final value = values['modes_enabled'];
+    if (value is! List<Object?>) return null;
+    final modes = [
+      for (final mode in GameMode.values)
+        if (value.contains(mode.wire)) mode,
+    ];
+    return modes.isEmpty ? null : modes;
+  }
 
   JsonMap toJson() => values;
 }

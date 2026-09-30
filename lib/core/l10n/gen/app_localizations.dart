@@ -1606,10 +1606,10 @@ abstract class AppLocalizations {
   /// **'Песни из старого каталога нужно заменить новыми'**
   String get mySongsLegacyHint;
 
-  /// emoji_quiz game mode [новое имя — согласовать].
+  /// emoji_quiz game mode; since wave 4 the UI calls it «Угадай песню» (owner decision) [новое имя — согласовать].
   ///
   /// In ru, this message translates to:
-  /// **'Эмодзи-квиз'**
+  /// **'Угадай песню'**
   String get modeEmojiQuiz;
 
   /// No description provided for @modeEmojiQuizHint.
@@ -1731,6 +1731,144 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Без музыки: хватит телефонов'**
   String get lobbyEmojiHint;
+
+  /// youtube_embed DJ: they start the video in the official player themself (no autoplay).
+  ///
+  /// In ru, this message translates to:
+  /// **'Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни'**
+  String get gameYouTubePressPlay;
+
+  /// No description provided for @gameYouTubeTapWhenPlaying.
+  ///
+  /// In ru, this message translates to:
+  /// **'Когда зазвучит песня, жми кнопку ниже'**
+  String get gameYouTubeTapWhenPlaying;
+
+  /// Consent sheet before the embedded YouTube player loads (EU/EEA, YouTube policy III.E.4.i) [новое имя — согласовать].
+  ///
+  /// In ru, this message translates to:
+  /// **'Включить плеер YouTube?'**
+  String get gameYouTubeConsentTitle;
+
+  /// No description provided for @gameYouTubeConsentBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Песня сыграет в официальном плеере YouTube. Когда он загружается, YouTube (Google) получает данные о твоём устройстве и может показать рекламу.'**
+  String get gameYouTubeConsentBody;
+
+  /// No description provided for @gameYouTubeConsentAllow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешить'**
+  String get gameYouTubeConsentAllow;
+
+  /// No description provided for @gameYouTubeConsentDecline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет, включу сам'**
+  String get gameYouTubeConsentDecline;
+
+  /// youtube_embed DJ fell back to the BYOP cue (every video failed or the screen is too small).
+  ///
+  /// In ru, this message translates to:
+  /// **'Видео не играет — включи песню сам'**
+  String get gameYouTubeFallback;
+
+  /// youtube_embed DJ declined the player consent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без YouTube: включи песню в своём приложении'**
+  String get gameYouTubeDeclined;
+
+  /// «Мои песни»: link a YouTube video to a song pick (wave 4) [новое имя — согласовать].
+  ///
+  /// In ru, this message translates to:
+  /// **'Видео YouTube'**
+  String get mySongsYouTubeAdd;
+
+  /// No description provided for @mySongsYouTubeTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Видео для песни «{song}»'**
+  String mySongsYouTubeTitle(String song);
+
+  /// No description provided for @mySongsYouTubeHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вставь ссылку на официальное видео песни — когда ты DJ, она сыграет в плеере YouTube'**
+  String get mySongsYouTubeHint;
+
+  /// No description provided for @mySongsYouTubeField.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка на YouTube'**
+  String get mySongsYouTubeField;
+
+  /// No description provided for @mySongsYouTubePaste.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вставить'**
+  String get mySongsYouTubePaste;
+
+  /// No description provided for @mySongsYouTubeCheck.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить'**
+  String get mySongsYouTubeCheck;
+
+  /// No description provided for @mySongsYouTubeUse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Привязать'**
+  String get mySongsYouTubeUse;
+
+  /// No description provided for @mySongsYouTubeCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена'**
+  String get mySongsYouTubeCancel;
+
+  /// No description provided for @mySongsYouTubeRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать видео'**
+  String get mySongsYouTubeRemove;
+
+  /// No description provided for @mySongsYouTubeInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это не ссылка на видео YouTube'**
+  String get mySongsYouTubeInvalid;
+
+  /// No description provided for @mySongsYouTubeNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Видео не найдено или скрыто'**
+  String get mySongsYouTubeNotFound;
+
+  /// No description provided for @mySongsYouTubeNotEmbeddable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Автор запретил показывать это видео в приложениях'**
+  String get mySongsYouTubeNotEmbeddable;
+
+  /// No description provided for @mySongsYouTubeFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не получилось проверить ссылку'**
+  String get mySongsYouTubeFailed;
+
+  /// No description provided for @mySongsYouTubeLinked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Видео YouTube привязано'**
+  String get mySongsYouTubeLinked;
+
+  /// No description provided for @mySongsYouTubeChannel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Канал: {channel}'**
+  String mySongsYouTubeChannel(String channel);
 }
 
 class _AppLocalizationsDelegate

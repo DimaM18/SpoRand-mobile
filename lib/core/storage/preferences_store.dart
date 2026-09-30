@@ -36,6 +36,10 @@ abstract final class PrefKeys {
   /// (`PATCH /v1/me`, see `AgeBandSync`) [новое имя — согласовать].
   static const ageBandSyncedFor = 'age_band_synced_for';
 
+  /// The DJ allowed the embedded YouTube player to load (EU/EEA consent,
+  /// wave 4) [новое имя — согласовать].
+  static const youtubePlayerConsent = 'youtube_player_consent';
+
   static const all = {
     ageBand,
     ageGateBlocked,
@@ -43,6 +47,7 @@ abstract final class PrefKeys {
     analyticsConsent,
     displayName,
     ageBandSyncedFor,
+    youtubePlayerConsent,
   };
 }
 

@@ -11,6 +11,22 @@ Uri? e2eApiBaseUrl() {
   return raw.isEmpty ? null : Uri.parse(raw);
 }
 
+/// The second server of `scripts/e2e.sh` (`E2E_GUESS_TRACK_API_BASE_URL`):
+/// the same config plus the hidden mode guess_track in `modes_enabled`
+/// (wave 4 hides it by default). Null when it is not running.
+/// [новое имя — согласовать]
+Uri? e2eGuessTrackApiBaseUrl() {
+  final raw = Platform.environment['E2E_GUESS_TRACK_API_BASE_URL'] ?? '';
+  return raw.isEmpty ? null : Uri.parse(raw);
+}
+
+/// `skip:` value for the guess_track suite.
+Object e2eGuessTrackSkip() => e2eGuessTrackApiBaseUrl() == null
+    ? 'no guess_track server: run scripts/e2e.sh (or set '
+          'E2E_GUESS_TRACK_API_BASE_URL to a server whose modes_enabled '
+          'includes guess_track)'
+    : false;
+
 /// `skip:` value for every end-to-end test.
 Object e2eSkip() => e2eApiBaseUrl() == null
     ? 'no server: run scripts/e2e.sh (or pass '

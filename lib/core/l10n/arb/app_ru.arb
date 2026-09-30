@@ -591,9 +591,9 @@
   "@mySongsLegacyHint": {
     "description": "«Мои песни» still holds legacy catalogue picks (test_catalog); they cannot be saved as songs."
   },
-  "modeEmojiQuiz": "Эмодзи-квиз",
+  "modeEmojiQuiz": "Угадай песню",
   "@modeEmojiQuiz": {
-    "description": "emoji_quiz game mode [новое имя — согласовать]."
+    "description": "emoji_quiz game mode; since wave 4 the UI calls it «Угадай песню» (owner decision) [новое имя — согласовать]."
   },
   "modeEmojiQuizHint": "Угадайте песню по эмодзи — музыка не нужна",
   "gamePromptEmoji": "Какая это песня?",
@@ -666,5 +666,57 @@
   "lobbyEmojiDifficultyEasy": "Лёгкие",
   "lobbyEmojiDifficultyMedium": "До средних",
   "lobbyEmojiDifficultyHard": "Все, включая сложные",
-  "lobbyEmojiHint": "Без музыки: хватит телефонов"
+  "lobbyEmojiHint": "Без музыки: хватит телефонов",
+  "gameYouTubePressPlay": "Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни",
+  "@gameYouTubePressPlay": {
+    "description": "youtube_embed DJ: they start the video in the official player themself (no autoplay)."
+  },
+  "gameYouTubeTapWhenPlaying": "Когда зазвучит песня, жми кнопку ниже",
+  "gameYouTubeConsentTitle": "Включить плеер YouTube?",
+  "@gameYouTubeConsentTitle": {
+    "description": "Consent sheet before the embedded YouTube player loads (EU/EEA, YouTube policy III.E.4.i) [новое имя — согласовать]."
+  },
+  "gameYouTubeConsentBody": "Песня сыграет в официальном плеере YouTube. Когда он загружается, YouTube (Google) получает данные о твоём устройстве и может показать рекламу.",
+  "gameYouTubeConsentAllow": "Разрешить",
+  "gameYouTubeConsentDecline": "Нет, включу сам",
+  "gameYouTubeFallback": "Видео не играет — включи песню сам",
+  "@gameYouTubeFallback": {
+    "description": "youtube_embed DJ fell back to the BYOP cue (every video failed or the screen is too small)."
+  },
+  "gameYouTubeDeclined": "Без YouTube: включи песню в своём приложении",
+  "@gameYouTubeDeclined": {
+    "description": "youtube_embed DJ declined the player consent."
+  },
+  "mySongsYouTubeAdd": "Видео YouTube",
+  "@mySongsYouTubeAdd": {
+    "description": "«Мои песни»: link a YouTube video to a song pick (wave 4) [новое имя — согласовать]."
+  },
+  "mySongsYouTubeTitle": "Видео для песни «{song}»",
+  "@mySongsYouTubeTitle": {
+    "placeholders": {
+      "song": {
+        "type": "String"
+      }
+    }
+  },
+  "mySongsYouTubeHint": "Вставь ссылку на официальное видео песни — когда ты DJ, она сыграет в плеере YouTube",
+  "mySongsYouTubeField": "Ссылка на YouTube",
+  "mySongsYouTubePaste": "Вставить",
+  "mySongsYouTubeCheck": "Проверить",
+  "mySongsYouTubeUse": "Привязать",
+  "mySongsYouTubeCancel": "Отмена",
+  "mySongsYouTubeRemove": "Убрать видео",
+  "mySongsYouTubeInvalid": "Это не ссылка на видео YouTube",
+  "mySongsYouTubeNotFound": "Видео не найдено или скрыто",
+  "mySongsYouTubeNotEmbeddable": "Автор запретил показывать это видео в приложениях",
+  "mySongsYouTubeFailed": "Не получилось проверить ссылку",
+  "mySongsYouTubeLinked": "Видео YouTube привязано",
+  "mySongsYouTubeChannel": "Канал: {channel}",
+  "@mySongsYouTubeChannel": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  }
 }

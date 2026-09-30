@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/flavors/flavor.dart';
+import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
 import 'package:sporand/core/remote_config/remote_config_keys.dart';
 import 'package:sporand/core/remote_config/remote_config_service.dart';
@@ -34,6 +35,8 @@ void main() {
         'boot_config_timeout_ms',
         'boot_min_splash_ms',
         'boot_max_total_ms',
+        'modes_enabled',
+        'youtube_player_min_width_dp',
       });
     });
 
@@ -196,6 +199,46 @@ void main() {
         ConfigFetchResult.failed,
       );
       expect(svc.bootTimings.maxTotal.inMilliseconds, 8000);
+    });
+  });
+
+  group('wave 4 keys', () {
+    test('modes_enabled: default hides guess_track; JSON arrays are '
+        'filtered, deduplicated and never empty', () {
+      final defaults = RemoteConfigService(
+        backend: InMemoryRemoteConfigBackend(),
+      );
+      expect(defaults.modesEnabled, [GameMode.whoseSong, GameMode.emojiQuiz]);
+      expect(
+        serviceWith({
+          'modes_enabled': '["guess_track","whose_song","guess_track","x"]',
+        }).modesEnabled,
+        [GameMode.whoseSong, GameMode.guessTrack],
+      );
+      for (final raw in ['[]', '["x"]', 'guess_track', '{"a":1}', '']) {
+        expect(serviceWith({'modes_enabled': raw}).modesEnabled, [
+          GameMode.whoseSong,
+          GameMode.emojiQuiz,
+        ], reason: raw);
+      }
+      expect(
+        RcKeys.modesEnabled.parse('["whose_song","emoji_quiz"]'),
+        '["emoji_quiz","whose_song"]',
+        reason: 'stored sorted, like the server',
+      );
+    });
+
+    test('youtube_player_min_width_dp: 480 by default, never below 356', () {
+      expect(
+        RemoteConfigService(backend: InMemoryRemoteConfigBackend())
+            .youtubePlayerMinWidthDp,
+        480,
+      );
+      expect(
+        serviceWith({'youtube_player_min_width_dp': '200'})
+            .youtubePlayerMinWidthDp,
+        356,
+      );
     });
   });
 }

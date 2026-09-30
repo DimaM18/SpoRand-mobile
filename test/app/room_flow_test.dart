@@ -38,6 +38,10 @@ void main() {
         'onboarding_completed': true,
         'analytics_consent': true,
       },
+      // guess_track is hidden unless modes_enabled lists it (wave 4).
+      cachedConfig: {
+        'modes_enabled': '["emoji_quiz","guess_track","whose_song"]',
+      },
     );
     final server = FakeWsServer();
     final rooms = FakeRoomsApi();
@@ -286,7 +290,12 @@ void main() {
       find.text('Угадайте песню по эмодзи — музыка не нужна'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Эмодзи-квиз'));
+    // modes_enabled (default): whose_song and the emoji quiz, which the UI
+    // calls «Угадай песню» since wave 4; the audio guess_track is hidden.
+    expect(find.byKey(const ValueKey('create-mode-whose_song')), findsOne);
+    expect(find.byKey(const ValueKey('create-mode-guess_track')), findsNothing);
+    expect(find.text('Угадай трек'), findsNothing);
+    await tester.tap(find.text('Угадай песню'));
     await tester.enterText(
       find.widgetWithText(TextField, 'Ваше имя в игре'),
       'Ania',

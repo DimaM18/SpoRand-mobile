@@ -11,6 +11,7 @@ import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_backend.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
 import 'package:sporand/core/clock/input_clock.dart';
+import 'package:sporand/core/consent/consent_service.dart';
 import 'package:sporand/core/net/app_signals.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
@@ -18,10 +19,12 @@ import 'package:sporand/core/net/ws_client.dart';
 import 'package:sporand/core/platform/app_platform.dart';
 import 'package:sporand/core/playback/music_app_launcher.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
+import 'package:sporand/core/playback/youtube/youtube_player.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
 import 'package:sporand/core/remote_config/remote_config_backend.dart';
 import 'package:sporand/core/remote_config/remote_config_service.dart';
 import 'package:sporand/core/security/app_check_service.dart';
+import 'package:sporand/core/storage/preferences_store.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/lobby/domain/room_session.dart';
@@ -85,8 +88,13 @@ class GameHarness {
     InputClock Function(FakeInputClock clock)? gameClock,
     int anchorUs = defaultAnchorUs,
     FakeAppCheckService? appCheck,
+    FakeConsentService? consent,
     List<Override> extraOverrides = const [],
   }) : ads = ads ?? GatedAdsService(),
+       // Outside the EEA by default: the YouTube player needs no consent.
+       consent =
+           consent ??
+           (FakeConsentService()..refresh(underAgeOfConsent: false).ignore()),
        appCheck =
            appCheck ?? FakeAppCheckService(token: 'limited-use-token-123'),
        playback = playback ?? FakePlaybackAdapter(),
@@ -132,6 +140,9 @@ class GameHarness {
         playbackAdapterFactoryProvider.overrideWithValue((_) => this.playback),
         appCheckProvider.overrideWithValue(this.appCheck),
         musicAppLauncherProvider.overrideWithValue(musicApp),
+        youTubePlayerFactoryProvider.overrideWithValue(youTube),
+        consentServiceProvider.overrideWithValue(this.consent),
+        preferencesStoreProvider.overrideWithValue(prefs),
         ...extraOverrides,
       ],
       retry: (_, _) => null,
@@ -164,6 +175,13 @@ class GameHarness {
   final FakePurchasesService purchases = FakePurchasesService();
   final FakeAppCheckService appCheck;
   final FakeMusicAppLauncher musicApp = FakeMusicAppLauncher();
+
+  /// The embedded YouTube players the round screen created (no WebView in
+  /// `flutter test`).
+  final FakeYouTubePlayerFactory youTube = FakeYouTubePlayerFactory();
+  final FakeConsentService consent;
+  final InMemoryPreferencesStore prefs = InMemoryPreferencesStore()
+    ..open().ignore();
   late final WsClient ws;
   late final RoomSession session;
   late final ProviderContainer container;

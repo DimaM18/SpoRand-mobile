@@ -1,7 +1,10 @@
 // End-to-end: guess_track with provider external_player (addendum A2.2):
 // the DJ saw the title, so it may not answer (`dj_ineligible`), and a round
 // the DJ never starts is voided after `byop_start_timeout_ms` and replaced
-// by a spare `void_notice_ms` later. See apps/mobile/README.md, "End-to-end suite".
+// by a spare `void_notice_ms` later. guess_track is hidden by default since
+// wave 4 (`modes_enabled`), so this suite runs on the second server of
+// scripts/e2e.sh, which enables it. See apps/mobile/README.md, "End-to-end
+// suite".
 @Timeout(Duration(minutes: 3))
 library;
 
@@ -26,7 +29,7 @@ void main() {
     'follows; the DJ may not answer; guests are scored by device time',
     () async {
       final party = await Party.assemble(
-        api: e2eApiBaseUrl()!,
+        api: e2eGuessTrackApiBaseUrl()!,
         names: const ['Jan', 'Kinga', 'Lena'],
         mode: GameMode.guessTrack,
         provider: MusicProviderId.externalPlayer,
@@ -161,7 +164,7 @@ void main() {
       expect(djRow.points, 0);
       expect(dj.wire.receivedOf('error'), isEmpty);
     },
-    skip: e2eSkip(),
+    skip: e2eGuessTrackSkip(),
   );
 
   test(
@@ -173,7 +176,7 @@ void main() {
       expect(audit.restProblems(), isEmpty);
       expect(audit.typeCounts.keys, contains('round.voided'));
     },
-    skip: e2eSkip(),
+    skip: e2eGuessTrackSkip(),
   );
 }
 

@@ -53,6 +53,26 @@ abstract final class Samples {
     supportsSearch: true,
   );
 
+  /// `provider_capabilities` of a youtube_embed room, as in packages/protocol
+  /// `fixtures/ws/variants/s2c/room.state/youtube_embed.json` (wave 4).
+  static const youtubeCapabilities = ProviderCapabilities(
+    playback: AudioStartSource.hostReported,
+    audioSource: AudioSource.externalApp,
+    allowsMonetization: true,
+    allowsPrefetch: false,
+    allowsCustomOffset: true,
+    revealsMetadataDuringPlay: true,
+    licensedTerritories: ['*'],
+    requiresPremiumHost: false,
+    supportsSearch: true,
+    titleVisibleDuringPlay: true,
+    requiresVisiblePlayer: true,
+    requiresConsentBeforeLoad: true,
+    thirdPartyAdsPossible: true,
+    paywallAllowed: false,
+    startAccuracyMs: 2000,
+  );
+
   static const textCapabilities = ProviderCapabilities(
     playback: AudioStartSource.none,
     audioSource: AudioSource.none,
@@ -108,6 +128,17 @@ abstract final class Samples {
     capabilities: byopCapabilities,
   );
 
+  /// A youtube_embed room (the host is the DJ).
+  static RoomSnapshot youtubeRoom({
+    RoomState state = RoomState.roundPlaying,
+    GameMode mode = GameMode.whoseSong,
+  }) => room(
+    state: state,
+    mode: mode,
+    provider: MusicProviderId.youtubeEmbed,
+    capabilities: youtubeCapabilities,
+  );
+
   static Welcome welcome({
     String me = guestId,
     RoomSnapshot? room,
@@ -139,6 +170,7 @@ abstract final class Samples {
     RoundKind kind = RoundKind.regular,
     RoundClip? clip,
     RoundCue? cue,
+    RoundVideo? video,
     RoundTextPrompt? textPrompt,
     RoundEmojiPrompt? emojiPrompt,
     RoundPrompt prompt = RoundPrompt.whoseSong,
@@ -163,6 +195,7 @@ abstract final class Samples {
         'fcb326c4a60b146025d44fa3758ccf983a9ce51c58ad53ae325186ab48767c35',
     clip: clip,
     cue: cue,
+    video: video,
     textPrompt: textPrompt,
     emojiPrompt: emojiPrompt,
     youAreDj: youAreDj,
@@ -190,6 +223,28 @@ abstract final class Samples {
     prompt: prompt,
     youAreOwner: youAreOwner,
     cue: cue,
+    youAreDj: true,
+    djPlayerId: djId,
+  );
+
+  static const video = RoundVideo(
+    videoId: 'tEsTvIdEo01',
+    startS: 42,
+    fallbackVideoIds: ['tEsTvIdEo02'],
+  );
+
+  /// The DJ's round.prepare in a youtube_embed room: the cue and the video.
+  static RoundPrepare youtubeDjPrepare({
+    String roundId = 'round-1',
+    required int startAtMonoUs,
+    RoundVideo video = video,
+    String djId = hostId,
+  }) => prepare(
+    roundId: roundId,
+    startAtMonoUs: startAtMonoUs,
+    source: AudioStartSource.hostReported,
+    cue: cue,
+    video: video,
     youAreDj: true,
     djPlayerId: djId,
   );

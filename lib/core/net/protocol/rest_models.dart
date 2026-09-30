@@ -755,7 +755,14 @@ sealed class CatalogPick {
       if (json.str('song_id') != song.songId) {
         throw const ProtocolFormatException('song_id differs from song');
       }
-      return SongPick(position: position, song: song);
+      final videoId = json.optStr('youtube_video_id');
+      if (videoId != null) checkYouTubeVideoId('youtube_video_id', videoId);
+      return SongPick(position: position, song: song, youtubeVideoId: videoId);
+    }
+    if (json.containsKey('youtube_video_id')) {
+      throw const ProtocolFormatException(
+        'youtube_video_id only goes with a song pick',
+      );
     }
     final track = CatalogTrack.fromJson(json.obj('track'));
     if (json.str('catalog_track_id') != track.catalogTrackId) {
@@ -778,9 +785,23 @@ sealed class CatalogPick {
 /// A song pick (A2.3); protocol fields `song_id` / `song` [новое имя —
 /// согласовать].
 final class SongPick extends CatalogPick {
-  const SongPick({required super.position, required this.song});
+  const SongPick({
+    required super.position,
+    required this.song,
+    this.youtubeVideoId,
+  });
 
   final Song song;
+
+  /// The YouTube video the owner linked for this song (wave 4,
+  /// youtube_embed) [новое имя — согласовать].
+  final String? youtubeVideoId;
+
+  SongPick withPosition(int position) =>
+      SongPick(position: position, song: song, youtubeVideoId: youtubeVideoId);
+
+  SongPick withVideo(String? videoId) =>
+      SongPick(position: position, song: song, youtubeVideoId: videoId);
 
   @override
   String get title => song.title;
@@ -793,6 +814,7 @@ final class SongPick extends CatalogPick {
     'position': position,
     'song_id': song.songId,
     'song': song.toJson(),
+    'youtube_video_id': ?youtubeVideoId,
   };
 }
 
@@ -832,28 +854,63 @@ final class PicksResponse {
   };
 }
 
-/// `PUT /v1/me/picks` body: exactly one ordered list, `song_ids` (A2.3,
-/// preferred) or the legacy `catalog_track_ids`.
+/// One entry of `PicksUpdateRequest.song_picks` (wave 4): a song with an
+/// optional YouTube video. Protocol `SongPickInput` [новое имя — согласовать].
+final class SongPickInput {
+  const SongPickInput({required this.songId, this.youtubeVideoId});
+
+  factory SongPickInput.fromJson(JsonMap json) {
+    json.expectOnly(const {'song_id', 'youtube_video_id'});
+    final videoId = json.optStr('youtube_video_id');
+    if (videoId != null) checkYouTubeVideoId('youtube_video_id', videoId);
+    return SongPickInput(songId: json.str('song_id'), youtubeVideoId: videoId);
+  }
+
+  final String songId;
+  final String? youtubeVideoId;
+
+  JsonMap toJson() => {'song_id': songId, 'youtube_video_id': ?youtubeVideoId};
+}
+
+/// `PUT /v1/me/picks` body: exactly one ordered list: `song_ids` (A2.3),
+/// `song_picks` (wave 4: songs with an optional YouTube video each) or the
+/// legacy `catalog_track_ids`.
 final class PicksUpdateRequest {
   const PicksUpdateRequest.songs(List<String> this.songIds)
-    : catalogTrackIds = null;
+    : songPicks = null,
+      catalogTrackIds = null;
+
+  const PicksUpdateRequest.songPicks(List<SongPickInput> this.songPicks)
+    : songIds = null,
+      catalogTrackIds = null;
 
   const PicksUpdateRequest.legacyCatalog(List<String> this.catalogTrackIds)
-    : songIds = null;
+    : songIds = null,
+      songPicks = null;
 
   factory PicksUpdateRequest.fromJson(JsonMap json) {
-    json.expectOnly(const {'song_ids', 'catalog_track_ids'});
+    json.expectOnly(const {'song_ids', 'song_picks', 'catalog_track_ids'});
     if (json.length != 1) {
       throw const ProtocolFormatException(
-        'exactly one of song_ids and catalog_track_ids',
+        'exactly one of song_ids, song_picks and catalog_track_ids',
       );
     }
     final songs = json.optList('song_ids', asString);
-    return songs != null
-        ? PicksUpdateRequest.songs(songs)
-        : PicksUpdateRequest.legacyCatalog(
-            json.list('catalog_track_ids', asString),
-          );
+    if (songs != null) return PicksUpdateRequest.songs(songs);
+    final picks = json.optList(
+      'song_picks',
+      (item) => SongPickInput.fromJson(asObject(item)),
+    );
+    if (picks != null) {
+      final ids = {for (final p in picks) p.songId};
+      if (ids.length != picks.length) {
+        throw const ProtocolFormatException('song_picks repeat a song_id');
+      }
+      return PicksUpdateRequest.songPicks(picks);
+    }
+    return PicksUpdateRequest.legacyCatalog(
+      json.list('catalog_track_ids', asString),
+    );
   }
 
   /// Protocol bounds of the list (`PICKS_MIN` / `PICKS_MAX`).
@@ -861,11 +918,80 @@ final class PicksUpdateRequest {
   static const maxPicks = 10;
 
   final List<String>? songIds;
+  final List<SongPickInput>? songPicks;
   final List<String>? catalogTrackIds;
 
   JsonMap toJson() => {
     'song_ids': ?songIds,
+    if (songPicks case final picks?)
+      'song_picks': [for (final p in picks) p.toJson()],
     'catalog_track_ids': ?catalogTrackIds,
+  };
+}
+
+/// Protocol `YOUTUBE_VIDEO_ID_PATTERN`: 11 URL-safe base64 characters.
+final youTubeVideoIdPattern = RegExp(r'^[A-Za-z0-9_-]{11}$');
+
+void checkYouTubeVideoId(String field, String value) {
+  if (!youTubeVideoIdPattern.hasMatch(value)) {
+    throw ProtocolFormatException('"$field" must be an 11-character video id');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// YouTube links (wave 4)
+// ---------------------------------------------------------------------------
+
+/// `POST /v1/songs/youtube/resolve` body: a pasted link as is
+/// [новое имя — согласовать].
+final class YouTubeResolveRequest {
+  const YouTubeResolveRequest({required this.url});
+
+  factory YouTubeResolveRequest.fromJson(JsonMap json) =>
+      YouTubeResolveRequest(url: (json..expectOnly(const {'url'})).str('url'));
+
+  /// 1–2048 characters.
+  final String url;
+
+  JsonMap toJson() => {'url': url};
+}
+
+/// `POST /v1/songs/youtube/resolve` response: the video id and its oEmbed
+/// title and channel, shown to the owner as text only (never a thumbnail)
+/// [новое имя — согласовать].
+final class YouTubeResolveResponse {
+  const YouTubeResolveResponse({
+    required this.videoId,
+    required this.title,
+    required this.authorName,
+    this.embeddableHint,
+  });
+
+  factory YouTubeResolveResponse.fromJson(JsonMap json) {
+    final videoId = json.str('video_id');
+    checkYouTubeVideoId('video_id', videoId);
+    return YouTubeResolveResponse(
+      videoId: videoId,
+      title: json.str('title'),
+      authorName: json.str('author_name'),
+      embeddableHint: json.optBool('embeddable_hint'),
+    );
+  }
+
+  final String videoId;
+  final String title;
+
+  /// The channel name.
+  final String authorName;
+
+  /// Best effort: probably embeddable; null when unknown.
+  final bool? embeddableHint;
+
+  JsonMap toJson() => {
+    'video_id': videoId,
+    'title': title,
+    'author_name': authorName,
+    'embeddable_hint': ?embeddableHint,
   };
 }
 
@@ -880,11 +1006,14 @@ sealed class PoolTrackInput {
 
   factory PoolTrackInput.fromJson(JsonMap json) {
     if (json.containsKey('song_id')) {
-      json.expectOnly(const {'song_id', 'rank', 'hidden'});
+      json.expectOnly(const {'song_id', 'rank', 'hidden', 'youtube_video_id'});
+      final videoId = json.optStr('youtube_video_id');
+      if (videoId != null) checkYouTubeVideoId('youtube_video_id', videoId);
       return SongPoolTrack(
         songId: json.str('song_id'),
         rank: json.optInt('rank'),
         hidden: json.optBool('hidden'),
+        youtubeVideoId: videoId,
       );
     }
     json.expectOnly(const {'catalog_track_id', 'rank', 'hidden'});
@@ -906,12 +1035,26 @@ sealed class PoolTrackInput {
 
 /// Protocol name `SongPoolTrack` [новое имя — согласовать].
 final class SongPoolTrack extends PoolTrackInput {
-  const SongPoolTrack({required this.songId, super.rank, super.hidden});
+  const SongPoolTrack({
+    required this.songId,
+    super.rank,
+    super.hidden,
+    this.youtubeVideoId,
+  });
 
   final String songId;
 
+  /// youtube_embed rooms: the video to play for this song (wave 4)
+  /// [новое имя — согласовать].
+  final String? youtubeVideoId;
+
   @override
-  JsonMap toJson() => {'song_id': songId, 'rank': ?rank, 'hidden': ?hidden};
+  JsonMap toJson() => {
+    'song_id': songId,
+    'rank': ?rank,
+    'hidden': ?hidden,
+    'youtube_video_id': ?youtubeVideoId,
+  };
 }
 
 final class CatalogPoolTrack extends PoolTrackInput {

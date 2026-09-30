@@ -14,6 +14,7 @@ import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/game/presentation/widgets/answer_grid.dart';
 import 'package:sporand/features/game/presentation/widgets/emoji_puzzle.dart';
+import 'package:sporand/features/game/presentation/widgets/youtube_round_player.dart';
 
 /// The question of a round. A text round (provider `none`) keeps the room
 /// mode's question.
@@ -113,7 +114,10 @@ class RoundScreen extends StatelessWidget {
       },
       RoundTimeUp() => l10n.gameTimeUp,
       RoundOwnerWatching() => l10n.gameYourTrackHint,
-      RoundDjCue() => l10n.gameDjCueSecret,
+      RoundDjCue() => switch (state.djVideo) {
+        DjVideoPlayer() => l10n.gameYouTubeTapWhenPlaying,
+        _ => l10n.gameDjCueSecret,
+      },
       RoundDjWatching() => l10n.gameDjWatchingHint,
     };
     final textPrompt = round.textPrompt;
@@ -179,7 +183,7 @@ class RoundScreen extends StatelessWidget {
         ),
         const SizedBox(height: Spacing.lg),
         if (state.phase is RoundDjCue) ...[
-          DjCueCard(round: round),
+          ..._djCue(context, state),
           if (!round.djMayAnswer) ...[
             const SizedBox(height: Spacing.sm),
             Text(
@@ -219,7 +223,7 @@ class RoundScreen extends StatelessWidget {
     );
     // Over the round, not in its layout: when the notice goes, nothing moves
     // under the player's finger.
-    return Stack(
+    final body = Stack(
       children: [
         list,
         if (voidNotice != null)
@@ -231,6 +235,49 @@ class RoundScreen extends StatelessWidget {
           ),
       ],
     );
+    if (!round.isDj || round.video == null) return body;
+    // youtube_embed DJ: the official player sits above the scrolling
+    // content, full width and fully visible; nothing (not even the void
+    // notice) is ever drawn over it.
+    return Column(
+      children: [
+        DjVideoSlot(roundId: round.roundId),
+        Expanded(child: body),
+      ],
+    );
+  }
+
+  /// The DJ's part of a round they have not started yet: the consent sheet,
+  /// the player's «Музыка играет!» button, or the BYOP cue card.
+  static List<Widget> _djCue(BuildContext context, GameRoundState state) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final round = state.round;
+    Widget note(String text) => Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.sm),
+      child: Text(
+        text,
+        key: const ValueKey('youtube-note'),
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyLarge,
+      ),
+    );
+    return switch (state.djVideo) {
+      null => [DjCueCard(round: round)],
+      DjVideoConsent() => [YouTubeConsentCard(roundId: round.roundId)],
+      DjVideoPlayer() => [
+        note(l10n.gameYouTubePressPlay),
+        DjMusicPlayingButton(round: round),
+      ],
+      DjVideoCueFallback(:final reason) => [
+        note(
+          reason == VideoPlaybackFailureReason.consentDeclined
+              ? l10n.gameYouTubeDeclined
+              : l10n.gameYouTubeFallback,
+        ),
+        DjCueCard(round: round),
+      ],
+    };
   }
 }
 
@@ -336,19 +383,10 @@ class DjCueCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final party = PartyColors.of(context);
     final cue = round.cue;
     if (cue == null) return const SizedBox.shrink();
     final controller = ref.read(gameControllerProvider.notifier);
     final canOpen = ref.read(musicAppLauncherProvider).canOpen(cue);
-
-    void started(int? audioStartMonoUs) {
-      final reported = controller.djStarted(
-        roundId: round.roundId,
-        audioStartMonoUs: audioStartMonoUs,
-      );
-      if (reported) unawaited(HapticFeedback.mediumImpact());
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -378,57 +416,86 @@ class DjCueCard extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: Spacing.lg),
-        Semantics(
-          button: true,
-          label: l10n.gameDjMusicPlaying,
-          hint: l10n.gameDjMusicPlayingHint,
-          excludeSemantics: true,
-          // A screen-reader activation has no touch time: the controller
-          // reads the input clock instead.
-          onTap: () => started(null),
-          child: Listener(
-            key: const ValueKey('dj-music-playing'),
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (event) =>
-                started(tapMonoUsFromPointer(controller.inputClock, event)),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 120),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.all(Spacing.lg),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: party.gradient),
-                borderRadius: BorderRadius.circular(Radii.xl),
+        DjMusicPlayingButton(round: round),
+      ],
+    );
+  }
+}
+
+/// «Музыка играет!» (BYOP and youtube_embed DJ): a [Listener], because
+/// `onPointerDown` carries the OS touch time, which becomes
+/// `audio_start_mono_us` (through the process anchor) with
+/// `source: dj_tap`; `onTap` would fire only when the finger lifts. In a
+/// youtube_embed round it sits below the player, never on it.
+class DjMusicPlayingButton extends ConsumerWidget {
+  const DjMusicPlayingButton({super.key, required this.round});
+
+  final RoundView round;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final party = PartyColors.of(context);
+    final controller = ref.read(gameControllerProvider.notifier);
+
+    void started(int? audioStartMonoUs) {
+      final reported = controller.djStarted(
+        roundId: round.roundId,
+        audioStartMonoUs: audioStartMonoUs,
+      );
+      if (reported) unawaited(HapticFeedback.mediumImpact());
+    }
+
+    return Semantics(
+      button: true,
+      label: l10n.gameDjMusicPlaying,
+      hint: l10n.gameDjMusicPlayingHint,
+      excludeSemantics: true,
+      // A screen-reader activation has no touch time: the controller
+      // reads the input clock instead.
+      onTap: () => started(null),
+      child: Listener(
+        key: const ValueKey('dj-music-playing'),
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) =>
+            started(tapMonoUsFromPointer(controller.inputClock, event)),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 120),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(Spacing.lg),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: party.gradient),
+            borderRadius: BorderRadius.circular(Radii.xl),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.play_circle_fill_rounded,
+                color: Colors.white,
+                size: 48,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.play_circle_fill_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  const SizedBox(height: Spacing.xs),
-                  Text(
-                    l10n.gameDjMusicPlaying,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    l10n.gameDjMusicPlayingHint,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: Spacing.xs),
+              Text(
+                l10n.gameDjMusicPlaying,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
+              Text(
+                l10n.gameDjMusicPlayingHint,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

@@ -927,7 +927,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Песни из старого каталога нужно заменить новыми';
 
   @override
-  String get modeEmojiQuiz => 'Эмодзи-квиз';
+  String get modeEmojiQuiz => 'Угадай песню';
 
   @override
   String get modeEmojiQuizHint => 'Угадайте песню по эмодзи — музыка не нужна';
@@ -997,4 +997,83 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lobbyEmojiHint => 'Без музыки: хватит телефонов';
+
+  @override
+  String get gameYouTubePressPlay =>
+      'Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни';
+
+  @override
+  String get gameYouTubeTapWhenPlaying =>
+      'Когда зазвучит песня, жми кнопку ниже';
+
+  @override
+  String get gameYouTubeConsentTitle => 'Включить плеер YouTube?';
+
+  @override
+  String get gameYouTubeConsentBody =>
+      'Песня сыграет в официальном плеере YouTube. Когда он загружается, YouTube (Google) получает данные о твоём устройстве и может показать рекламу.';
+
+  @override
+  String get gameYouTubeConsentAllow => 'Разрешить';
+
+  @override
+  String get gameYouTubeConsentDecline => 'Нет, включу сам';
+
+  @override
+  String get gameYouTubeFallback => 'Видео не играет — включи песню сам';
+
+  @override
+  String get gameYouTubeDeclined =>
+      'Без YouTube: включи песню в своём приложении';
+
+  @override
+  String get mySongsYouTubeAdd => 'Видео YouTube';
+
+  @override
+  String mySongsYouTubeTitle(String song) {
+    return 'Видео для песни «$song»';
+  }
+
+  @override
+  String get mySongsYouTubeHint =>
+      'Вставь ссылку на официальное видео песни — когда ты DJ, она сыграет в плеере YouTube';
+
+  @override
+  String get mySongsYouTubeField => 'Ссылка на YouTube';
+
+  @override
+  String get mySongsYouTubePaste => 'Вставить';
+
+  @override
+  String get mySongsYouTubeCheck => 'Проверить';
+
+  @override
+  String get mySongsYouTubeUse => 'Привязать';
+
+  @override
+  String get mySongsYouTubeCancel => 'Отмена';
+
+  @override
+  String get mySongsYouTubeRemove => 'Убрать видео';
+
+  @override
+  String get mySongsYouTubeInvalid => 'Это не ссылка на видео YouTube';
+
+  @override
+  String get mySongsYouTubeNotFound => 'Видео не найдено или скрыто';
+
+  @override
+  String get mySongsYouTubeNotEmbeddable =>
+      'Автор запретил показывать это видео в приложениях';
+
+  @override
+  String get mySongsYouTubeFailed => 'Не получилось проверить ссылку';
+
+  @override
+  String get mySongsYouTubeLinked => 'Видео YouTube привязано';
+
+  @override
+  String mySongsYouTubeChannel(String channel) {
+    return 'Канал: $channel';
+  }
 }

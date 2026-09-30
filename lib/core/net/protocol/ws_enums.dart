@@ -15,7 +15,12 @@ enum MusicProviderId implements WireEnum {
   externalPlayer('external_player'),
 
   /// Text rounds without audio (A2.1).
-  none('none');
+  none('none'),
+
+  /// Wave 4: the official embedded YouTube player, visible on the round
+  /// DJ's phone; the DJ presses play in the player and reports the start
+  /// with `dj_tap` [новое имя — согласовать].
+  youtubeEmbed('youtube_embed');
 
   const MusicProviderId(this.wire);
 
@@ -32,7 +37,8 @@ enum MusicProviderId implements WireEnum {
 
   /// Pools of these providers reference `song_id` (A2.3, protocol
   /// `SONG_PROVIDER_IDS`) instead of a catalogue track.
-  bool get usesSongIds => this == externalPlayer || this == none;
+  bool get usesSongIds =>
+      this == externalPlayer || this == none || this == youtubeEmbed;
 }
 
 enum GameMode implements WireEnum {
@@ -349,6 +355,34 @@ enum RoundVoidReason implements WireEnum {
   unknown('unknown');
 
   const RoundVoidReason(this.wire);
+
+  @override
+  final String wire;
+}
+
+/// `round.playback_failed.reason` for an embedded video
+/// (`round.prepare.video`, youtube_embed), so the server can mark the video
+/// bad. Protocol `VideoPlaybackFailureReason` [новое имя — согласовать].
+enum VideoPlaybackFailureReason implements WireEnum {
+  /// The owner disabled embedding (YouTube errors 101 / 150).
+  embedDisabled('embed_disabled'),
+
+  /// Removed or private (100).
+  notFound('not_found'),
+
+  /// Not playable in this country.
+  regionBlocked('region_blocked'),
+
+  /// The player rejected the app identity (153: missing origin / Referer).
+  noIdentity('no_identity'),
+
+  /// EU/EEA consent to load the player was declined.
+  consentDeclined('consent_declined'),
+
+  /// Anything else; the raw player code goes in `code`.
+  other('other');
+
+  const VideoPlaybackFailureReason(this.wire);
 
   @override
   final String wire;

@@ -32,6 +32,7 @@ import 'package:sporand/core/storage/preferences_store.dart';
 import 'package:sporand/core/storage/user_prefs_repository.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/domain/display_name.dart';
+import 'package:sporand/features/lobby/domain/game_modes.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/lobby/presentation/lobby_controller.dart';
 import 'package:sporand/features/my_songs/data/my_songs_api.dart';
@@ -662,13 +663,82 @@ void main() {
           ),
         ),
       );
-      t.lobby.setMode(GameMode.guessTrack);
+      t.lobby.setMode(GameMode.whoseSong);
       async.flushMicrotasks();
       final back = t.server.current.sent<LobbyUpdateSettings>().last;
-      expect(back.mode, GameMode.guessTrack);
+      expect(back.mode, GameMode.whoseSong);
       expect(back.toJson().containsKey('emoji_markets'), isFalse);
       expect(back.toJson().containsKey('emoji_max_difficulty'), isFalse);
       t.container.dispose();
+    });
+  });
+
+  group('modes_enabled (wave 4)', () {
+    LobbyView view(_Lobby t) => (t.lobby.state as LobbyLoaded).view;
+
+    test('the picker offers only enabled modes; guess_track is hidden by '
+        'default and cannot be chosen', () {
+      fakeAsync((async) {
+        final t = _Lobby(async)..join();
+        t.send(
+          Samples.welcome(
+            me: Samples.hostId,
+            room: Samples.room(mode: GameMode.whoseSong),
+          ),
+        );
+        expect(view(t).modeChoices, [GameMode.whoseSong, GameMode.emojiQuiz]);
+        t.lobby.setMode(GameMode.guessTrack);
+        async.flushMicrotasks();
+        expect(t.server.current.sent<LobbyUpdateSettings>(), isEmpty);
+        t.container.dispose();
+      });
+    });
+
+    test("the room's frozen config wins; the current mode always shows", () {
+      fakeAsync((async) {
+        final t = _Lobby(async)..join();
+        t.send(
+          Samples.welcome(
+            me: Samples.hostId,
+            room: Samples.room(mode: GameMode.guessTrack),
+            config: const {
+              'modes_enabled': ['emoji_quiz'],
+            },
+          ),
+        );
+        expect(view(t).modeChoices, [GameMode.guessTrack, GameMode.emojiQuiz]);
+        t.send(
+          Samples.welcome(
+            me: Samples.hostId,
+            room: Samples.room(mode: GameMode.emojiQuiz),
+            config: const {
+              'modes_enabled': ['guess_track', 'whose_song', 'emoji_quiz'],
+            },
+          ),
+        );
+        expect(view(t).modeChoices, GameMode.values);
+        t.lobby.setMode(GameMode.guessTrack);
+        async.flushMicrotasks();
+        expect(
+          t.server.current.sent<LobbyUpdateSettings>().single.mode,
+          GameMode.guessTrack,
+        );
+        t.container.dispose();
+      });
+    });
+
+    test('selectableModes keeps GameMode order and is never empty', () {
+      expect(selectableModes(enabled: const [GameMode.emojiQuiz]), [
+        GameMode.emojiQuiz,
+      ]);
+      expect(selectableModes(enabled: const []), defaultEnabledModes);
+      expect(
+        selectableModes(
+          enabled: const [GameMode.emojiQuiz, GameMode.whoseSong],
+          current: GameMode.guessTrack,
+        ),
+        GameMode.values,
+      );
     });
   });
 
