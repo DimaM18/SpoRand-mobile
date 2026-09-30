@@ -5,12 +5,16 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/bootstrap/presentation/widgets/boot_status_view.dart';
 import 'package:sporand/app/router/routes.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/theme/app_theme.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/onboarding/domain/age_gate.dart';
 import 'package:sporand/features/onboarding/presentation/onboarding_controller.dart';
 
-/// Shared onboarding layout: step dots, title, body, bottom action.
+/// Shared onboarding layout: step pills, title, body, and the hero action
+/// pinned at the bottom (above the gesture bar). The body scrolls with
+/// large text.
 class _OnboardingScaffold extends StatelessWidget {
   const _OnboardingScaffold({
     required this.step,
@@ -19,6 +23,8 @@ class _OnboardingScaffold extends StatelessWidget {
     required this.body,
     required this.action,
   });
+
+  static const steps = 2;
 
   final int step;
   final String title;
@@ -29,57 +35,86 @@ class _OnboardingScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final party = PartyColors.of(context);
+    final gutter = Spacing.gutter(MediaQuery.sizeOf(context).width);
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Spacing.lg,
-            Spacing.lg,
-            Spacing.lg,
-            Spacing.md,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, Spacing.lg, gutter, Spacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  for (var i = 0; i < 2; i++)
-                    AnimatedContainer(
-                      duration: Motion.medium,
-                      margin: const EdgeInsets.only(right: Spacing.xs),
-                      width: i == step ? 28 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        gradient: i == step
-                            ? LinearGradient(colors: party.gradient)
-                            : null,
-                        color: i == step
-                            ? null
-                            : theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                ],
-              ),
+              _StepPills(step: step, total: steps),
               const SizedBox(height: Spacing.xl),
-              Semantics(
-                header: true,
-                child: Text(title, style: theme.textTheme.displaySmall),
-              ),
-              const SizedBox(height: Spacing.sm),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.xl),
+                      body,
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: Spacing.xl),
-              Expanded(child: SingleChildScrollView(child: body)),
+              const SizedBox(height: Spacing.md),
               action,
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// «Шаг 1 из 2»: the active pill in the (decorative) neon gradient, the
+/// others in `outlineVariant`.
+class _StepPills extends StatelessWidget {
+  const _StepPills({required this.step, required this.total});
+
+  final int step;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final party = PartyColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: context.l10n.onboardingStepSemantics(step + 1, total),
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          for (var i = 0; i < total; i++)
+            AnimatedContainer(
+              duration: Motion.reduced(context) ? Duration.zero : Motion.medium,
+              curve: Motion.emphasized,
+              margin: const EdgeInsets.only(right: Spacing.xs),
+              width: i == step ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                gradient: i == step
+                    ? LinearGradient(colors: party.neonGradient)
+                    : null,
+                // outline: 3:1 or more on the page (outlineVariant was
+                // 1.6:1, so «of 2» was invisible).
+                color: i == step ? null : scheme.outline,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -140,8 +175,13 @@ class _AgeGatePageState extends ConsumerState<AgeGatePage> {
           FilteringTextInputFormatter.digitsOnly,
           LengthLimitingTextInputFormatter(4),
         ],
-        style: Theme.of(context).textTheme.headlineMedium,
+        style: Theme.of(context).textTheme.headlineSmall?.tabular.copyWith(
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 4,
+        ),
         decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.cake_rounded),
           labelText: l10n.onboardingAgeFieldLabel,
           hintText: l10n.onboardingAgeFieldHint,
           errorText: _invalid ? l10n.onboardingAgeInvalid : null,
@@ -151,9 +191,11 @@ class _AgeGatePageState extends ConsumerState<AgeGatePage> {
         },
         onSubmitted: (_) => _submit(),
       ),
-      action: FilledButton(
-        onPressed: _submitting ? null : _submit,
-        child: Text(l10n.onboardingContinue),
+      action: PartyButton(
+        label: l10n.onboardingContinue,
+        icon: Icons.arrow_forward_rounded,
+        loading: _submitting,
+        onPressed: _submit,
       ),
     );
   }
@@ -173,27 +215,43 @@ class ConsentPage extends ConsumerWidget {
       subtitle: l10n.onboardingConsentBody,
       body: state.canChooseAnalytics
           ? Card(
+              clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
                 value: state.analyticsOptIn,
                 onChanged: controller.setAnalyticsOptIn,
+                secondary: const Icon(Icons.insights_rounded),
                 title: Text(l10n.onboardingConsentAnalytics),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Radii.lg),
-                ),
+                subtitle: Text(l10n.settingsAnalyticsSubtitle),
               ),
             )
-          : Text(
-              l10n.onboardingConsentMinorNote,
-              style: Theme.of(context).textTheme.bodyMedium,
+          : PartyCard(
+              child: Row(
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.shield_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      l10n.onboardingConsentMinorNote,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
             ),
-      action: FilledButton(
-        onPressed: state.busy
-            ? null
-            : () async {
-                final next = await controller.complete();
-                if (context.mounted) context.go(next);
-              },
-        child: Text(l10n.onboardingConsentStart),
+      action: PartyButton(
+        label: l10n.onboardingConsentStart,
+        icon: Icons.celebration_rounded,
+        glow: true,
+        loading: state.busy,
+        onPressed: () async {
+          final next = await controller.complete();
+          if (context.mounted) context.go(next);
+        },
       ),
     );
   }

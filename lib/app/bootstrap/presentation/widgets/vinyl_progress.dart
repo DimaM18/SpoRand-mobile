@@ -91,7 +91,7 @@ class _VinylProgressState extends State<VinylProgress>
         child: CustomPaint(
           painter: _RingPainter(
             progress: _ring,
-            colors: party.gradient,
+            colors: party.neonGradient,
             track: party.ringTrack,
             strokeWidth: ringWidth,
           ),
@@ -105,7 +105,7 @@ class _VinylProgressState extends State<VinylProgress>
                   turns: _spin,
                   child: RepaintBoundary(
                     child: CustomPaint(
-                      painter: _LabelPainter(colors: party.gradient),
+                      painter: _LabelPainter(colors: party.neonGradient),
                       child: const SizedBox.expand(),
                     ),
                   ),

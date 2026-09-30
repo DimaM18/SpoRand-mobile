@@ -208,9 +208,12 @@ The Swift and Kotlin code has not been compiled in the sandbox that wrote it
 
 ## Layout
 
-- `lib/app/` bootstrap, router, theme, flavors, DI (`di/providers.dart`)
+- `lib/app/` bootstrap, router, flavors, DI (`di/providers.dart`);
+  `app/theme/*.dart` are re-export shims for `lib/core/theme/`
 - `lib/core/` SDK interfaces with real adapters and fakes; `net/`, `clock/`,
-  `playback/`
+  `playback/`; `theme/` (tokens, `AppTheme`, fonts) and `ui/` (shared
+  components), see "Design system (wave 6)"
+- `assets/fonts/` bundled OFL fonts with their licence texts
 - `lib/features/<feature>/{data,domain,presentation}`: onboarding, home,
   lobby (rooms API, room session), my_songs, game, results, paywall,
   settings, debug
@@ -218,6 +221,165 @@ The Swift and Kotlin code has not been compiled in the sandbox that wrote it
 - `lib/contracts/` reserved for code generated from `packages/protocol`
 - `pigeons/` Pigeon definitions; `packages/sporand_native/` generated code +
   native implementations
+
+## Design system (wave 6, "Neon Night+")
+
+Dark-first neon party look, light and dark themes, WCAG AA. Tokens and the
+theme live in `lib/core/theme/`; the old `lib/app/theme/{tokens,app_theme}.dart`
+paths re-export them, and `app/bootstrap/presentation/widgets/equalizer_bars.dart`
+re-exports `core/ui/equalizer_bars.dart`, so existing imports keep working.
+
+- **Colours.** `ColorScheme`s unchanged except the dark `outline`, raised
+  from `#6D6594` to `#7C74A2` in fix round 1 so text-field edges, the off
+  switch and step pills reach 3:1 on every container (WCAG 1.4.11; the
+  unselected switch thumb is `onSurfaceVariant`, filled text fields have a
+  1 dp `outline` edge). `PartyColors` now splits
+  `neonGradient` (decorative only; `gradient` stays as its old name) from the
+  text-safe `ctaGradient` + `onCta` and `headlineGradient` (ShaderMask text
+  of 24 sp or more, once per screen). `GameColors` (ThemeExtension): six
+  answer slots (`answers`/`onAnswers`/`answerTonals`, `answer(i)`),
+  `correct`/`wrong` pairs, `gold`, `timerUrgent`, `gained`. Every pair is
+  recomputed by `test/core/theme/contrast_test.dart` (text >= 4.5, non-text
+  >= 3, both themes). Widgets use `colorScheme`, `PartyColors.of`,
+  `GameColors.of`; never `Color(0x…)`, `Colors.white` or `BrandColors`.
+- **Type.** `AppTheme.textTheme`: Unbounded for short display strings
+  (display*, headlineLarge/Medium), Nunito for the rest (answer tiles 22/800,
+  buttons 18/800). Weights come from `fontWeight` only: it drives the
+  variable `wght` axis (dart:ui docs; `fonts_test.dart` checks widths grow
+  at 400/500/700/900 in `flutter_tester`), and an explicit `fontVariations`
+  would ignore `copyWith(fontWeight:)`. Tabular figures: `style.tabular`
+  (`PartyTextStyles`); Nunito's digits are tabular by default, Unbounded has
+  `tnum`.
+- **Tokens.** `Spacing` (+ `gutter(width)`), `Radii`, `IconSizes`
+  (20/24/32/48), `TapTargets` (48 / 56 / hero 64 / answer 88, 76 below
+  700 dp of height), `Motion` (`press` 90 ms, `medium` now 280 ms,
+  `stagger` 40 ms, `reducedCrossfade`, `Motion.reduced(context)`).
+- **Components** (`lib/core/ui/`, barrel `ui.dart`):
+  - `TimedTapTarget`: the only timed input path (`Listener.onPointerDown`
+    -> `tapMonoUsFromPointer` + `Semantics(onTap: commit(null))`; up/cancel
+    only clear the pressed look; enabled switches instantly).
+  - `AnswerTile` (`AnswerTileMode` locked/open/picked/faded/correct/wrong,
+    `AnswerMarker` + `AnswerShape` circle/triangle/square/diamond/hexagon/
+    star with letters A–F), `TimedCtaButton` (the DJ «Музыка играет!» look,
+    with a tonal done state). `AnswerButton` in
+    `features/game/.../answer_grid.dart` can delegate its look to
+    `AnswerTile` while keeping its unlock callback and `answer-*` keys.
+  - `PartyButton` (hero CTA; while `loading` screen readers hear
+    «Загрузка…» as a live value), `PartyCard` (`PartyCardTone` surface/
+    raised/cta), `GradientHeadline` (the shader hugs the longest line, so a
+    wrapped headline reaches every stop), `PartyChip`, `StatusChip`,
+    `PlayerAvatar` (`PlayerBadge`; a neutral monogram disc, never an answer
+    colour: in «Чья песня?» the answers are the players), `AnswerTimerRing`
+    (visual only; real time even when the platform removes animations),
+    `ResultPill` (`ResultKind`), `PointsGained`, `StreakChip`,
+    `CelebrationBurst`, `PartyBanner` (`PartyBannerTone`), `showPartyToast`,
+    `showPartySheet`, `PartyLoader`, `InlineSpinner`, `SkeletonRow`,
+    `EqualizerBars`, `PartyActionBar` (the bottom bar of the lobby and the
+    results: `surfaceContainer` band with a hairline top edge),
+    `ReduceMotionScope`.
+  - `AnswerTile` never truncates a label (decoys differ in the last
+    letters): «Title — Artist» labels show the title and the artist on two
+    fixed lines (`AnswerTile.splitLabel`, display only; screen readers get
+    the full label), and the text scale is capped at 1.5x
+    (`AnswerTile.maxTextScale`). The state word («Твой ответ», «Верно»,
+    «Мимо») is the semantics value; reveal recap tiles are static
+    information, not disabled buttons.
+  - Reduce-motion: `Motion.reduced` is Android «Remove animations»
+    (`MediaQuery.disableAnimations`) or iOS «Reduce Motion»
+    (`AccessibilityFeatures.reduceMotion`, which Flutter does not fold in);
+    `ReduceMotionScope` in `SporandApp` folds the iOS flag into the
+    `MediaQuery` and rebuilds on changes. Press keeps the overlay and drops
+    the scale; count-up, scale-in and the celebration are skipped; the timer
+    ring steps per second on a timer; loaders freeze; the game-start
+    countdown still counts (plain text, one-shot timers).
+  - Never on or around the YouTube player: toasts, sheets, glow, the timer
+    ring, the celebration, looping loaders, dialogs (the game screen's
+    «Выйти» confirms inline in the app bar: «Остаться» / «Выйти из игры?»,
+    48 dp targets at any text scale, no time limit, focus on «Остаться»).
+  - YouTube DJ layout (`RoundScreen.playerLayoutFor`): portrait puts the
+    player on top edge to edge; landscape puts it beside a side pane
+    (`landscapePaneMinWidth` 280 dp when there is room, never under
+    `landscapePaneFloorWidth` 200 dp) as wide as the height allows and never
+    under the 356 dp floor. Rotation and resizing keep the same widget tree,
+    so the playing video survives. A window too small for a legal player
+    (split screen) shows the cue with «Окно слишком маленькое…» until it
+    grows; that is no longer a terminal `DjVideoCueFallback`. The play hint
+    under the player draws the play symbol as a Material icon
+    (`YouTubePressPlayNote`), never the ▶ character (no bundled font has it;
+    the platform fallback draws a colour emoji).
+  - Large text: the round question and the status line cap at 1.5x, the
+    emoji slots grow with the text scale and the row scales down to the
+    card, so the four answers stay on screen at 2.0x on a 390x844 phone.
+- **Fonts** (dev-time fetch only; never downloaded at runtime, no
+  `google_fonts`): `github.com/google/fonts` rev
+  `038b637da7b3fd956a4ed93ffc607c3d5e4ce172`, unsubsetted.
+
+  | File | Source | SHA-256 |
+  |---|---|---|
+  | `assets/fonts/unbounded/Unbounded[wght].ttf` (778 272 B, wght 200–900) | `ofl/unbounded/` | `323b511be380c8d474ef030686b71aedde501f8d9cd46da558b7c40454372c3f` |
+  | `assets/fonts/unbounded/OFL.txt` | `ofl/unbounded/` | `31e5d4e83955e7103c34570dd49b0570ef490800bd65b42923c0dd02445263b3` |
+  | `assets/fonts/nunito/Nunito[wght].ttf` (276 932 B, wght 200–1000) | `ofl/nunito/` | `bb55a5ca5c2042335b3991af27c4d0705d0ef41cac6164ac737fd8f2a1e85207` |
+  | `assets/fonts/nunito/OFL.txt` | `ofl/nunito/` | `580df76c95a1ec5ab878ceb25bb3d85c6a076804e9c970c8c6972aea775fdf65` |
+
+  Coverage of «Чья это песня? ё й Ё Й — ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ 0123456789 ×»
+  checked with fontTools and in `fonts_test.dart`. The licences are
+  registered with `LicenseRegistry` by `AppFonts.registerLicenses()` at the
+  start of the existing `fonts` warm-up step
+  (`FlutterResourceWarmer.loadFonts`), before any await; `showLicensePage`
+  lists them. Rendering on real devices is «[не проверено]».
+- **New names** «[новое имя — согласовать]»: `GameColors`, `AnswerSwatch`,
+  `PartyColors.neonGradient`/`ctaGradient`/`onCta`/`headlineGradient`,
+  `lerpColorList`, `IconSizes`, `TapTargets`, `Spacing.gutter`,
+  `Motion.press`/`stagger`/`staggerMaxItems`/`reducedCrossfade`/`reduced`,
+  `AppFonts`, `PartyTextStyles.tabular`, `TimedTapTarget`, `AnswerTile`,
+  `AnswerTileMode`, `AnswerMarker`, `AnswerShape`, `TimedCtaButton`,
+  `PartyButton`, `PartyCard`, `PartyCardTone`, `GradientHeadline`,
+  `PartyChip`, `StatusChip`, `PlayerAvatar`, `PlayerBadge`,
+  `AnswerTimerRing`, `ResultPill`, `ResultKind`, `PointsGained`,
+  `StreakChip`, `CelebrationBurst`, `PartyBanner`, `PartyBannerTone`,
+  `showPartyToast`, `showPartySheet`, `PartyLoader`, `InlineSpinner`,
+  `SkeletonRow`; ARB keys `gameMarkerCircle`/`Triangle`/`Square`/
+  `Diamond`/`Hexagon`/`Star`, `gameAnswerSemantics`, `gameYourPick`,
+  `gameTileCorrect`, `gameTimeLeftSemantics`, `revealStreak`,
+  `playerBadgeHost`/`Dj`/`Ready` (Polish copy «[не проверено]» by a native
+  speaker).
+- **New names, fix round 1** «[новое имя — согласовать]»: `ReduceMotionScope`,
+  `PartyActionBar`, `AnswerTile.splitLabel`, `AnswerTile.maxTextScale`,
+  `TimedTapTarget.semanticsValue`, `YouTubePressPlayNote`,
+  `RoundScreen.playerLayoutFor`, `RoundScreen.landscapePaneFloorWidth`,
+  `RoundScreen.portraitControlsMinHeight`; ARB keys
+  `gameYouTubePlayButton`, `gameYouTubeWindowTooSmall`, `commonLoading`
+  (`gameYouTubePressPlay` now takes a `{playIcon}` placeholder). Earlier
+  wave 6 names that were missing here: `StandingName`, `RoomCodeField`,
+  `RoomCodeText`, `gameModeIcon`, `isPlayerRound`, `leaveRoom`; ARB keys
+  `gameDjTapped`, `gameLeaveInlineConfirm`, `gameLeaveInlineCancel`,
+  `lobbyCopyCode`, `lobbyCodeCopied`, `onboardingStepSemantics`,
+  `standingsMovedUp`, `standingsMovedDown`, `resultsPodiumSemantics`.
+  Removed: `PlayerAvatar.stableHash`, `GameController.youTubePlayerUnavailable`,
+  the ARB key `gameYouTubeTapWhenPlaying` (the player screen says it once).
+
+## Screen goldens (`test/goldens/`)
+
+`screens_golden_test.dart` renders the real app (router, theme, bundled
+fonts, fakes, no network) and compares the whole screen with
+`test/goldens/screens/<name>.<light|dark>.png`: 32 frames per theme on a
+390x844 phone at 3x (boot, home, onboarding, create-room sheet, join error,
+settings, «Мои песни», lobby host/guest, countdown, whose_song DJ with the
+player placeholder (portrait and 844x390 landscape), BYOP DJ, EEA consent,
+round locked/open/answered/urgent/time-up, emoji puzzle, reveal right and
+wrong, bonus offer, ad break, results, paywall; plus 360x640 and text
+scale 2.0 frames). `flutter_test_config.dart` allows 0.2 % of pixels to
+differ (Skia SIMD paths move a few anti-aliased pixels between CPUs).
+
+- They are Linux renders and need the reference emoji font
+  `/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf` from Ubuntu 24.04
+  `fonts-noto-color-emoji` 2.047-0ubuntu0.24.04.1 (checked by length and
+  hash). On any other OS, or without that exact file, the group is
+  **skipped**, not failed: `flutter test` on a Mac or a CI image without the
+  package does not check them.
+- After an intended visual change: `flutter test test/goldens
+  --update-goldens` on Linux, then look at every changed PNG.
+  `GOLDEN_SHOTS_DIR=<dir>` also writes each frame at 3x for design review.
 
 ## Checks
 

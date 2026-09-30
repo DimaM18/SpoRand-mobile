@@ -3,9 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/di/providers.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/purchases/purchases_service.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 import 'package:sporand/features/paywall/presentation/paywall_controller.dart';
 import 'package:sporand/features/settings/presentation/settings_controller.dart';
@@ -24,11 +25,10 @@ class PaywallPage extends ConsumerWidget {
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final theme = Theme.of(context);
-    final party = PartyColors.of(context);
+    final game = GameColors.of(context);
+    final gutter = Spacing.gutter(MediaQuery.sizeOf(context).width);
 
-    void snack(String text) => ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+    void snack(String text) => showPartyToast(context, text);
 
     Future<void> buy() async {
       final outcome = await controller.purchaseSelected();
@@ -67,18 +67,14 @@ class PaywallPage extends ConsumerWidget {
         onAction: controller.load,
       ),
       PaywallReady() => ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Spacing.lg,
-          0,
-          Spacing.lg,
-          Spacing.xl,
-        ),
+        padding: EdgeInsets.fromLTRB(gutter, 0, gutter, Spacing.xl),
         children: [
-          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) =>
-                LinearGradient(colors: party.gradient).createShader(bounds),
-            child: Text(l10n.paywallTitle, style: theme.textTheme.displaySmall),
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.5,
+            child: GradientHeadline(
+              l10n.paywallTitle,
+              style: theme.textTheme.headlineLarge,
+            ),
           ),
           const SizedBox(height: Spacing.xs),
           Text(
@@ -94,12 +90,14 @@ class PaywallPage extends ConsumerWidget {
             l10n.paywallPerkPlayers,
           ])
             Padding(
-              padding: const EdgeInsets.only(bottom: Spacing.xs),
+              padding: const EdgeInsets.only(bottom: Spacing.sm),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: theme.colorScheme.tertiary,
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      color: game.correct,
+                    ),
                   ),
                   const SizedBox(width: Spacing.sm),
                   Expanded(
@@ -108,7 +106,7 @@ class PaywallPage extends ConsumerWidget {
                 ],
               ),
             ),
-          const SizedBox(height: Spacing.lg),
+          const SizedBox(height: Spacing.md),
           for (final package in state.packages)
             Padding(
               padding: const EdgeInsets.only(bottom: Spacing.sm),
@@ -119,15 +117,14 @@ class PaywallPage extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: Spacing.md),
-          FilledButton(
-            onPressed: state.purchasing ? null : buy,
-            child: state.purchasing
-                ? const SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : Text(l10n.paywallBuy),
+          PartyButton(
+            label: l10n.paywallBuy,
+            icon: Icons.workspace_premium_rounded,
+            glow: true,
+            loading: state.purchasing,
+            onPressed: buy,
           ),
+          const SizedBox(height: Spacing.xs),
           TextButton(onPressed: restore, child: Text(l10n.paywallRestore)),
           const SizedBox(height: Spacing.sm),
           Text(
@@ -164,6 +161,7 @@ class _PackageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final party = PartyColors.of(context);
     final (title, price) = switch (package.product) {
       PaywallProduct.removeAds => (
@@ -180,68 +178,76 @@ class _PackageTile extends StatelessWidget {
       ),
     };
     final trialDays = package.trialDays;
+    // Selected: a 2 dp neon edge (decorative) plus the radio icon and the
+    // selected flag, so the state never rests on colour alone.
     return Semantics(
       selected: selected,
+      inMutuallyExclusiveGroup: true,
       button: true,
-      child: AnimatedContainer(
-        duration: Motion.fast,
-        padding: const EdgeInsets.all(2),
+      child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Radii.lg),
-          gradient: selected ? LinearGradient(colors: party.gradient) : null,
-          color: selected ? null : theme.colorScheme.outlineVariant,
+          gradient: selected
+              ? LinearGradient(colors: party.neonGradient)
+              : null,
+          color: selected ? null : scheme.outlineVariant,
         ),
-        child: Material(
-          color: theme.colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(Radii.lg - 2),
-          child: InkWell(
+        child: Padding(
+          padding: EdgeInsets.all(selected ? 2 : 1),
+          child: Material(
+            color: scheme.surfaceContainer,
             borderRadius: BorderRadius.circular(Radii.lg - 2),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: Row(
-                children: [
-                  Icon(
-                    selected
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_off_rounded,
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline,
-                  ),
-                  const SizedBox(width: Spacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: theme.textTheme.titleMedium),
-                        Text(
-                          price,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (trialDays != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.sm,
-                        vertical: Spacing.xxs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(Radii.sm),
-                      ),
-                      child: Text(
-                        l10n.paywallTrial(trialDays),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onTertiaryContainer,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 72),
+                child: Padding(
+                  padding: const EdgeInsets.all(Spacing.md),
+                  child: Row(
+                    children: [
+                      ExcludeSemantics(
+                        child: Icon(
+                          selected
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_off_rounded,
+                          color: selected ? scheme.primary : scheme.outline,
                         ),
                       ),
-                    ),
-                ],
+                      const SizedBox(width: Spacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title, style: theme.textTheme.titleMedium),
+                            // The trial chip follows the price with the
+                            // card's whole width, so its label stays on one
+                            // line; it wraps below the price when needed.
+                            Wrap(
+                              spacing: Spacing.sm,
+                              runSpacing: Spacing.xxs,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  price,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                if (trialDays != null)
+                                  StatusChip(
+                                    icon: Icons.card_giftcard_rounded,
+                                    label: l10n.paywallTrial(trialDays),
+                                    tabular: true,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -261,6 +267,7 @@ class _LegalLinks extends ConsumerWidget {
     // TODO(owner): TERMS_URL / PRIVACY_URL are mandatory before store review.
     return Wrap(
       alignment: WrapAlignment.center,
+      spacing: Spacing.xs,
       children: [
         if (terms != null)
           TextButton(
@@ -293,6 +300,14 @@ class _Message extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ExcludeSemantics(
+              child: Icon(
+                Icons.storefront_rounded,
+                size: IconSizes.xl,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
             Text(
               text,
               textAlign: TextAlign.center,
@@ -300,7 +315,11 @@ class _Message extends StatelessWidget {
             ),
             if (label != null) ...[
               const SizedBox(height: Spacing.lg),
-              OutlinedButton(onPressed: onAction, child: Text(label)),
+              OutlinedButton.icon(
+                onPressed: onAction,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(label),
+              ),
             ],
           ],
         ),

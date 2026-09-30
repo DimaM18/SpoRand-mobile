@@ -313,6 +313,13 @@ void main() {
     );
     h.send(Samples.djPrepare(startAtMonoUs: h.inputClock.monoNowUs));
     await tester.pump();
+    // The note sits below the DJ button; with the wave 6 type scale it can
+    // start below the fold of the lazy round list.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('dj-no-answer')),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.byKey(const ValueKey('dj-no-answer')), findsOneWidget);
     expect(_answer('opt-a'), findsNothing);
 
@@ -412,6 +419,9 @@ void main() {
         reason: AnswerValidation.djIneligible,
       ),
     );
+    // The ack lands after this frame; the tiles switch without animating
+    // (design system §6.1), so the next frame renders it.
+    await tester.pump();
     await tester.pump();
     expect(find.text('Диджей в этом раунде не отвечает'), findsOneWidget);
     await _end(tester, h);

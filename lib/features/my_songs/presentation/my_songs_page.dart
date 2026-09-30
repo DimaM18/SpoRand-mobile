@@ -2,9 +2,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/net/protocol/rest_models.dart';
+import 'package:sporand/core/theme/app_theme.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/my_songs/presentation/my_songs_controller.dart';
 
 /// «Мои песни» (design doc S1.11 `my_songs`, addendum A2.3): search, the
@@ -18,6 +20,7 @@ class MySongsPage extends ConsumerWidget {
     final l10n = context.l10n;
     final state = ref.watch(mySongsControllerProvider);
     final controller = ref.read(mySongsControllerProvider.notifier);
+    final gutter = Spacing.gutter(MediaQuery.sizeOf(context).width);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.mySongsTitle)),
       body: SafeArea(
@@ -29,10 +32,10 @@ class MySongsPage extends ConsumerWidget {
                 children: [
                   // Pinned above the list so it never scrolls away.
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Spacing.lg,
+                    padding: EdgeInsets.fromLTRB(
+                      gutter,
                       Spacing.xs,
-                      Spacing.lg,
+                      gutter,
                       Spacing.xs,
                     ),
                     child: TextField(
@@ -47,10 +50,10 @@ class MySongsPage extends ConsumerWidget {
                   ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        Spacing.lg,
+                      padding: EdgeInsets.fromLTRB(
+                        gutter,
                         0,
-                        Spacing.lg,
+                        gutter,
                         Spacing.xl,
                       ),
                       children: [
@@ -69,10 +72,10 @@ class MySongsPage extends ConsumerWidget {
           ? null
           : SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Spacing.lg,
+                padding: EdgeInsets.fromLTRB(
+                  gutter,
                   Spacing.xs,
-                  Spacing.lg,
+                  gutter,
                   Spacing.md,
                 ),
                 child: FilledButton(
@@ -81,24 +84,14 @@ class MySongsPage extends ConsumerWidget {
                       ? () async {
                           final saved = await controller.save();
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context)
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  saved
-                                      ? l10n.mySongsSaved
-                                      : l10n.mySongsSaveFailed,
-                                ),
-                              ),
-                            );
+                          showPartyToast(
+                            context,
+                            saved ? l10n.mySongsSaved : l10n.mySongsSaveFailed,
+                          );
                         }
                       : null,
                   child: state.saving
-                      ? const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
+                      ? const InlineSpinner()
                       : Text(l10n.mySongsSave),
                 ),
               ),
@@ -113,19 +106,38 @@ class _LoadFailed extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(Spacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(context.l10n.mySongsLoadFailed, textAlign: TextAlign.center),
-          const SizedBox(height: Spacing.md),
-          FilledButton(onPressed: onRetry, child: Text(context.l10n.bootRetry)),
-        ],
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(Spacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                Icons.cloud_off_rounded,
+                size: IconSizes.xl,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            Text(
+              context.l10n.mySongsLoadFailed,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: Spacing.lg),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(context.l10n.bootRetry),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SearchResults extends ConsumerWidget {
@@ -141,7 +153,12 @@ class _SearchResults extends ConsumerWidget {
     if (state.query.length < MySongsController.minQueryLength) {
       return const SizedBox.shrink();
     }
-    if (state.searching) return const LinearProgressIndicator();
+    if (state.searching) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: Spacing.sm),
+        child: LinearProgressIndicator(),
+      );
+    }
     final message = state.searchFailed
         ? l10n.mySongsSearchFailed
         : state.results.isEmpty
@@ -150,11 +167,26 @@ class _SearchResults extends ConsumerWidget {
     if (message != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
-        child: Text(
-          message,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        child: Row(
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                state.searchFailed
+                    ? Icons.wifi_off_rounded
+                    : Icons.search_off_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: Spacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -168,13 +200,19 @@ class _SearchResults extends ConsumerWidget {
             title: Text(song.title),
             subtitle: Text(_subtitle(song)),
             trailing: state.isPicked(song.songId)
-                ? const Icon(Icons.check_circle_rounded)
+                ? SizedBox.square(
+                    dimension: TapTargets.min,
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      color: GameColors.of(context).correct,
+                    ),
+                  )
                 : IconButton(
                     key: ValueKey('add-${song.songId}'),
                     tooltip: state.full
                         ? l10n.mySongsFull(state.limits.max)
                         : l10n.mySongsAdd,
-                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    icon: const Icon(Icons.add_circle_rounded),
                     onPressed: state.full ? null : () => controller.add(song),
                   ),
           ),
@@ -207,32 +245,51 @@ class _Selection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          l10n.mySongsSelected(state.count, state.limits.max),
-          style: theme.textTheme.titleMedium,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: StatusChip(
+            icon: Icons.queue_music_rounded,
+            label: l10n.mySongsSelected(state.count, state.limits.max),
+            tabular: true,
+          ),
         ),
-        if (hint != null)
+        if (hint != null) ...[
+          const SizedBox(height: Spacing.xs),
           Text(
             hint,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+        ],
         const SizedBox(height: Spacing.xs),
         if (state.picks.isEmpty)
-          Text(l10n.mySongsEmpty(state.limits.min, state.limits.max))
+          PartyCard(
+            child: Row(
+              children: [
+                const _SongIcon(),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: Text(
+                    l10n.mySongsEmpty(state.limits.min, state.limits.max),
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                ),
+              ],
+            ),
+          )
         else
           for (final pick in state.picks) ...[
             ListTile(
               key: ValueKey('pick-${pickId(pick)}'),
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(child: Text('${pick.position}')),
+              leading: _PositionBadge(position: pick.position),
               title: Text(pick.title),
               subtitle: Text(pick.artists.join(', ')),
               trailing: IconButton(
                 key: ValueKey('remove-${pickId(pick)}'),
                 tooltip: l10n.mySongsRemove,
-                icon: const Icon(Icons.remove_circle_outline_rounded),
+                icon: const Icon(Icons.remove_circle_rounded),
                 onPressed: () => controller.remove(pickId(pick)),
               ),
             ),
@@ -305,38 +362,39 @@ class YouTubeVideoText extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final channel = this.channel;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.smart_display_outlined,
+    return PartyCard(
+      tone: PartyCardTone.raised,
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.md,
+        vertical: Spacing.xs,
+      ),
+      child: Row(
+        children: [
+          // A generic video icon: never a YouTube logo or thumbnail.
+          ExcludeSemantics(
+            child: Icon(
+              Icons.ondemand_video_rounded,
               color: theme.colorScheme.primary,
             ),
-            const SizedBox(width: Spacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleSmall),
-                  if (channel != null)
-                    Text(
-                      context.l10n.mySongsYouTubeChannel(channel),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+          ),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                if (channel != null)
+                  Text(
+                    context.l10n.mySongsYouTubeChannel(channel),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            ?trailing,
-          ],
-        ),
+          ),
+          ?trailing,
+        ],
       ),
     );
   }
@@ -473,15 +531,60 @@ class _YouTubeLinkDialogState extends ConsumerState<_YouTubeLinkDialog> {
   }
 }
 
+/// A tonal note monogram for a song (never artwork).
 class _SongIcon extends StatelessWidget {
   const _SongIcon();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return CircleAvatar(
-      backgroundColor: scheme.secondaryContainer,
-      child: Icon(Icons.music_note_rounded, color: scheme.onSecondaryContainer),
+    return ExcludeSemantics(
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: scheme.primaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.music_note_rounded,
+          color: scheme.onPrimaryContainer,
+          size: IconSizes.md,
+        ),
+      ),
+    );
+  }
+}
+
+/// A pick's position in the list, in tabular figures.
+class _PositionBadge extends StatelessWidget {
+  const _PositionBadge({required this.position});
+
+  final int position;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return SizedBox.square(
+      dimension: 40,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.primaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: MediaQuery.withNoTextScaling(
+            child: Text(
+              '$position',
+              style: theme.textTheme.titleMedium?.tabular.copyWith(
+                color: scheme.onPrimaryContainer,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -495,29 +598,34 @@ class PoolPrivacyNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.visibility_outlined,
+    return PartyCard(
+      tone: PartyCardTone.raised,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.visibility_rounded,
                   color: theme.colorScheme.primary,
                 ),
-                const SizedBox(width: Spacing.xs),
-                Text(
-                  l10n.mySongsPreviewTitle,
-                  style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(width: Spacing.xs),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.mySongsPreviewTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(l10n.mySongsPreviewBody),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(l10n.mySongsPreviewBody, style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }

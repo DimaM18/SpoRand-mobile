@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/di/providers.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/clock/clock_calibration.dart';
 import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/clock/input_timestamps.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/theme/app_theme.dart';
+import 'package:sporand/core/theme/tokens.dart';
 
 /// Device timing calibration (brief §5 "Device test", §9): records, per tap,
 /// the pointer timestamp, the next frame's timestamp and
@@ -70,7 +71,9 @@ class _ClockCalibrationPageState extends ConsumerState<ClockCalibrationPage> {
               ),
               child: Text(
                 l10n.debugClockTapArea,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
             ),
           ),
@@ -82,7 +85,7 @@ class _ClockCalibrationPageState extends ConsumerState<ClockCalibrationPage> {
                   : l10n.debugClockFailed(summary.samples),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: summary.passed
-                    ? theme.colorScheme.tertiary
+                    ? GameColors.of(context).correct
                     : theme.colorScheme.error,
               ),
             ),
@@ -90,9 +93,7 @@ class _ClockCalibrationPageState extends ConsumerState<ClockCalibrationPage> {
             Text(
               'pointer ${(s.pointerLagUs / 1000).toStringAsFixed(1)} ms · '
               'frame ${(s.frameLagUs / 1000).toStringAsFixed(1)} ms',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: theme.textTheme.bodySmall?.tabular,
             ),
           const SizedBox(height: Spacing.md),
           Wrap(

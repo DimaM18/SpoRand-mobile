@@ -2,18 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:sporand/app/bootstrap/presentation/widgets/equalizer_bars.dart';
 import 'package:sporand/app/router/routes.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/game/presentation/widgets/round_views.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 import 'package:sporand/features/paywall/presentation/remove_ads_price.dart';
 
-/// `bonus_offer` (brief §6 steps 2–7).
+/// `bonus_offer`: the offer card, then who watches and the result. Never a
+/// screen with the YouTube player (that one is disposed before).
 class BonusScreen extends ConsumerWidget {
   const BonusScreen({super.key, required this.state});
 
@@ -28,7 +29,7 @@ class BonusScreen extends ConsumerWidget {
       ),
       BonusOffered() => StatusScreen(
         title: l10n.bonusOfferWaiting,
-        icon: Icons.star_outline_rounded,
+        icon: Icons.star_rounded,
       ),
       BonusRequested() => StatusScreen(
         title: l10n.bonusYouWatching,
@@ -55,6 +56,9 @@ class BonusScreen extends ConsumerWidget {
   }
 }
 
+/// «Посмотри рекламу — +1 раунд для всех» on the text-safe CTA fill. Its
+/// button is the inverse: an [PartyColors.onCta] fill with the CTA violet
+/// as text (6.12:1).
 class _OfferCard extends StatelessWidget {
   const _OfferCard({required this.onWatch});
 
@@ -66,39 +70,40 @@ class _OfferCard extends StatelessWidget {
     final party = PartyColors.of(context);
     final l10n = context.l10n;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Container(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(
+          Spacing.gutter(MediaQuery.sizeOf(context).width),
+        ),
+        child: PartyCard(
+          tone: PartyCardTone.cta,
           padding: const EdgeInsets.all(Spacing.xl),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: party.gradient),
-            borderRadius: BorderRadius.circular(Radii.xl),
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.play_circle_rounded,
-                color: Colors.white,
-                size: 56,
+              const ExcludeSemantics(
+                child: Icon(Icons.play_circle_rounded, size: 56),
               ),
               const SizedBox(height: Spacing.md),
               Text(
                 l10n.bonusOfferTitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
+                  color: party.onCta,
                 ),
               ),
               const SizedBox(height: Spacing.lg),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: BrandColors.nightInk,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: party.onCta,
+                    foregroundColor: party.ctaGradient.first,
+                    minimumSize: const Size(64, TapTargets.hero),
+                  ),
+                  onPressed: onWatch,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: Text(l10n.bonusOfferAction),
                 ),
-                onPressed: onWatch,
-                child: Text(l10n.bonusOfferAction),
               ),
             ],
           ),
@@ -110,6 +115,8 @@ class _OfferCard extends StatelessWidget {
 
 /// `ad_break`: an interstitial may be on screen (the SDK covers the app);
 /// players without an ad see «Считаем очки…» and maybe the upsell card.
+/// Our interstitial only ever runs here, after the round (and any YouTube
+/// player) is gone.
 class AdBreakScreen extends ConsumerWidget {
   const AdBreakScreen({super.key, required this.state});
 
@@ -119,19 +126,27 @@ class AdBreakScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final animate = !MediaQuery.disableAnimationsOf(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(Spacing.lg),
+        padding: EdgeInsets.all(
+          Spacing.gutter(MediaQuery.sizeOf(context).width),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            EqualizerBars(animate: animate, width: 140, height: 44),
+            ExcludeSemantics(
+              child: EqualizerBars(
+                animate: !Motion.reduced(context),
+                width: 96,
+                height: 32,
+              ),
+            ),
             const SizedBox(height: Spacing.lg),
             Semantics(
               liveRegion: true,
               child: Text(
                 l10n.adBreakCounting,
+                textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall,
               ),
             ),
@@ -155,25 +170,37 @@ class _RemoveAdsCard extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final price = ref.watch(removeAdsPriceProvider).value;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Column(
-          children: [
-            Text(
-              price == null ? l10n.upsellTitle : l10n.upsellPrice(price),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: Spacing.md),
-            FilledButton.tonal(
-              onPressed: () => context.push(
-                Routes.paywallFor(PaywallPlacement.adBreak.wireName),
+    return PartyCard(
+      padding: const EdgeInsets.all(Spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.block_rounded,
+                  color: theme.colorScheme.primary,
+                  size: IconSizes.lg,
+                ),
               ),
-              child: Text(l10n.upsellAction),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Text(
+                  price == null ? l10n.upsellTitle : l10n.upsellPrice(price),
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.md),
+          FilledButton.tonal(
+            onPressed: () => context.push(
+              Routes.paywallFor(PaywallPlacement.adBreak.wireName),
             ),
-          ],
-        ),
+            child: Text(l10n.upsellAction),
+          ),
+        ],
       ),
     );
   }

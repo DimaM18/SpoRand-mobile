@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:sporand/app/bootstrap/presentation/widgets/equalizer_bars.dart';
 import 'package:sporand/app/router/routes.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/theme/app_theme.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/home/presentation/create_room_sheet.dart';
 import 'package:sporand/features/home/presentation/home_controller.dart';
 
@@ -51,8 +52,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final party = PartyColors.of(context);
-    final animate = !MediaQuery.disableAnimationsOf(context);
+    final scheme = theme.colorScheme;
+    final gutter = Spacing.gutter(MediaQuery.sizeOf(context).width);
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -67,42 +68,36 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            Spacing.lg,
-            Spacing.xs,
-            Spacing.lg,
-            Spacing.xl,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, Spacing.xs, gutter, Spacing.xl),
           children: [
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: EqualizerBars(animate: animate, width: 72, height: 28),
-            ),
-            const SizedBox(height: Spacing.lg),
-            Semantics(
-              header: true,
-              child: ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) =>
-                    LinearGradient(colors: party.gradient).createShader(bounds),
-                child: Text(
-                  l10n.homeHeadline,
-                  style: theme.textTheme.displayMedium,
+              child: ExcludeSemantics(
+                child: EqualizerBars(
+                  animate: !Motion.reduced(context),
+                  width: 72,
+                  height: 28,
                 ),
               ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.5,
+              child: GradientHeadline(l10n.homeHeadline),
             ),
             const SizedBox(height: Spacing.sm),
             Text(
               l10n.homeSubtitle,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: scheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: Spacing.xl),
-            FilledButton.icon(
+            const SizedBox(height: Spacing.lg),
+            PartyButton(
+              label: l10n.homeCreateRoom,
+              icon: Icons.add_rounded,
+              glow: true,
               onPressed: () => showCreateRoomSheet(context),
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.homeCreateRoom),
             ),
             const SizedBox(height: Spacing.sm),
             OutlinedButton.icon(
@@ -111,52 +106,119 @@ class _HomePageState extends ConsumerState<HomePage> {
               label: Text(l10n.homeMySongs),
             ),
             const SizedBox(height: Spacing.lg),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(Spacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(l10n.homeJoinTitle, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: Spacing.md),
-                    TextField(
-                      controller: _code,
-                      textCapitalization: TextCapitalization.characters,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textInputAction: TextInputAction.go,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp('[0-9A-Za-z-]'),
+            PartyCard(
+              padding: const EdgeInsets.all(Spacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      ExcludeSemantics(
+                        child: Icon(Icons.login_rounded, color: scheme.primary),
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Expanded(
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            l10n.homeJoinTitle,
+                            style: theme.textTheme.titleLarge,
+                          ),
                         ),
-                        LengthLimitingTextInputFormatter(7),
-                      ],
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        letterSpacing: 6,
                       ),
-                      decoration: InputDecoration(
-                        labelText: l10n.homeJoinCodeLabel,
-                        errorText: _invalidCode
-                            ? l10n.homeJoinCodeInvalid
-                            : null,
-                      ),
-                      onChanged: (_) {
-                        if (_invalidCode) setState(() => _invalidCode = false);
-                      },
-                      onSubmitted: (_) => _join(),
-                    ),
-                    const SizedBox(height: Spacing.md),
-                    OutlinedButton(
-                      onPressed: _join,
-                      child: Text(l10n.homeJoinAction),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: Spacing.md),
+                  RoomCodeField(
+                    controller: _code,
+                    label: l10n.homeJoinCodeLabel,
+                    error: _invalidCode ? l10n.homeJoinCodeInvalid : null,
+                    onChanged: (_) {
+                      if (_invalidCode) setState(() => _invalidCode = false);
+                    },
+                    onSubmitted: (_) => _join(),
+                  ),
+                  const SizedBox(height: Spacing.md),
+                  OutlinedButton.icon(
+                    onPressed: _join,
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: Text(l10n.homeJoinAction),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The room-code field: big, spaced, tabular Nunito 800 so a code read
+/// aloud across the room is easy to type; the error sits under it with an
+/// icon. [новое имя — согласовать]
+class RoomCodeField extends StatelessWidget {
+  const RoomCodeField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.error,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String? error;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final error = this.error;
+    return TextField(
+      controller: controller,
+      textCapitalization: TextCapitalization.characters,
+      autocorrect: false,
+      enableSuggestions: false,
+      textInputAction: TextInputAction.go,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp('[0-9A-Za-z-]')),
+        LengthLimitingTextInputFormatter(7),
+      ],
+      style: theme.textTheme.headlineSmall?.tabular.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: 6,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        error: error == null
+            ? null
+            : Row(
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.error_rounded,
+                      size: IconSizes.sm,
+                      color: scheme.error,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.xxs),
+                  Expanded(
+                    child: Text(
+                      error,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
     );
   }
 }

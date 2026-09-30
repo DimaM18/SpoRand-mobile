@@ -260,6 +260,10 @@
   "lobbyLeaveConfirmTitle": "Выйти из комнаты?",
   "lobbyLeaveConfirmBody": "Вернуться можно по тому же коду, пока игра не началась.",
   "commonCancel": "Отмена",
+  "commonLoading": "Загрузка…",
+  "@commonLoading": {
+    "description": "Screen-reader value of a button that is busy (spinner) [новое имя — согласовать]."
+  },
   "lobbyNoRoom": "Вы не в комнате",
   "lobbyBackHome": "На главную",
   "roomEndedKicked": "Ведущий удалил вас из комнаты",
@@ -667,11 +671,19 @@
   "lobbyEmojiDifficultyMedium": "До средних",
   "lobbyEmojiDifficultyHard": "Все, включая сложные",
   "lobbyEmojiHint": "Без музыки: хватит телефонов",
-  "gameYouTubePressPlay": "Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни",
+  "gameYouTubePressPlay": "Нажми {playIcon} в плеере. Если YouTube сначала покажет рекламу, дождись песни",
   "@gameYouTubePressPlay": {
-    "description": "youtube_embed DJ: they start the video in the official player themself (no autoplay)."
+    "description": "youtube_embed DJ: they start the video in the official player themself (no autoplay). {playIcon} is a play icon drawn inline (never an emoji); screen readers get gameYouTubePlayButton in its place.",
+    "placeholders": {
+      "playIcon": {
+        "type": "String"
+      }
+    }
   },
-  "gameYouTubeTapWhenPlaying": "Когда зазвучит песня, жми кнопку ниже",
+  "gameYouTubePlayButton": "кнопку воспроизведения",
+  "@gameYouTubePlayButton": {
+    "description": "Screen-reader stand-in for the play icon in gameYouTubePressPlay (accusative in ru) [новое имя — согласовать]."
+  },
   "gameYouTubeConsentTitle": "Включить плеер YouTube?",
   "@gameYouTubeConsentTitle": {
     "description": "Consent sheet before the embedded YouTube player loads (EU/EEA, YouTube policy III.E.4.i) [новое имя — согласовать]."
@@ -681,7 +693,11 @@
   "gameYouTubeConsentDecline": "Нет, включу сам",
   "gameYouTubeFallback": "Видео не играет — включи песню сам",
   "@gameYouTubeFallback": {
-    "description": "youtube_embed DJ fell back to the BYOP cue (every video failed or the screen is too small)."
+    "description": "youtube_embed DJ fell back to the BYOP cue (every video failed)."
+  },
+  "gameYouTubeWindowTooSmall": "Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам",
+  "@gameYouTubeWindowTooSmall": {
+    "description": "youtube_embed DJ: the window (split screen, a small window) cannot hold a legal player right now, so the DJ gets the cue until it grows [новое имя — согласовать]."
   },
   "gameYouTubeDeclined": "Без YouTube: включи песню в своём приложении",
   "@gameYouTubeDeclined": {
@@ -715,6 +731,130 @@
   "@mySongsYouTubeChannel": {
     "placeholders": {
       "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "gameMarkerCircle": "Круг",
+  "@gameMarkerCircle": {
+    "description": "Shape marker of answer slot A (screen readers: '{marker}: {option}')."
+  },
+  "gameMarkerTriangle": "Треугольник",
+  "gameMarkerSquare": "Квадрат",
+  "gameMarkerDiamond": "Ромб",
+  "gameMarkerHexagon": "Шестиугольник",
+  "gameMarkerStar": "Звезда",
+  "gameAnswerSemantics": "{marker}: {option}",
+  "@gameAnswerSemantics": {
+    "description": "Screen reader label of an answer tile: its shape marker and the option text.",
+    "placeholders": {
+      "marker": {
+        "type": "String"
+      },
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "gameYourPick": "Твой ответ",
+  "@gameYourPick": {
+    "description": "Under the answer tile the player picked."
+  },
+  "gameTileCorrect": "Верно",
+  "@gameTileCorrect": {
+    "description": "Reveal: the correct answer tile and the result pill."
+  },
+  "gameTimeLeftSemantics": "Осталось {seconds} с",
+  "@gameTimeLeftSemantics": {
+    "description": "Screen reader value of the answer timer ring (visual only; the server decides time-up).",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "revealStreak": "Серия ×{count}",
+  "@revealStreak": {
+    "description": "Streak chip on the reveal (RoundResult.streak from the server, shown from 2).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playerBadgeHost": "Ведущий",
+  "@playerBadgeHost": {
+    "description": "Tooltip of the host badge on a player avatar."
+  },
+  "playerBadgeDj": "DJ",
+  "@playerBadgeDj": {
+    "description": "Tooltip of the DJ badge on a player avatar."
+  },
+  "playerBadgeReady": "Готов",
+  "@playerBadgeReady": {
+    "description": "Tooltip of the ready badge on a player avatar."
+  },
+  "gameDjTapped": "Отмечено",
+  "@gameDjTapped": {
+    "description": "The DJ's «Музыка играет!» after the tap: a tonal done state under the YouTube player (never a SnackBar)."
+  },
+  "gameLeaveInlineConfirm": "Выйти из игры?",
+  "@gameLeaveInlineConfirm": {
+    "description": "Second step of «Выйти» on the DJ screen with the YouTube player: an inline confirm in the app bar (no dialog over the player)."
+  },
+  "gameLeaveInlineCancel": "Остаться",
+  "@gameLeaveInlineCancel": {
+    "description": "Cancels the inline leave confirm on the DJ player screen."
+  },
+  "lobbyCopyCode": "Скопировать код",
+  "@lobbyCopyCode": {
+    "description": "Tooltip of the copy button next to the room code in the lobby."
+  },
+  "lobbyCodeCopied": "Код скопирован",
+  "@lobbyCodeCopied": {
+    "description": "Toast after the room code was copied."
+  },
+  "onboardingStepSemantics": "Шаг {step} из {total}",
+  "@onboardingStepSemantics": {
+    "description": "Screen reader label of the onboarding step pills.",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "standingsMovedUp": "вверх на {n}",
+  "@standingsMovedUp": {
+    "description": "Screen reader label of the rank-up arrow in the standings.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "standingsMovedDown": "вниз на {n}",
+  "@standingsMovedDown": {
+    "description": "Screen reader label of the rank-down arrow in the standings.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsPodiumSemantics": "{rank} место: {name}, {points}",
+  "@resultsPodiumSemantics": {
+    "description": "Screen reader label of a podium column; points is the formatted pointsShort text.",
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      },
+      "points": {
         "type": "String"
       }
     }

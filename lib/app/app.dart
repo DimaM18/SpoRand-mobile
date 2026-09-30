@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sporand/app/router/app_router.dart';
 import 'package:sporand/app/theme/app_theme.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/ui/reduce_motion_scope.dart';
 
 class SporandApp extends ConsumerWidget {
   const SporandApp({super.key});
@@ -24,6 +25,8 @@ class SporandApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       localeListResolutionCallback: resolveAppLocale,
       routerConfig: ref.watch(routerProvider),
+      // iOS «Reduce Motion» counts as reduced motion everywhere.
+      builder: (context, child) => ReduceMotionScope(child: child!),
     );
   }
 }

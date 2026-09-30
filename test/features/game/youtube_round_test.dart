@@ -155,6 +155,9 @@ void main() {
     expect(_musicPlaying, findsNothing);
 
     h.send(Samples.reveal());
+    // The message lands after this frame; the player screen runs no
+    // animation (hard rule 12), so the next frame renders the reveal.
+    await tester.pump();
     await tester.pump();
     expect(player.disposed, isTrue);
     expect(h.youTube.live, isEmpty);
@@ -372,8 +375,17 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(h.youTube.created, isEmpty);
-    expect((h.state as GameRoundState).djVideo, isA<DjVideoCueFallback>());
+    // A layout shortfall, not a failure: the stage stays, so the player
+    // comes back if the window grows.
+    expect((h.state as GameRoundState).djVideo, isA<DjVideoPlayer>());
     expect(find.text('Northern Lights'), findsOneWidget);
+    expect(
+      find.text(
+        'Окно слишком маленькое для плеера YouTube. Разверни его или '
+        'включи песню сам',
+      ),
+      findsOneWidget,
+    );
     expect(h.received<RoundPlaybackFailed>(), isEmpty);
     await _end(tester, h);
   });

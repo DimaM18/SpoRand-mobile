@@ -481,6 +481,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonCancel => 'Отмена';
 
   @override
+  String get commonLoading => 'Загрузка…';
+
+  @override
   String get lobbyNoRoom => 'Вы не в комнате';
 
   @override
@@ -999,12 +1002,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lobbyEmojiHint => 'Без музыки: хватит телефонов';
 
   @override
-  String get gameYouTubePressPlay =>
-      'Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни';
+  String gameYouTubePressPlay(String playIcon) {
+    return 'Нажми $playIcon в плеере. Если YouTube сначала покажет рекламу, дождись песни';
+  }
 
   @override
-  String get gameYouTubeTapWhenPlaying =>
-      'Когда зазвучит песня, жми кнопку ниже';
+  String get gameYouTubePlayButton => 'кнопку воспроизведения';
 
   @override
   String get gameYouTubeConsentTitle => 'Включить плеер YouTube?';
@@ -1021,6 +1024,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameYouTubeFallback => 'Видео не играет — включи песню сам';
+
+  @override
+  String get gameYouTubeWindowTooSmall =>
+      'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам';
 
   @override
   String get gameYouTubeDeclined =>
@@ -1075,5 +1082,88 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String mySongsYouTubeChannel(String channel) {
     return 'Канал: $channel';
+  }
+
+  @override
+  String get gameMarkerCircle => 'Круг';
+
+  @override
+  String get gameMarkerTriangle => 'Треугольник';
+
+  @override
+  String get gameMarkerSquare => 'Квадрат';
+
+  @override
+  String get gameMarkerDiamond => 'Ромб';
+
+  @override
+  String get gameMarkerHexagon => 'Шестиугольник';
+
+  @override
+  String get gameMarkerStar => 'Звезда';
+
+  @override
+  String gameAnswerSemantics(String marker, String option) {
+    return '$marker: $option';
+  }
+
+  @override
+  String get gameYourPick => 'Твой ответ';
+
+  @override
+  String get gameTileCorrect => 'Верно';
+
+  @override
+  String gameTimeLeftSemantics(int seconds) {
+    return 'Осталось $seconds с';
+  }
+
+  @override
+  String revealStreak(int count) {
+    return 'Серия ×$count';
+  }
+
+  @override
+  String get playerBadgeHost => 'Ведущий';
+
+  @override
+  String get playerBadgeDj => 'DJ';
+
+  @override
+  String get playerBadgeReady => 'Готов';
+
+  @override
+  String get gameDjTapped => 'Отмечено';
+
+  @override
+  String get gameLeaveInlineConfirm => 'Выйти из игры?';
+
+  @override
+  String get gameLeaveInlineCancel => 'Остаться';
+
+  @override
+  String get lobbyCopyCode => 'Скопировать код';
+
+  @override
+  String get lobbyCodeCopied => 'Код скопирован';
+
+  @override
+  String onboardingStepSemantics(int step, int total) {
+    return 'Шаг $step из $total';
+  }
+
+  @override
+  String standingsMovedUp(int n) {
+    return 'вверх на $n';
+  }
+
+  @override
+  String standingsMovedDown(int n) {
+    return 'вниз на $n';
+  }
+
+  @override
+  String resultsPodiumSemantics(int rank, String name, String points) {
+    return '$rank место: $name, $points';
   }
 }

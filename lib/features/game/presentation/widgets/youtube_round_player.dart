@@ -5,9 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/di/providers.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/playback/youtube/youtube_player.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 
@@ -18,7 +19,9 @@ import 'package:sporand/features/game/presentation/game_controller.dart';
 ///
 /// It reads the live game state rather than a snapshot, so the player is
 /// disposed in the very frame the round leaves play (reveal, void, pause,
-/// ad break), even while the old screen is still fading out.
+/// ad break). Its width comes from the parent (`RoundScreen.playerLayoutFor`):
+/// the full screen width in portrait (no gutter), the left pane in
+/// landscape, zero when the window is too small for a legal player.
 class DjVideoSlot extends ConsumerWidget {
   const DjVideoSlot({super.key, required this.roundId});
 
@@ -42,13 +45,9 @@ class DjVideoSlot extends ConsumerWidget {
           constraints.maxWidth,
           minWidthDp: minWidth,
         );
-        if (size == null) {
-          // Below the YouTube 200 px floor: the cue instead.
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => controller.youTubePlayerUnavailable(roundId),
-          );
-          return const SizedBox.shrink();
-        }
+        // Below the YouTube 200 px floor (the round layout gave no room):
+        // no player; the round body shows the cue until the window grows.
+        if (size == null) return const SizedBox.shrink();
         return SizedBox.fromSize(
           size: size,
           child: YouTubeRoundPlayer(
@@ -93,6 +92,11 @@ class _YouTubeRoundPlayerState extends ConsumerState<YouTubeRoundPlayer>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _create();
+    // Nothing may float over the player: drop any SnackBar left from an
+    // earlier screen (e.g. the lobby) once the player is on screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
+    });
   }
 
   void _create() {
@@ -173,8 +177,9 @@ class _YouTubeRoundPlayerState extends ConsumerState<YouTubeRoundPlayer>
   }
 }
 
-/// The short consent sheet shown in place of the player before it may load
-/// (EU/EEA or region unknown, YouTube III.E.4.i).
+/// The short consent card shown in place of the player before it may load
+/// (EU/EEA or region unknown, YouTube III.E.4.i). No player exists yet, so
+/// it is an ordinary card in the round's list.
 class YouTubeConsentCard extends ConsumerWidget {
   const YouTubeConsentCard({super.key, required this.roundId});
 
@@ -184,43 +189,61 @@ class YouTubeConsentCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final controller = ref.read(gameControllerProvider.notifier);
-    return Card(
+    return PartyCard(
       key: const ValueKey('youtube-consent'),
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.gameYouTubeConsentTitle,
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              l10n.gameYouTubeConsentBody,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: Spacing.md),
-            FilledButton(
-              key: const ValueKey('youtube-consent-allow'),
-              onPressed: () => controller.youTubeConsentAnswered(
-                roundId: roundId,
-                granted: true,
+      padding: const EdgeInsets.all(Spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.privacy_tip_rounded,
+                  color: scheme.primary,
+                  size: IconSizes.lg,
+                ),
               ),
-              child: Text(l10n.gameYouTubeConsentAllow),
-            ),
-            const SizedBox(height: Spacing.xs),
-            TextButton(
-              key: const ValueKey('youtube-consent-decline'),
-              onPressed: () => controller.youTubeConsentAnswered(
-                roundId: roundId,
-                granted: false,
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.gameYouTubeConsentTitle,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
               ),
-              child: Text(l10n.gameYouTubeConsentDecline),
+            ],
+          ),
+          const SizedBox(height: Spacing.sm),
+          Text(
+            l10n.gameYouTubeConsentBody,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: Spacing.lg),
+          FilledButton(
+            key: const ValueKey('youtube-consent-allow'),
+            onPressed: () => controller.youTubeConsentAnswered(
+              roundId: roundId,
+              granted: true,
+            ),
+            child: Text(l10n.gameYouTubeConsentAllow),
+          ),
+          const SizedBox(height: Spacing.xs),
+          TextButton(
+            key: const ValueKey('youtube-consent-decline'),
+            onPressed: () => controller.youTubeConsentAnswered(
+              roundId: roundId,
+              granted: false,
+            ),
+            child: Text(l10n.gameYouTubeConsentDecline),
+          ),
+        ],
       ),
     );
   }

@@ -306,20 +306,6 @@ class GameController extends Notifier<GameUiState> {
     );
   }
 
-  /// The screen cannot show the player at the YouTube minimum size: the DJ
-  /// gets the cue. Not the video's fault, so nothing is reported.
-  void youTubePlayerUnavailable(String roundId) {
-    final current = state;
-    if (current is! GameRoundState ||
-        current.round.roundId != roundId ||
-        current.djVideo is! DjVideoPlayer) {
-      return;
-    }
-    state = current.copyWith(
-      djVideo: const DjVideoCueFallback(VideoPlaybackFailureReason.other),
-    );
-  }
-
   /// `youtube_player_min_width_dp` (Remote Config).
   int get youTubePlayerMinWidthDp => _config.youtubePlayerMinWidthDp;
 

@@ -11,10 +11,10 @@ import 'package:sporand/app/bootstrap/domain/init_step.dart';
 import 'package:sporand/app/bootstrap/presentation/boot_labels.dart';
 import 'package:sporand/app/bootstrap/presentation/widgets/boot_backdrop.dart';
 import 'package:sporand/app/bootstrap/presentation/widgets/boot_status_view.dart';
-import 'package:sporand/app/bootstrap/presentation/widgets/equalizer_bars.dart';
 import 'package:sporand/app/bootstrap/presentation/widgets/vinyl_progress.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 
 /// The animated loader shown while `AppInitializer` runs (R-BOOT).
 ///
@@ -179,27 +179,16 @@ class _StepLabel extends ConsumerWidget {
       bootControllerProvider.select((state) => state.progress.label),
     );
     final theme = Theme.of(context);
+    // A short cross-fade (<= 150 ms), no slide; full-strength text.
     return Semantics(
       liveRegion: true,
       child: AnimatedSwitcher(
-        duration: animate ? Motion.medium : Duration.zero,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.35),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          ),
-        ),
+        duration: animate ? Motion.reducedCrossfade : Duration.zero,
         child: Text(
           label.text(context.l10n),
           key: ValueKey<BootLabel>(label),
           textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.86),
-          ),
+          style: theme.textTheme.titleMedium,
         ),
       ),
     );

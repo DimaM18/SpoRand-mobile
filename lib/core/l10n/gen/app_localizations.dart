@@ -910,6 +910,12 @@ abstract class AppLocalizations {
   /// **'Отмена'**
   String get commonCancel;
 
+  /// Screen-reader value of a button that is busy (spinner) [новое имя — согласовать].
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузка…'**
+  String get commonLoading;
+
   /// No description provided for @lobbyNoRoom.
   ///
   /// In ru, this message translates to:
@@ -1732,17 +1738,17 @@ abstract class AppLocalizations {
   /// **'Без музыки: хватит телефонов'**
   String get lobbyEmojiHint;
 
-  /// youtube_embed DJ: they start the video in the official player themself (no autoplay).
+  /// youtube_embed DJ: they start the video in the official player themself (no autoplay). {playIcon} is a play icon drawn inline (never an emoji); screen readers get gameYouTubePlayButton in its place.
   ///
   /// In ru, this message translates to:
-  /// **'Нажми ▶ в плеере. Если YouTube сначала покажет рекламу, дождись песни'**
-  String get gameYouTubePressPlay;
+  /// **'Нажми {playIcon} в плеере. Если YouTube сначала покажет рекламу, дождись песни'**
+  String gameYouTubePressPlay(String playIcon);
 
-  /// No description provided for @gameYouTubeTapWhenPlaying.
+  /// Screen-reader stand-in for the play icon in gameYouTubePressPlay (accusative in ru) [новое имя — согласовать].
   ///
   /// In ru, this message translates to:
-  /// **'Когда зазвучит песня, жми кнопку ниже'**
-  String get gameYouTubeTapWhenPlaying;
+  /// **'кнопку воспроизведения'**
+  String get gameYouTubePlayButton;
 
   /// Consent sheet before the embedded YouTube player loads (EU/EEA, YouTube policy III.E.4.i) [новое имя — согласовать].
   ///
@@ -1768,11 +1774,17 @@ abstract class AppLocalizations {
   /// **'Нет, включу сам'**
   String get gameYouTubeConsentDecline;
 
-  /// youtube_embed DJ fell back to the BYOP cue (every video failed or the screen is too small).
+  /// youtube_embed DJ fell back to the BYOP cue (every video failed).
   ///
   /// In ru, this message translates to:
   /// **'Видео не играет — включи песню сам'**
   String get gameYouTubeFallback;
+
+  /// youtube_embed DJ: the window (split screen, a small window) cannot hold a legal player right now, so the DJ gets the cue until it grows [новое имя — согласовать].
+  ///
+  /// In ru, this message translates to:
+  /// **'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам'**
+  String get gameYouTubeWindowTooSmall;
 
   /// youtube_embed DJ declined the player consent.
   ///
@@ -1869,6 +1881,144 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Канал: {channel}'**
   String mySongsYouTubeChannel(String channel);
+
+  /// Shape marker of answer slot A (screen readers: '{marker}: {option}').
+  ///
+  /// In ru, this message translates to:
+  /// **'Круг'**
+  String get gameMarkerCircle;
+
+  /// No description provided for @gameMarkerTriangle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Треугольник'**
+  String get gameMarkerTriangle;
+
+  /// No description provided for @gameMarkerSquare.
+  ///
+  /// In ru, this message translates to:
+  /// **'Квадрат'**
+  String get gameMarkerSquare;
+
+  /// No description provided for @gameMarkerDiamond.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ромб'**
+  String get gameMarkerDiamond;
+
+  /// No description provided for @gameMarkerHexagon.
+  ///
+  /// In ru, this message translates to:
+  /// **'Шестиугольник'**
+  String get gameMarkerHexagon;
+
+  /// No description provided for @gameMarkerStar.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звезда'**
+  String get gameMarkerStar;
+
+  /// Screen reader label of an answer tile: its shape marker and the option text.
+  ///
+  /// In ru, this message translates to:
+  /// **'{marker}: {option}'**
+  String gameAnswerSemantics(String marker, String option);
+
+  /// Under the answer tile the player picked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Твой ответ'**
+  String get gameYourPick;
+
+  /// Reveal: the correct answer tile and the result pill.
+  ///
+  /// In ru, this message translates to:
+  /// **'Верно'**
+  String get gameTileCorrect;
+
+  /// Screen reader value of the answer timer ring (visual only; the server decides time-up).
+  ///
+  /// In ru, this message translates to:
+  /// **'Осталось {seconds} с'**
+  String gameTimeLeftSemantics(int seconds);
+
+  /// Streak chip on the reveal (RoundResult.streak from the server, shown from 2).
+  ///
+  /// In ru, this message translates to:
+  /// **'Серия ×{count}'**
+  String revealStreak(int count);
+
+  /// Tooltip of the host badge on a player avatar.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ведущий'**
+  String get playerBadgeHost;
+
+  /// Tooltip of the DJ badge on a player avatar.
+  ///
+  /// In ru, this message translates to:
+  /// **'DJ'**
+  String get playerBadgeDj;
+
+  /// Tooltip of the ready badge on a player avatar.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готов'**
+  String get playerBadgeReady;
+
+  /// The DJ's «Музыка играет!» after the tap: a tonal done state under the YouTube player (never a SnackBar).
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмечено'**
+  String get gameDjTapped;
+
+  /// Second step of «Выйти» on the DJ screen with the YouTube player: an inline confirm in the app bar (no dialog over the player).
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти из игры?'**
+  String get gameLeaveInlineConfirm;
+
+  /// Cancels the inline leave confirm on the DJ player screen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Остаться'**
+  String get gameLeaveInlineCancel;
+
+  /// Tooltip of the copy button next to the room code in the lobby.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировать код'**
+  String get lobbyCopyCode;
+
+  /// Toast after the room code was copied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код скопирован'**
+  String get lobbyCodeCopied;
+
+  /// Screen reader label of the onboarding step pills.
+  ///
+  /// In ru, this message translates to:
+  /// **'Шаг {step} из {total}'**
+  String onboardingStepSemantics(int step, int total);
+
+  /// Screen reader label of the rank-up arrow in the standings.
+  ///
+  /// In ru, this message translates to:
+  /// **'вверх на {n}'**
+  String standingsMovedUp(int n);
+
+  /// Screen reader label of the rank-down arrow in the standings.
+  ///
+  /// In ru, this message translates to:
+  /// **'вниз на {n}'**
+  String standingsMovedDown(int n);
+
+  /// Screen reader label of a podium column; points is the formatted pointsShort text.
+  ///
+  /// In ru, this message translates to:
+  /// **'{rank} место: {name}, {points}'**
+  String resultsPodiumSemantics(int rank, String name, String points);
 }
 
 class _AppLocalizationsDelegate

@@ -6,6 +6,7 @@ import 'package:flutter/painting.dart';
 
 import 'package:sporand/app/bootstrap/warmup/resource_warmer.dart';
 import 'package:sporand/app/theme/tokens.dart';
+import 'package:sporand/core/theme/app_fonts.dart';
 
 /// Warm-up for the `warmup` stage.
 ///
@@ -40,22 +41,30 @@ final class FlutterResourceWarmer implements ResourceWarmer {
     return done.future;
   }
 
-  /// Lays out text in every script we ship (Cyrillic, Latin, Polish
-  /// diacritics) at the display weights, so the first real screen does not
-  /// pay for font fallback resolution and glyph rasterization.
+  /// Registers the bundled fonts' OFL licences, then lays out text in
+  /// every script we ship (Cyrillic, Latin, Polish diacritics) in both
+  /// families at the weights the UI uses, so the first real screen does not
+  /// pay for font loading and glyph rasterization.
   @override
   Future<void> loadFonts() async {
+    // Before any await: a step timeout must never skip the licences.
+    AppFonts.registerLicenses();
     const sample =
-        'Чья это песня? Whose song? Czyja to piosenka? ąęłńóśźż 0123';
-    for (final weight in const [
-      FontWeight.w400,
-      FontWeight.w700,
-      FontWeight.w900,
-    ]) {
+        'Чья это песня? ё й Ё Й Whose song? Czyja to piosenka? '
+        'ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ 0123456789';
+    final styles = [
+      for (final weight in AppFonts.displayWeights) (AppFonts.display, weight),
+      for (final weight in AppFonts.bodyWeights) (AppFonts.body, weight),
+    ];
+    for (final (family, weight) in styles) {
       final painter = TextPainter(
         text: TextSpan(
           text: sample,
-          style: TextStyle(fontSize: 24, fontWeight: weight),
+          style: TextStyle(
+            fontFamily: family,
+            fontSize: 24,
+            fontWeight: weight,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();

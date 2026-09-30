@@ -1,11 +1,13 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'package:sporand/app/bootstrap/presentation/widgets/boot_backdrop.dart';
-import 'package:sporand/app/theme/tokens.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 
 /// Icon badge + title + message + action: the shared layout of the retry,
 /// force-update and maintenance screens (same visual language as the
-/// splash: gradient ring, glow backdrop).
+/// splash: a decorative neon ring on the glow backdrop, which is the
+/// screen's one glow).
 class BootStatusView extends StatelessWidget {
   const BootStatusView({
     super.key,
@@ -41,16 +43,21 @@ class BootStatusView extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(
-                  colors: [...party.gradient, party.gradient.first],
+                  colors: [...party.neonGradient, party.neonGradient.first],
                 ),
-                boxShadow: [BoxShadow(color: party.glow, blurRadius: 32)],
               ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: theme.colorScheme.surfaceContainerLow,
                 ),
-                child: Icon(icon, size: 44, color: theme.colorScheme.onSurface),
+                child: ExcludeSemantics(
+                  child: Icon(
+                    icon,
+                    size: IconSizes.xl,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: Spacing.xl),
@@ -59,7 +66,7 @@ class BootStatusView extends StatelessWidget {
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.headlineMedium,
+                style: theme.textTheme.headlineSmall,
               ),
             ),
             const SizedBox(height: Spacing.sm),
@@ -74,7 +81,11 @@ class BootStatusView extends StatelessWidget {
               const SizedBox(height: Spacing.xl),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(onPressed: onAction, child: Text(label)),
+                child: PartyButton(
+                  label: label,
+                  icon: Icons.refresh_rounded,
+                  onPressed: onAction,
+                ),
               ),
             ],
           ],

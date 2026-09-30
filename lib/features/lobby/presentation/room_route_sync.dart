@@ -6,6 +6,8 @@ import 'package:sporand/app/router/routes.dart';
 import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
+import 'package:sporand/core/ui/ui.dart';
+import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/presentation/game_controller.dart';
 import 'package:sporand/features/lobby/domain/room_navigation.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
@@ -39,7 +41,11 @@ class RoomRouteSync extends ConsumerWidget {
       })
       ..listen(roomErrorsProvider, (previous, next) {
         final error = next.value;
-        if (error != null) {
+        // Nothing may float over the DJ's YouTube player: a server error
+        // during that round is not toasted.
+        final game = ref.read(gameControllerProvider);
+        if (error != null &&
+            !(game is GameRoundState && game.showsVideoPlayer)) {
           _snack(context, serverErrorText(context.l10n, error));
         }
       });
@@ -47,9 +53,7 @@ class RoomRouteSync extends ConsumerWidget {
   }
 
   static void _snack(BuildContext context, String text) =>
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(text)));
+      showPartyToast(context, text);
 }
 
 String roomEndedText(AppLocalizations l10n, RoomEndReason reason) =>

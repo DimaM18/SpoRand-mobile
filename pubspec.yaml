@@ -67,3 +67,17 @@ flutter:
   uses-material-design: true
   # ARB files live in lib/core/l10n/arb (see l10n.yaml).
   generate: true
+
+  # Bundled OFL fonts (wave 6; never downloaded at runtime). Each licence
+  # text is registered with LicenseRegistry by the `fonts` warm-up step
+  # (AppFonts.registerLicenses). Source rev and SHA-256: README.md, "Fonts".
+  assets:
+    - assets/fonts/unbounded/OFL.txt
+    - assets/fonts/nunito/OFL.txt
+  fonts:
+    - family: Unbounded
+      fonts:
+        - asset: assets/fonts/unbounded/Unbounded[wght].ttf
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/nunito/Nunito[wght].ttf

@@ -5,8 +5,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/app/router/routes.dart';
-import 'package:sporand/app/theme/tokens.dart';
 import 'package:sporand/core/l10n/l10n.dart';
+import 'package:sporand/core/theme/tokens.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/lobby/domain/display_name.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 
@@ -92,16 +93,20 @@ class _JoinRoomPageState extends ConsumerState<JoinRoomPage> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final error = _error;
+    final gutter = Spacing.gutter(MediaQuery.sizeOf(context).width);
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.all(Spacing.lg),
+          padding: EdgeInsets.fromLTRB(gutter, Spacing.xs, gutter, Spacing.xl),
           children: [
-            Text(
-              l10n.joinTitle(widget.roomCode),
-              style: theme.textTheme.headlineMedium,
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.joinTitle(widget.roomCode),
+                style: theme.textTheme.headlineMedium,
+              ),
             ),
             const SizedBox(height: Spacing.xs),
             Text(
@@ -119,6 +124,7 @@ class _JoinRoomPageState extends ConsumerState<JoinRoomPage> {
               maxLength: DisplayName.maxLength,
               decoration: InputDecoration(
                 labelText: l10n.displayNameLabel,
+                prefixIcon: const Icon(Icons.badge_rounded),
                 errorText: _invalidName ? l10n.displayNameInvalid : null,
               ),
               onChanged: (_) {
@@ -128,22 +134,22 @@ class _JoinRoomPageState extends ConsumerState<JoinRoomPage> {
             ),
             if (error != null) ...[
               const SizedBox(height: Spacing.sm),
-              Text(
-                roomOpenErrorText(l10n, error),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.error,
+              PartyBanner(
+                icon: Icons.error_rounded,
+                tone: PartyBannerTone.error,
+                message: roomOpenErrorText(l10n, error),
+                action: TextButton(
+                  onPressed: _busy ? null : _join,
+                  child: Text(l10n.paywallRetry),
                 ),
               ),
             ],
             const SizedBox(height: Spacing.lg),
-            FilledButton(
-              onPressed: _busy ? null : _join,
-              child: _busy
-                  ? const SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
-                    )
-                  : Text(l10n.joinAction),
+            PartyButton(
+              label: l10n.joinAction,
+              icon: Icons.login_rounded,
+              loading: _busy,
+              onPressed: _join,
             ),
           ],
         ),
