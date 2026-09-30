@@ -27,8 +27,9 @@ typedef StepErrorHandler = void Function(
 ///   abandoned (recorded as `timeout`) and the app is entered in degraded
 ///   mode. Critical steps are still awaited, each bounded by its own
 ///   timeout, because the app cannot work without them.
-/// - `boot_min_splash_ms`: completion is held until the splash has been
-///   visible that long, so a fast boot does not flicker.
+/// - `boot_min_splash_ms`: enter_app is held until the splash has been
+///   visible that long, so a fast boot does not flicker (and `route` still
+///   sees deep links received during the hold).
 /// - `app_init_step` / `app_init_completed` are buffered until the analytics
 ///   SDK is initialized, then flushed in order.
 ///
@@ -104,6 +105,19 @@ class AppInitializer {
         final failure = await _runStageWithDeadline(stage, elapsed);
         if (failure != null) return failure;
       }
+
+      // The boot_min_splash_ms hold happens *before* enter_app, so `route`
+      // drains the deep-link queue at the last possible moment: a link that
+      // arrives while the splash is held is still delivered.
+      _stage = InitStage.enterApp;
+      _emit();
+      final hold = clock.stopwatch()..start();
+      final minSplash = context.timings.minSplash;
+      if (elapsed.elapsed < minSplash) {
+        await Future<void>.delayed(minSplash - elapsed.elapsed);
+      }
+      hold.stop();
+
       // enter_app runs even after the deadline: the user must land somewhere.
       final routeFailure = await _runStage(
         InitStage.enterApp,
@@ -111,11 +125,8 @@ class AppInitializer {
       );
       if (routeFailure != null) return routeFailure;
 
-      final total = elapsed.elapsed;
-      final minSplash = context.timings.minSplash;
-      if (total < minSplash) {
-        await Future<void>.delayed(minSplash - total);
-      }
+      // Pipeline time only; the splash hold is not boot work.
+      final total = elapsed.elapsed - hold.elapsed;
 
       final report = BootReport(
         total: total,

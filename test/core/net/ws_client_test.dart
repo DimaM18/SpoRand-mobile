@@ -14,8 +14,20 @@ import 'package:sporand/core/platform/app_platform.dart';
 import '../../support/fake_ws.dart';
 import '../../support/protocol_samples.dart';
 
+/// An input clock whose platform channel is broken.
+class _BrokenClock implements InputClock {
+  int calls = 0;
+
+  @override
+  Future<int> nowMicros() async {
+    calls++;
+    throw StateError('input clock unavailable');
+  }
+}
+
 class _Harness {
-  _Harness(this.async, {this.ticketError}) {
+  _Harness(this.async, {this.ticketError, InputClock? clock})
+    : clock = clock ?? FakeInputClock(startUs: 5000000) {
     client = WsClient(
       endpoint: Uri.parse('wss://api.example.test/v1/ws'),
       fetchTicket: () async {
@@ -24,7 +36,7 @@ class _Harness {
         tickets++;
         return WsTicket(ticket: 'wst_ticket_number_$tickets');
       },
-      clock: clock,
+      clock: this.clock,
       appVersion: '1.2.3',
       platform: AppPlatform.ios,
       connector: server.connect,
@@ -37,7 +49,7 @@ class _Harness {
   final FakeAsync async;
   Object? ticketError;
   final FakeWsServer server = FakeWsServer();
-  final FakeInputClock clock = FakeInputClock(startUs: 5000000);
+  final InputClock clock;
   late final WsClient client;
   final List<WsConnectionState> states = [];
   final List<ServerMessage> messages = [];
@@ -97,8 +109,8 @@ void main() {
       final h = _Harness(async)
         ..connect()
         ..welcome();
-      h.clock.nowUs = 777000123;
-      final callsBefore = h.clock.calls;
+      final clock = h.clock as FakeInputClock..nowUs = 777000123;
+      final callsBefore = clock.calls;
       h.server.send(
         const ClockPing(pingId: 'ping-9', t1ServerUs: 1759212345678901),
       );
@@ -108,7 +120,7 @@ void main() {
       );
       async.flushMicrotasks();
 
-      expect(h.clock.calls - callsBefore, 1);
+      expect(clock.calls - callsBefore, 1);
       final sent = h.server.current.sentMessages;
       final pong = sent.whereType<ClockPong>().single;
       expect(pong.pingId, 'ping-9');
@@ -117,6 +129,27 @@ void main() {
       // Pings are answered by the transport, not forwarded to the game.
       expect(h.messages.whereType<ClockPing>(), isEmpty);
       expect(h.messages.last, isA<RoundProgress>());
+    });
+  });
+
+  test('a failing input clock skips the pong without an uncaught error', () {
+    // Regression: the t2 read had no error handler, so a broken clock
+    // channel raised an uncaught error on every ping.
+    fakeAsync((async) {
+      final clock = _BrokenClock();
+      final h = _Harness(async, clock: clock)
+        ..connect()
+        ..welcome();
+      h.server.send(const ClockPing(pingId: 'ping-1', t1ServerUs: 1));
+      h.server.send(
+        const RoundProgress(roundId: 'r', answeredCount: 1, eligibleCount: 3),
+      );
+      async.flushMicrotasks();
+
+      expect(clock.calls, 1);
+      expect(h.server.current.sent<ClockPong>(), isEmpty);
+      expect(h.messages.last, isA<RoundProgress>());
+      expect(h.client.isConnected, isTrue);
     });
   });
 

@@ -139,20 +139,12 @@ class OnboardingController extends Notifier<OnboardingState> {
         Routes.home;
   }
 
-  Future<void> _initAdsIfAllowed(AgeBand band, ConsentInfo info) async {
-    final ads = ref.read(adsServiceProvider);
-    if (ads.isInitialized) return;
-    final options = adsInitOptions(
-      flavorAllowsMonetization: ref.read(appEnvProvider).monetizationAllowed,
-      config: ref.read(remoteConfigProvider),
-      ageBand: band,
-      consent: info,
-    );
-    if (options == null) return;
-    try {
-      await ads.initialize(options).timeout(const Duration(seconds: 3));
-    } on Object {
-      // Ads stay off for this session; nothing user-visible depends on it.
-    }
-  }
+  Future<void> _initAdsIfAllowed(AgeBand band, ConsentInfo info) =>
+      initializeAdsIfAllowed(
+        ads: ref.read(adsServiceProvider),
+        flavorAllowsMonetization: ref.read(appEnvProvider).monetizationAllowed,
+        config: ref.read(remoteConfigProvider),
+        ageBand: band,
+        consent: info,
+      );
 }

@@ -8,8 +8,8 @@ import 'package:sporand/app/theme/tokens.dart';
 /// A spinning vinyl record inside a gradient progress ring.
 ///
 /// [progress] is the real weighted boot progress. The ring eases toward it
-/// and never moves backwards. Rotation and easing run in painters bound to
-/// animations, so a tick repaints this boundary only and rebuilds nothing.
+/// and never moves backwards. Neither the spin nor the easing rebuilds
+/// widgets, and a spin frame repaints nothing (see the layering in build).
 class VinylProgress extends StatefulWidget {
   const VinylProgress({
     super.key,
@@ -81,6 +81,10 @@ class _VinylProgressState extends State<VinylProgress>
   Widget build(BuildContext context) {
     final party = PartyColors.of(context);
     final ringWidth = widget.size * 0.03;
+    // Layering keeps the 60 fps spin off the paint path: the ring repaints
+    // only while progress eases; the disc and its sheen are recorded once;
+    // the label turns as a compositor transform over its cached layer, so a
+    // rotation frame re-records nothing but that transform.
     return RepaintBoundary(
       child: SizedBox.square(
         dimension: widget.size,
@@ -94,12 +98,19 @@ class _VinylProgressState extends State<VinylProgress>
           child: Padding(
             padding: EdgeInsets.all(ringWidth * 3.2),
             child: CustomPaint(
-              painter: _VinylPainter(
-                rotation: _spin,
-                labelColors: party.gradient,
-                hole: party.launchBackground,
+              painter: const _DiscPainter(),
+              foregroundPainter: _SheenPainter(hole: party.launchBackground),
+              child: RepaintBoundary(
+                child: RotationTransition(
+                  turns: _spin,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _LabelPainter(colors: party.gradient),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
               ),
-              child: const SizedBox.expand(),
             ),
           ),
         ),
@@ -108,16 +119,9 @@ class _VinylProgressState extends State<VinylProgress>
   }
 }
 
-class _VinylPainter extends CustomPainter {
-  _VinylPainter({
-    required this.rotation,
-    required this.labelColors,
-    required this.hole,
-  }) : super(repaint: rotation);
-
-  final Animation<double> rotation;
-  final List<Color> labelColors;
-  final Color hole;
+/// The record itself: body, grooves and rim. Static.
+class _DiscPainter extends CustomPainter {
+  const _DiscPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -150,24 +154,32 @@ class _VinylPainter extends CustomPainter {
         ..strokeWidth = 1.5
         ..color = BrandColors.vinylEdge,
     );
+  }
 
-    // Label and marker rotate; the sheen below stays put like a real light.
+  @override
+  bool shouldRepaint(_DiscPainter old) => false;
+}
+
+/// The label and its marker; rotated by a transform, never repainted.
+class _LabelPainter extends CustomPainter {
+  const _LabelPainter({required this.colors});
+
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
     final labelRadius = r * 0.36;
-    canvas
-      ..save()
-      ..translate(center.dx, center.dy)
-      ..rotate(rotation.value * 2 * math.pi);
     canvas.drawCircle(
-      Offset.zero,
+      center,
       labelRadius,
       Paint()
-        ..shader = SweepGradient(colors: [...labelColors, labelColors.first])
-            .createShader(
-              Rect.fromCircle(center: Offset.zero, radius: labelRadius),
-            ),
+        ..shader = SweepGradient(colors: [...colors, colors.first])
+            .createShader(Rect.fromCircle(center: center, radius: labelRadius)),
     );
     canvas.drawCircle(
-      Offset.zero,
+      center,
       labelRadius * 0.74,
       Paint()
         ..style = PaintingStyle.stroke
@@ -175,14 +187,28 @@ class _VinylPainter extends CustomPainter {
         ..color = const Color(0x59FFFFFF),
     );
     canvas.drawCircle(
-      Offset(0, -labelRadius * 0.52),
+      center + Offset(0, -labelRadius * 0.52),
       r * 0.032,
       Paint()..color = const Color(0xE6FFFFFF),
     );
-    canvas.restore();
+  }
 
+  @override
+  bool shouldRepaint(_LabelPainter old) => !listEquals(old.colors, colors);
+}
+
+/// Spindle hole and a fixed sheen above the turning label, like a real
+/// light on a spinning record. Static.
+class _SheenPainter extends CustomPainter {
+  const _SheenPainter({required this.hole});
+
+  final Color hole;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
     canvas.drawCircle(center, r * 0.05, Paint()..color = hole);
-
     canvas.drawCircle(
       center,
       r,
@@ -198,15 +224,12 @@ class _VinylPainter extends CustomPainter {
           ],
           stops: [0, 0.07, 0.16, 0.5, 0.57, 0.66],
           transform: GradientRotation(-math.pi / 3),
-        ).createShader(disc),
+        ).createShader(Rect.fromCircle(center: center, radius: r)),
     );
   }
 
   @override
-  bool shouldRepaint(_VinylPainter old) =>
-      old.rotation != rotation ||
-      old.hole != hole ||
-      !listEquals(old.labelColors, labelColors);
+  bool shouldRepaint(_SheenPainter old) => old.hole != hole;
 }
 
 class _RingPainter extends CustomPainter {

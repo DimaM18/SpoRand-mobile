@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/app/router/routes.dart';
+import 'package:sporand/core/ads/ads_policy.dart';
+import 'package:sporand/core/consent/consent_policy.dart';
+import 'package:sporand/core/consent/consent_service.dart';
 
 final homeControllerProvider = Provider<HomeController>(HomeController.new);
 
@@ -19,14 +22,37 @@ class HomeController {
   }
 
   /// Returning users whose UMP consent must be renewed see the form once
-  /// after boot, never over the splash (brief §3 `consent` step).
+  /// after boot, never over the splash (brief §3 `consent` step). The answer
+  /// is then applied in the same order as in onboarding (brief §7): Firebase
+  /// Consent Mode, then ads init, which the boot `ads` step had to skip.
   Future<void> showConsentFormIfRequired() async {
     final consent = _ref.read(consentServiceProvider);
     if (!consent.current.formRequired) return;
+    ConsentInfo info;
     try {
-      await consent.showFormIfRequired();
+      info = await consent.showFormIfRequired();
     } on Object {
       // Ads simply stay off until the next attempt.
+      return;
     }
+    final prefs = _ref.read(userPrefsProvider);
+    final band = prefs.ageBand;
+    await _ref
+        .read(analyticsProvider)
+        .applyConsent(
+          resolveAnalyticsConsent(
+            ageBand: band,
+            storedChoice: prefs.analyticsConsent,
+            ump: info,
+          ),
+          adsPersonalized: resolveAdsPersonalized(ageBand: band, ump: info),
+        );
+    await initializeAdsIfAllowed(
+      ads: _ref.read(adsServiceProvider),
+      flavorAllowsMonetization: _ref.read(appEnvProvider).monetizationAllowed,
+      config: _ref.read(remoteConfigProvider),
+      ageBand: band,
+      consent: info,
+    );
   }
 }

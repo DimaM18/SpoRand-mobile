@@ -20,12 +20,19 @@ AnalyticsConsent resolveAnalyticsConsent({
   return AnalyticsConsent.unknown;
 }
 
-/// Firebase Consent Mode ad signals follow UMP and age.
+/// Firebase Consent Mode ad signals (`ad_storage`, `ad_user_data`,
+/// `ad_personalization`) follow age and UMP.
+///
+/// Only a region without a consent requirement grants them. UMP status
+/// `obtained` means the user answered the form, not that they agreed:
+/// "Do not consent" also ends as `obtained` with `canRequestAds() == true`
+/// (limited ads). Until the TCF purpose consents (`IABTCF_PurposeConsents`)
+/// are read, the signals stay denied in the EEA/UK. AdMob is unaffected: it
+/// reads the TCF string itself.
 bool resolveAdsPersonalized({
   required AgeBand? ageBand,
   required ConsentInfo ump,
 }) =>
     (ageBand?.allowsPersonalizedAds ?? false) &&
     ump.canRequestAds &&
-    (ump.status == ConsentStatus.obtained ||
-        ump.status == ConsentStatus.notRequired);
+    ump.status == ConsentStatus.notRequired;

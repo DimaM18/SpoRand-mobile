@@ -7,6 +7,7 @@ import 'package:sporand/app/router/deep_links.dart';
 import 'package:sporand/app/router/routes.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/consent/consent_service.dart';
 import 'package:sporand/core/privacy/age_band.dart';
 import 'package:sporand/features/onboarding/domain/age_gate.dart';
 import 'package:sporand/features/onboarding/presentation/onboarding_controller.dart';
@@ -122,6 +123,34 @@ void main() {
         'consent_ads': 1,
       });
       expect(container.read(onboardingControllerProvider).completed, isTrue);
+    });
+
+    test('EEA: answering the UMP form does not grant ad personalization '
+        'signals', () async {
+      services.consent
+        ..statusAfterRefresh = ConsentStatus.required
+        ..canRequestAdsAfterRefresh = false;
+      await in2026(() => controller().submitBirthYear('1990'));
+      controller().setAnalyticsOptIn(true);
+      await controller().complete();
+
+      expect(services.consent.formShownCount, 1);
+      expect(services.analytics.consent, AnalyticsConsent.granted);
+      final signals = services.analyticsBackend.consent!;
+      expect(signals.analyticsStorage, isTrue);
+      expect(signals.adStorage, isFalse);
+      expect(signals.adUserData, isFalse);
+      expect(signals.adPersonalization, isFalse);
+      expect(
+        services.analyticsBackend
+            .named(AnalyticsEvents.onboardingComplete)
+            .single
+            .params['consent_ads'],
+        0,
+      );
+      // Ads still initialize (UMP allows requests); AdMob itself reads the
+      // TCF choice.
+      expect(services.ads.isInitialized, isTrue);
     });
 
     test('analytics is opt-in (off unless chosen)', () async {

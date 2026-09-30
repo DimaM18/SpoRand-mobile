@@ -22,6 +22,7 @@ class SporandApp extends ConsumerWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: resolveAppLocale,
       routerConfig: ref.watch(routerProvider),
     );
   }

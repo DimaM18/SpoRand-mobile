@@ -80,6 +80,7 @@ class GameHarness {
     this.me = Samples.guestId,
     AdsService? ads,
     FakePlaybackAdapter? playback,
+    InputClock Function(FakeInputClock clock)? gameClock,
     List<Override> extraOverrides = const [],
   }) : ads = ads ?? GatedAdsService(),
        playback = playback ?? FakePlaybackAdapter(),
@@ -104,7 +105,9 @@ class GameHarness {
     container = ProviderContainer(
       overrides: [
         roomSessionProvider.overrideWithValue(session),
-        inputClockProvider.overrideWithValue(inputClock),
+        inputClockProvider.overrideWithValue(
+          gameClock?.call(inputClock) ?? inputClock,
+        ),
         adsServiceProvider.overrideWithValue(this.ads),
         analyticsProvider.overrideWithValue(analytics),
         remoteConfigProvider.overrideWithValue(

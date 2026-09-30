@@ -35,7 +35,8 @@ report lists the degraded steps (visible in Settings).
 weighted progress. Steps are declared in `steps/boot_steps.dart`; timings come
 from Remote Config (`boot_config_timeout_ms`, `boot_min_splash_ms`,
 `boot_max_total_ms`). Deep links that arrive during boot are queued and
-opened by the `route` step.
+opened by the `route` step. The `boot_min_splash_ms` hold happens before
+`enter_app`, so a link received while the splash is held is not lost.
 
 ## Realtime, timing and the game
 
@@ -115,3 +116,10 @@ flutter test
   (not verifiable offline).
 - Run the clock calibration screen on one iPhone and one Android phone
   (including after the device slept) and keep the reports.
+
+## CI
+
+`.github/workflows/mobile.yml` runs on pushes and pull requests that touch
+`apps/mobile/`: Flutter 3.47.5, `flutter pub get`, `flutter analyze
+--no-fatal-infos` (errors and warnings fail; infos are reported) and
+`flutter test --coverage` (the lcov report is uploaded as an artifact).

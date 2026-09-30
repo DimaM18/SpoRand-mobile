@@ -35,14 +35,20 @@ final class _RoundRuntime {
   bool unlockRequested = false;
 
   /// `nowMicros()` read when the unlock was requested, before the frame
-  /// showing enabled buttons was built (a lower bound for the unlock).
-  Future<int>? provisionalUnlockUs;
+  /// showing enabled buttons was built (a lower bound for the unlock); null
+  /// if that read failed.
+  Future<int?>? provisionalUnlockUs;
 
   /// `currentSystemFrameTimeStamp` of the first frame with enabled buttons.
   int? frameUnlockUs;
 
   String? committedOptionId;
   RoundAnswer? sentAnswer;
+
+  /// True once [sentAnswer] was written to an open socket. While the socket
+  /// is reconnecting the WsClient outbox holds it and sends it after the
+  /// next `welcome` itself, so it must not be resent on top of that.
+  bool answerOnWire = false;
   bool acked = false;
 }
 
@@ -209,13 +215,14 @@ class GameController extends Notifier<GameUiState> {
 
   void _onConnection(WsConnectionState connection) {
     if (connection is! WsConnected) return;
-    // The socket dropped between the answer and its ack: send it again. A
-    // duplicate is harmless (first answer wins; ack `duplicate`).
     final runtime = _round;
     final answer = runtime?.sentAnswer;
-    if (runtime != null && answer != null && !runtime.acked) {
-      _session?.send(answer);
-    }
+    if (runtime == null || answer == null || runtime.acked) return;
+    // The socket dropped between the answer and its ack: send it again (the
+    // server keeps the first one and acks the copy `duplicate`). An answer
+    // given while offline was just flushed from the outbox: already sent.
+    if (runtime.answerOnWire) _session?.send(answer);
+    runtime.answerOnWire = true;
   }
 
   void _onRoomSnapshot(RoomSnapshot room) {
@@ -317,7 +324,7 @@ class GameController extends Notifier<GameUiState> {
     }
     runtime
       ..unlockRequested = true
-      ..provisionalUnlockUs = _clock.nowMicros();
+      ..provisionalUnlockUs = _readMono(_clock.nowMicros());
     final current = state;
     if (current is GameRoundState &&
         current.round.roundId == runtime.roundId &&
@@ -343,23 +350,32 @@ class GameController extends Notifier<GameUiState> {
     String optionId,
     int? rawTapUs,
   ) async {
-    final clock = _clock;
-    final provisional =
-        await (runtime.provisionalUnlockUs ?? clock.nowMicros());
-    final now = await clock.nowMicros();
-    final unlock = MonoTimestamps.resolveUnlock(
-      provisionalUs: provisional,
-      frameUs: runtime.frameUnlockUs,
-      nowUs: now,
-    );
-    final tap = rawTapUs == null
-        ? now
-        : MonoTimestamps.resolveTap(
-            tapUs: rawTapUs,
-            unlockUs: unlock,
-            nowUs: now,
-          );
-    if (_round != runtime) return;
+    // A committed answer is always sent: if the input clock cannot be read,
+    // the pointer and frame timestamps (also OS-stamped) are used as they
+    // are, and the server's arrival-time bounds still apply.
+    final provisional = await runtime.provisionalUnlockUs;
+    final now = await _readMono(_clock.nowMicros());
+    final frame = runtime.frameUnlockUs;
+    final int? unlock;
+    final int? tap;
+    if (now != null) {
+      unlock = MonoTimestamps.resolveUnlock(
+        provisionalUs: provisional ?? frame ?? now,
+        frameUs: frame,
+        nowUs: now,
+      );
+      tap = rawTapUs == null
+          ? now
+          : MonoTimestamps.resolveTap(
+              tapUs: rawTapUs,
+              unlockUs: unlock,
+              nowUs: now,
+            );
+    } else {
+      unlock = frame ?? provisional ?? rawTapUs;
+      tap = rawTapUs ?? unlock;
+    }
+    if (_round != runtime || unlock == null || tap == null) return;
     final answer = RoundAnswer(
       roundId: runtime.roundId,
       nonce: runtime.prepare.nonce,
@@ -367,8 +383,19 @@ class GameController extends Notifier<GameUiState> {
       tapMonoUs: tap,
       unlockMonoUs: unlock,
     );
-    runtime.sentAnswer = answer;
+    runtime
+      ..sentAnswer = answer
+      ..answerOnWire = _session?.ws.isConnected ?? false;
     _session?.send(answer);
+  }
+
+  /// An input-clock read, or null when it failed.
+  static Future<int?> _readMono(Future<int> read) async {
+    try {
+      return await read;
+    } on Object {
+      return null;
+    }
   }
 
   void _onAnswerAck(RoundAnswerAck message) {

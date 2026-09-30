@@ -26,6 +26,32 @@ AdsInitOptions? adsInitOptions({
   );
 }
 
+/// Initializes [ads] once [adsInitOptions] allows it (onboarding, or a
+/// consent renewed after boot). A failure leaves ads off for this session;
+/// nothing user-visible depends on it.
+Future<void> initializeAdsIfAllowed({
+  required AdsService ads,
+  required bool flavorAllowsMonetization,
+  required RemoteConfigService config,
+  required AgeBand? ageBand,
+  required ConsentInfo consent,
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  if (ads.isInitialized) return;
+  final options = adsInitOptions(
+    flavorAllowsMonetization: flavorAllowsMonetization,
+    config: config,
+    ageBand: ageBand,
+    consent: consent,
+  );
+  if (options == null) return;
+  try {
+    await ads.initialize(options).timeout(timeout);
+  } on Object {
+    // Ads stay off until the next launch.
+  }
+}
+
 /// Purchases are available unless the flavor, `monetization_enabled` or
 /// `kill_switch_purchases` turn them off.
 bool purchasesEnabled({

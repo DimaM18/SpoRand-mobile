@@ -155,6 +155,33 @@ void main() {
       expect(services.deepLinks.deferred, const JoinRoomLink('XYZ789'));
     });
 
+    test('a link that arrives while the splash is held for '
+        'boot_min_splash_ms is still delivered', () {
+      // Regression: `route` drained the queue before the min-splash hold, so
+      // a link received during the hold stayed queued forever.
+      final services = FakeServices(prefs: returningAdult);
+      fakeAsync((async) {
+        final init = AppInitializer(
+          steps: buildBootSteps(),
+          context: services.context(),
+          telemetry: AnalyticsBootTelemetry(services.analytics),
+        );
+        BootOutcome? outcome;
+        unawaited(init.run().then((o) => outcome = o));
+        // The fake pipeline is instant; the splash is still being held.
+        async.elapse(const Duration(milliseconds: 400));
+        expect(outcome, isNull);
+        services.deepLinks.enqueue(
+          UriLink(Uri.parse('https://$testLinkHost/j/abc-234')),
+        );
+        async.elapse(const Duration(seconds: 2));
+        final destination = (outcome! as BootSucceeded).destination;
+        expect(destination, isA<DeepLinkDestination>());
+        expect(destination.location, '/j/ABC234');
+        expect(services.deepLinks.isEmpty, isTrue);
+      });
+    });
+
     test('from foreign hosts are ignored', () {
       final services = FakeServices(prefs: returningAdult);
       services.deepLinks.enqueue(

@@ -1,8 +1,10 @@
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
+import 'package:sporand/core/clock/input_clock.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
@@ -11,6 +13,21 @@ import 'package:sporand/features/game/domain/game_state.dart';
 
 import '../../support/game_harness.dart';
 import '../../support/protocol_samples.dart';
+
+/// Delegates to the fake clock until [failing] is set, then throws like a
+/// broken platform channel would.
+class _FlakyClock implements InputClock {
+  _FlakyClock(this._inner);
+
+  final FakeInputClock _inner;
+  bool failing = false;
+
+  @override
+  Future<int> nowMicros() async {
+    if (failing) throw PlatformException(code: 'channel-error');
+    return _inner.nowMicros();
+  }
+}
 
 void main() {
   GameHarness harness(
@@ -209,7 +226,7 @@ void main() {
       );
       async.flushMicrotasks();
       final answers = h.received<RoundAnswer>();
-      expect(answers.length, greaterThanOrEqualTo(2));
+      expect(answers, hasLength(2), reason: 'once per connection');
       expect(answers.map((a) => a.tapMonoUs).toSet(), hasLength(1));
       // The server has it already: `duplicate` counts as accepted.
       h.send(
@@ -223,6 +240,95 @@ void main() {
         ((h.state as GameRoundState).phase as RoundAnswered).ack,
         AnswerAckStatus.accepted,
       );
+    });
+  });
+
+  test('an answer given while the socket reconnects is sent exactly once', () {
+    // Regression: the WsClient outbox flushed the queued answer after
+    // `welcome` and the controller resent it on WsConnected as well.
+    fakeAsync((async) {
+      final h = harness(async);
+      h.send(Samples.prepare(startAtMonoUs: h.inputClock.nowUs));
+      async.flushMicrotasks();
+      h.server.current.serverClose(1006);
+      async.flushMicrotasks();
+      expect(
+        h.controller.tap(
+          roundId: 'round-1',
+          optionId: 'opt-b',
+          tapMonoUs: h.inputClock.nowUs,
+        ),
+        isTrue,
+      );
+      async.flushMicrotasks();
+      expect(h.received<RoundAnswer>(), isEmpty, reason: 'queued offline');
+
+      async.elapse(const Duration(seconds: 1));
+      h.send(
+        Samples.welcome(room: Samples.room(state: RoomState.roundPlaying)),
+      );
+      async.flushMicrotasks();
+      expect(h.received<RoundAnswer>(), hasLength(1));
+
+      // Still unacked when this connection drops too: sent once more.
+      h.server.current.serverClose(1006);
+      async.elapse(const Duration(seconds: 1));
+      h.send(
+        Samples.welcome(room: Samples.room(state: RoomState.roundPlaying)),
+      );
+      async.flushMicrotasks();
+      expect(h.received<RoundAnswer>(), hasLength(2));
+      h.send(const RoundAnswerAck(roundId: 'round-1', accepted: true));
+
+      // Acked: a later reconnect sends nothing.
+      h.server.current.serverClose(1006);
+      async.elapse(const Duration(seconds: 1));
+      h.send(
+        Samples.welcome(room: Samples.room(state: RoomState.roundPlaying)),
+      );
+      async.flushMicrotasks();
+      expect(h.received<RoundAnswer>(), hasLength(2));
+    });
+  });
+
+  test('a failing input clock read never loses a committed answer', () {
+    // Regression: the answer was built after awaiting the input clock; when
+    // that read threw, the tap showed as sent but nothing went out.
+    fakeAsync((async) {
+      late _FlakyClock flaky;
+      final h = GameHarness(
+        clock: async.getClock(DateTime(2026, 9, 30)),
+        flush: async.flushMicrotasks,
+        gameClock: (inner) => flaky = _FlakyClock(inner),
+      );
+      addTearDown(h.dispose);
+      h.welcome();
+      h.send(
+        Samples.prepare(
+          startAtMonoUs: h.inputClock.nowUs + 500000,
+          source: AudioStartSource.hostReported,
+        ),
+      );
+      async.elapse(const Duration(milliseconds: 600));
+      flaky.failing = true;
+      h.send(const RoundStart(roundId: 'round-1', audioStartServerMs: 1));
+      final frameUs = h.inputClock.nowUs + 8000;
+      h.controller.onAnswerButtonsShown('round-1', frameUs);
+      async.elapse(const Duration(milliseconds: 400));
+      final tapUs = h.inputClock.nowUs - 10000;
+      expect(
+        h.controller.tap(
+          roundId: 'round-1',
+          optionId: 'opt-a',
+          tapMonoUs: tapUs,
+        ),
+        isTrue,
+      );
+      async.flushMicrotasks();
+
+      final answer = h.received<RoundAnswer>().single;
+      expect(answer.tapMonoUs, tapUs, reason: 'the OS touch time is kept');
+      expect(answer.unlockMonoUs, frameUs);
     });
   });
 

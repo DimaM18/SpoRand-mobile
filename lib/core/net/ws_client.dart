@@ -435,7 +435,7 @@ class WsClient {
     // Stamp t2 before anything else: every microsecond spent before this
     // read biases the offset the server estimates (brief §5).
     final t2 = data.contains('"${WsServerMessage.clockPing}"')
-        ? _clock.nowMicros()
+        ? _readInputClock()
         : null;
     _armWatchdog();
     final WsEnvelope? envelope;
@@ -500,7 +500,19 @@ class WsClient {
     return true;
   }
 
-  void _answerPing(JsonMap payload, Future<int> t2) {
+  /// `t2_mono_us`, or null when the input clock could not be read: the
+  /// server then just misses this sample. The native read starts
+  /// synchronously, before the frame is decoded.
+  Future<int?> _readInputClock() async {
+    try {
+      return await _clock.nowMicros();
+    } on Object catch (e) {
+      _log?.call('input clock read failed: $e');
+      return null;
+    }
+  }
+
+  void _answerPing(JsonMap payload, Future<int?> t2) {
     final ClockPing ping;
     try {
       ping = ClockPing.fromJson(payload);
@@ -511,7 +523,12 @@ class WsClient {
     unawaited(
       t2.then((t2MonoUs) {
         // A pong on a newer connection would pair with the wrong t1/t4.
-        if (conn == null || !identical(conn, _conn) || _stopped) return;
+        if (t2MonoUs == null ||
+            conn == null ||
+            !identical(conn, _conn) ||
+            _stopped) {
+          return;
+        }
         _sendRaw(
           conn,
           ClockPong(

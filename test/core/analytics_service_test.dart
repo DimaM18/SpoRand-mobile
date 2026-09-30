@@ -154,6 +154,29 @@ void main() {
         AnalyticsConsent.unknown,
       );
     });
+
+    test('a UMP choice is not consent to personalized ads', () {
+      // Regression: status `obtained` only means the user answered the form;
+      // "Do not consent" also yields obtained + canRequestAds (limited ads).
+      const answered = ConsentInfo(
+        status: ConsentStatus.obtained,
+        canRequestAds: true,
+      );
+      expect(
+        resolveAdsPersonalized(ageBand: AgeBand.adult, ump: answered),
+        isFalse,
+      );
+      expect(
+        resolveAdsPersonalized(ageBand: AgeBand.adult, ump: outside),
+        isTrue,
+        reason: 'no consent requirement outside the EEA/UK',
+      );
+      expect(
+        resolveAdsPersonalized(ageBand: AgeBand.age13to15, ump: outside),
+        isFalse,
+      );
+      expect(resolveAdsPersonalized(ageBand: AgeBand.adult, ump: eea), isFalse);
+    });
   });
 
   group('BufferingCrashReporter', () {

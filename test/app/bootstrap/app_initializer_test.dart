@@ -93,7 +93,9 @@ void main() {
         // warmup waits for the whole config stage, not just the fast step.
         expect(t.starts['w'], 300);
         expect(t.starts['s'], 310);
-        expect(t.starts['r'], 320);
+        // enter_app starts once boot_min_splash_ms (800 ms) has passed, so
+        // `route` sees deep links received while the splash was held.
+        expect(t.starts['r'], 800);
         expect(
           t.events.indexOf('end:c_slow'),
           lessThan(t.events.indexOf('start:w')),
