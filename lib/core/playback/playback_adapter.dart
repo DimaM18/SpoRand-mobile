@@ -1,44 +1,151 @@
-/// Music provider ids (brief §1.3).
-enum MusicProviderId {
-  testCatalog('test_catalog'),
-  spotifyAppRemote('spotify_app_remote'),
-  licensedClips('licensed_clips');
+import 'package:sporand/core/net/protocol/ws_enums.dart';
+import 'package:sporand/core/net/protocol/ws_models.dart';
 
-  const MusicProviderId(this.wireName);
+export 'package:sporand/core/net/protocol/ws_enums.dart' show MusicProviderId;
 
-  final String wireName;
+/// What the playback device must play for one round (`round.prepare.clip`).
+typedef PlaybackClip = RoundClip;
+
+/// Outcome of a preload (`round.preloaded{ok, preload_ms}`).
+final class PreloadOutcome {
+  const PreloadOutcome({required this.ok, required this.preloadMs, this.error});
+
+  final bool ok;
+  final int preloadMs;
+
+  /// snake_case reason for `round.playback_failed` when [ok] is false.
+  final String? error;
 }
 
-/// Client-side playback abstraction (brief §1.3 `PlaybackAdapter`). Game
+/// `round.playback_started` data.
+final class PlaybackStarted {
+  const PlaybackStarted({
+    required this.audioStartMonoUs,
+    required this.outputLatencyMs,
+    required this.outputRoute,
+    required this.source,
+  });
+
+  /// When the audio actually started, on the input clock.
+  final int audioStartMonoUs;
+  final int outputLatencyMs;
+  final OutputRoute outputRoute;
+  final PlaybackStartSource source;
+}
+
+/// Playback failed; [reason] goes to `round.playback_failed.reason`.
+final class PlaybackFailure implements Exception {
+  const PlaybackFailure(this.reason);
+
+  static const clipLoadFailed = 'clip_load_failed';
+  static const playerError = 'player_error';
+  static const notPrepared = 'not_prepared';
+  static const spotifyNotRunning = 'spotify_not_running';
+  static const startTimeout = 'start_timeout';
+
+  final String reason;
+
+  @override
+  String toString() => 'PlaybackFailure($reason)';
+}
+
+/// Client-side playback abstraction (brief §1.3 `PlaybackAdapter`): game
 /// logic never reads provider-specific fields.
+///
+/// Licensing rules built in (brief §1.3, point 7): at most the snippet is
+/// played, and clips live only in memory or temporary cache until
+/// [dispose].
 abstract interface class PlaybackAdapter {
   MusicProviderId get provider;
 
-  /// Prepares the provider (audio session, native bridge). Never plays audio.
+  /// `scheduled` for clip providers, `host_reported` for Spotify.
+  AudioStartSource get startSource;
+
+  /// Prepares the provider (audio session, native bridge). Never plays.
   Future<void> initialize();
+
+  /// Caches a `game.starting` prefetch entry (only if the provider allows it).
+  Future<PreloadOutcome> prefetch(PrefetchClip clip);
+
+  /// Loads [clip] and positions it at the snippet. Never plays.
+  Future<PreloadOutcome> prepare(PlaybackClip clip);
+
+  /// Starts the prepared clip at [startAtMonoUs] on the input clock and
+  /// completes once audio has started. Throws [PlaybackFailure].
+  Future<PlaybackStarted> playAt(int startAtMonoUs);
+
+  Future<void> stop();
+
+  /// Releases the player and purges cached clips.
+  Future<void> dispose();
 }
 
-/// `test_catalog` / `licensed_clips`: scheduled playback through the
-/// `ClipPlayerApi` Pigeon bridge (part 2). Nothing to warm up yet.
-final class ClipPlaybackAdapter implements PlaybackAdapter {
-  ClipPlaybackAdapter(this.provider);
-
-  @override
-  final MusicProviderId provider;
-
-  bool initialized = false;
-
-  @override
-  Future<void> initialize() async => initialized = true;
-}
-
+/// Scriptable fake for tests and for builds without a playback device.
 final class FakePlaybackAdapter implements PlaybackAdapter {
-  FakePlaybackAdapter({this.provider = MusicProviderId.testCatalog});
+  FakePlaybackAdapter({
+    this.provider = MusicProviderId.testCatalog,
+    this.startSource = AudioStartSource.scheduled,
+    this.prepareOk = true,
+    this.playFailure,
+    this.outputRoute = OutputRoute.speaker,
+    this.outputLatencyMs = 0,
+  });
 
   @override
   final MusicProviderId provider;
+
+  @override
+  final AudioStartSource startSource;
+
+  bool prepareOk;
+  String? playFailure;
+  OutputRoute outputRoute;
+  int outputLatencyMs;
+
   bool initialized = false;
+  bool disposed = false;
+  int stops = 0;
+  final List<PrefetchClip> prefetched = [];
+  final List<PlaybackClip> prepared = [];
+  final List<int> playedAt = [];
 
   @override
   Future<void> initialize() async => initialized = true;
+
+  @override
+  Future<PreloadOutcome> prefetch(PrefetchClip clip) async {
+    prefetched.add(clip);
+    return const PreloadOutcome(ok: true, preloadMs: 5);
+  }
+
+  @override
+  Future<PreloadOutcome> prepare(PlaybackClip clip) async {
+    prepared.add(clip);
+    return PreloadOutcome(
+      ok: prepareOk,
+      preloadMs: 12,
+      error: prepareOk ? null : PlaybackFailure.clipLoadFailed,
+    );
+  }
+
+  @override
+  Future<PlaybackStarted> playAt(int startAtMonoUs) async {
+    final failure = playFailure;
+    if (failure != null) throw PlaybackFailure(failure);
+    playedAt.add(startAtMonoUs);
+    return PlaybackStarted(
+      audioStartMonoUs: startAtMonoUs,
+      outputLatencyMs: outputLatencyMs,
+      outputRoute: outputRoute,
+      source: startSource == AudioStartSource.scheduled
+          ? PlaybackStartSource.scheduled
+          : PlaybackStartSource.playerState,
+    );
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+
+  @override
+  Future<void> dispose() async => disposed = true;
 }

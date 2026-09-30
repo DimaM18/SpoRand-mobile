@@ -19,6 +19,11 @@ class UserPrefsRepository {
   /// The user's own analytics choice; null when never asked.
   bool? get analyticsConsent => _store.getBool(PrefKeys.analyticsConsent);
 
+  String? get displayName => _store.getString(PrefKeys.displayName);
+
+  Future<void> saveDisplayName(String name) =>
+      _store.setString(PrefKeys.displayName, name);
+
   Future<void> saveAgeBand(AgeBand band) async {
     await _store.setString(PrefKeys.ageBand, band.wireName);
     if (band.isBlocked) await _store.setBool(PrefKeys.ageGateBlocked, true);

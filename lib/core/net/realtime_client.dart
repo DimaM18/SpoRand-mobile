@@ -7,8 +7,9 @@ abstract interface class RealtimeClient {
   Uri? get endpoint;
 }
 
-/// Lazy client used until the socket implementation lands (reconnect,
-/// resume via `hello.last_seq`, clock sync; part 2).
+/// Holds the endpoint for the room connections: each room opens its own
+/// `WsClient` (reconnect, resume via `hello.last_seq`, clock sync) when the
+/// player creates or joins it.
 final class LazyRealtimeClient implements RealtimeClient {
   Uri? _endpoint;
 

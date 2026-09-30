@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO(owner): final application id once the brand is chosen (Q3).
         applicationId = "dev.brandtbd.sporand"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -27,6 +27,15 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // TODO(owner): pass -PadmobAppId=... and -PlinkHost=<domain> (or set
+        // them in gradle.properties). Defaults: Google's sample AdMob app id
+        // and a non-routable placeholder host.
+        manifestPlaceholders["admobAppId"] =
+            (project.findProperty("admobAppId") as String?)
+                ?: "ca-app-pub-3940256099942544~3347511713"
+        manifestPlaceholders["linkHost"] =
+            (project.findProperty("linkHost") as String?) ?: "links.example.invalid"
     }
 
     buildTypes {

@@ -23,8 +23,10 @@ final class AuthSession {
 
   /// Access tokens live 10 minutes (brief §7); refresh a little early so a
   /// request never leaves with a token that expires in flight.
-  bool isAccessTokenValid(DateTime now, {Duration skew = const Duration(seconds: 30)}) =>
-      now.add(skew).isBefore(accessTokenExpiresAt);
+  bool isAccessTokenValid(
+    DateTime now, {
+    Duration skew = const Duration(seconds: 30),
+  }) => now.add(skew).isBefore(accessTokenExpiresAt);
 
   Map<String, Object?> toJson() => {
     'user_id': userId,

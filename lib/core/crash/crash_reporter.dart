@@ -18,7 +18,12 @@ abstract interface class CrashReporter {
 }
 
 final class RecordedError {
-  const RecordedError(this.error, this.stack, {required this.fatal, this.reason});
+  const RecordedError(
+    this.error,
+    this.stack, {
+    required this.fatal,
+    this.reason,
+  });
 
   final Object error;
   final StackTrace? stack;

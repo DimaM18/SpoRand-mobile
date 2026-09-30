@@ -1,0 +1,340 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:sporand/app/bootstrap/domain/app_initializer.dart';
+import 'package:sporand/app/bootstrap/domain/boot_telemetry.dart';
+import 'package:sporand/app/bootstrap/domain/init_context.dart';
+import 'package:sporand/app/bootstrap/steps/boot_steps.dart';
+import 'package:sporand/app/bootstrap/warmup/flutter_resource_warmer.dart';
+import 'package:sporand/app/bootstrap/warmup/resource_warmer.dart';
+import 'package:sporand/app/flavors/app_env.dart';
+import 'package:sporand/app/flavors/flavor.dart';
+import 'package:sporand/app/router/deep_links.dart';
+import 'package:sporand/core/ads/admob_ads_service.dart';
+import 'package:sporand/core/ads/ads_service.dart';
+import 'package:sporand/core/analytics/analytics_backend.dart';
+import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/analytics/firebase_analytics_backend.dart';
+import 'package:sporand/core/auth/auth_api.dart';
+import 'package:sporand/core/auth/auth_service.dart';
+import 'package:sporand/core/clock/input_clock.dart';
+import 'package:sporand/core/consent/consent_service.dart';
+import 'package:sporand/core/consent/ump_consent_service.dart';
+import 'package:sporand/core/crash/crash_reporter.dart';
+import 'package:sporand/core/crash/firebase_crash_reporter.dart';
+import 'package:sporand/core/firebase/firebase_core_gate.dart';
+import 'package:sporand/core/links/external_link_launcher.dart';
+import 'package:sporand/core/net/api_client.dart';
+import 'package:sporand/core/net/app_signals.dart';
+import 'package:sporand/core/net/realtime_client.dart';
+import 'package:sporand/core/net/ws_connection.dart';
+import 'package:sporand/core/platform/app_info.dart';
+import 'package:sporand/core/platform/app_platform.dart';
+import 'package:sporand/core/playback/clip_player_adapter.dart';
+import 'package:sporand/core/playback/playback_adapter.dart';
+import 'package:sporand/core/playback/spotify_remote_playback_adapter.dart';
+import 'package:sporand/core/purchases/entitlement_sync_api.dart';
+import 'package:sporand/core/purchases/purchases_service.dart';
+import 'package:sporand/core/purchases/revenuecat_purchases_service.dart';
+import 'package:sporand/core/remote_config/firebase_remote_config_backend.dart';
+import 'package:sporand/core/remote_config/remote_config_backend.dart';
+import 'package:sporand/core/remote_config/remote_config_keys.dart';
+import 'package:sporand/core/remote_config/remote_config_service.dart';
+import 'package:sporand/core/security/app_check_service.dart';
+import 'package:sporand/core/security/secure_store.dart';
+import 'package:sporand/core/security/session_repository.dart';
+import 'package:sporand/core/share/share_service.dart';
+import 'package:sporand/core/storage/preferences_store.dart';
+import 'package:sporand/core/storage/user_prefs_repository.dart';
+
+/// Composition root. Every provider below picks the real adapter or a fake
+/// from [AppEnv]; tests override any of them with `ProviderScope.overrides`.
+///
+/// Builds without Firebase config (the dev flavor by default) get in-memory
+/// fakes for Firebase-backed services, so the app boots in degraded mode
+/// instead of crashing.
+
+final appEnvProvider = Provider<AppEnv>(
+  (ref) =>
+      throw UnimplementedError('appEnvProvider is overridden in bootstrap()'),
+);
+
+/// The buffer main()'s error handlers write to (overridden in bootstrap).
+final crashGateProvider = Provider<BufferingCrashReporter>(
+  (ref) => BufferingCrashReporter(),
+);
+
+final firebaseCoreGateProvider = Provider<FirebaseCoreGate>(
+  (ref) => FirebaseCoreGate(),
+);
+
+void _debugLog(String line) {
+  if (kDebugMode) debugPrint(line);
+}
+
+final crashReporterProvider = Provider<CrashReporter>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.firebaseEnabled) {
+    return FakeCrashReporter(onError: (e) => _debugLog('[crash] ${e.error}'));
+  }
+  return FirebaseCrashReporter(ref.watch(firebaseCoreGateProvider));
+});
+
+/// Per-flavor client defaults (brief §4.6): the spotifyProto project turns
+/// the prototype on and monetization off.
+Map<String, Object> flavorConfigDefaults(Flavor flavor) => switch (flavor) {
+  Flavor.spotifyProto => {
+    RcKeys.spotifyProtoEnabled.name: true,
+    RcKeys.monetizationEnabled.name: false,
+  },
+  _ => const {},
+};
+
+final remoteConfigBackendProvider = Provider<RemoteConfigBackend>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.firebaseEnabled) return InMemoryRemoteConfigBackend();
+  return FirebaseRemoteConfigBackend(
+    firebase: ref.watch(firebaseCoreGateProvider),
+    // Client template: 12 h fetch interval (brief §9 S8); fast in dev.
+    minimumFetchInterval: env.flavor.isDev
+        ? const Duration(minutes: 1)
+        : const Duration(hours: 12),
+  );
+});
+
+final remoteConfigProvider = Provider<RemoteConfigService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  return RemoteConfigService(
+    backend: ref.watch(remoteConfigBackendProvider),
+    defaultOverrides: flavorConfigDefaults(env.flavor),
+  );
+});
+
+final analyticsBackendProvider = Provider<AnalyticsBackend>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.firebaseEnabled) return InMemoryAnalyticsBackend(onEvent: _debugLog);
+  return FirebaseAnalyticsBackend(ref.watch(firebaseCoreGateProvider));
+});
+
+final analyticsProvider = Provider<AnalyticsService>(
+  (ref) => AnalyticsService(backend: ref.watch(analyticsBackendProvider)),
+);
+
+final consentServiceProvider = Provider<ConsentService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  // No ads in spotifyProto, so there is no ads consent to collect.
+  if (!env.monetizationAllowed) {
+    return FakeConsentService(canRequestAdsAfterRefresh: false);
+  }
+  return UmpConsentService();
+});
+
+final adsServiceProvider = Provider<AdsService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.monetizationAllowed || !env.adUnits.isComplete) {
+    return FakeAdsService(interstitialLoaded: false, rewardedLoaded: false);
+  }
+  return AdMobAdsService(units: env.adUnits);
+});
+
+final purchasesServiceProvider = Provider<PurchasesService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.monetizationAllowed) return FakePurchasesService(packages: const []);
+  // Dev builds without a RevenueCat key get a demo paywall.
+  if (env.revenueCatApiKey == null && env.flavor.isDev) {
+    return FakePurchasesService();
+  }
+  return RevenueCatPurchasesService(apiKey: env.revenueCatApiKey);
+});
+
+final entitlementsProvider = StreamProvider<Entitlements>((ref) async* {
+  final purchases = ref.watch(purchasesServiceProvider);
+  yield purchases.entitlements;
+  yield* purchases.entitlementChanges;
+});
+
+final secureStoreProvider = Provider<SecureStore>(
+  (ref) => FlutterSecureStore(),
+);
+
+final preferencesStoreProvider = Provider<PreferencesStore>(
+  (ref) => SharedPreferencesStore(),
+);
+
+final userPrefsProvider = Provider<UserPrefsRepository>(
+  (ref) => UserPrefsRepository(ref.watch(preferencesStoreProvider)),
+);
+
+final sessionRepositoryProvider = Provider<SessionRepository>(
+  (ref) => SessionRepository(ref.watch(secureStoreProvider)),
+);
+
+final appCheckProvider = Provider<AppCheckService>((ref) {
+  final env = ref.watch(appEnvProvider);
+  if (!env.firebaseEnabled) return FakeAppCheckService(token: null);
+  return FirebaseAppCheckService(
+    ref.watch(firebaseCoreGateProvider),
+    useDebugProviders: env.flavor.isDev,
+  );
+});
+
+final appInfoSourceProvider = Provider<AppInfoSource>(
+  (ref) => PackageInfoAppInfoSource(ref.watch(appEnvProvider).platform),
+);
+
+/// Unauthenticated client for `/v1/auth/*` (the calls that obtain tokens).
+final authApiClientProvider = Provider<ApiClient?>((ref) {
+  final baseUrl = ref.watch(appEnvProvider).apiBaseUrl;
+  if (baseUrl == null) return null;
+  final client = ApiClient(
+    baseUrl: baseUrl,
+    appCheck: ref.watch(appCheckProvider),
+  );
+  ref.onDispose(client.close);
+  return client;
+});
+
+/// Authenticated client (Bearer + single-flight refresh on 401). Null when
+/// no `API_BASE_URL` is configured: the app then uses offline fakes.
+final apiClientProvider = Provider<ApiClient?>((ref) {
+  final baseUrl = ref.watch(appEnvProvider).apiBaseUrl;
+  if (baseUrl == null) return null;
+  final client = ApiClient(
+    baseUrl: baseUrl,
+    tokens: ref.watch(authServiceProvider),
+    appCheck: ref.watch(appCheckProvider),
+  );
+  ref.onDispose(client.close);
+  return client;
+});
+
+final authApiProvider = Provider<AuthApi>((ref) {
+  final client = ref.watch(authApiClientProvider);
+  return client == null ? FakeAuthApi() : HttpAuthApi(client);
+});
+
+final authServiceProvider = Provider<AuthService>(
+  (ref) => AuthService(
+    api: ref.watch(authApiProvider),
+    sessions: ref.watch(sessionRepositoryProvider),
+    appInfo: ref.watch(appInfoSourceProvider),
+    localeTag: () => PlatformDispatcher.instance.locale.toLanguageTag(),
+  ),
+);
+
+final entitlementSyncProvider = Provider<EntitlementSyncApi>((ref) {
+  final client = ref.watch(apiClientProvider);
+  return client == null
+      ? FakeEntitlementSyncApi()
+      : HttpEntitlementSyncApi(client);
+});
+
+/// The OS input clock (brief §5). Desktop dev runs have no native bridge.
+final inputClockProvider = Provider<InputClock>((ref) {
+  final platform = ref.watch(appEnvProvider).platform;
+  return platform == AppPlatform.other
+      ? StopwatchInputClock()
+      : PigeonInputClock();
+});
+
+/// Adapter for the flavor's default provider; the boot `music_provider`
+/// step initializes it.
+final playbackAdapterProvider = Provider<PlaybackAdapter>(
+  (ref) => ref.watch(playbackAdapterFactoryProvider)(
+    ref.watch(appEnvProvider).flavor == Flavor.spotifyProto
+        ? MusicProviderId.spotifyAppRemote
+        : MusicProviderId.testCatalog,
+  ),
+);
+
+/// Builds the playback adapter for a room's provider (playback device only).
+final playbackAdapterFactoryProvider =
+    Provider<PlaybackAdapter Function(MusicProviderId provider)>((ref) {
+      final clock = ref.watch(inputClockProvider);
+      return (provider) => switch (provider) {
+        MusicProviderId.testCatalog ||
+        MusicProviderId.licensedClips => ClipPlayerAdapter(provider),
+        // TODO(owner, Q1): a real bridge once SpotifyRemoteApi exists.
+        MusicProviderId.spotifyAppRemote => SpotifyRemotePlaybackAdapter(
+          bridge: const UnavailableSpotifyRemoteBridge(),
+          clock: clock,
+        ),
+      };
+    });
+
+final wsConnectorProvider = Provider<WsConnector>(
+  (ref) => ChannelWsConnection.connect,
+);
+
+/// Lifecycle + connectivity changes for `app.state` (created lazily when
+/// the first room opens).
+final appSignalSourceProvider = Provider<AppSignalSource>((ref) {
+  final source = FlutterAppSignalSource();
+  ref.onDispose(source.dispose);
+  return source;
+});
+
+final shareServiceProvider = Provider<ShareService>(
+  (ref) => const SharePlusShareService(),
+);
+
+final realtimeClientProvider = Provider<RealtimeClient>(
+  (ref) => LazyRealtimeClient(),
+);
+
+final resourceWarmerProvider = Provider<ResourceWarmer>(
+  (ref) => FlutterResourceWarmer(),
+);
+
+final deepLinkQueueProvider = Provider<DeepLinkQueue>((ref) => DeepLinkQueue());
+
+final deepLinkParserProvider = Provider<DeepLinkParser>(
+  (ref) => DeepLinkParser(allowedHosts: ref.watch(appEnvProvider).linkHosts),
+);
+
+final externalLinkLauncherProvider = Provider<ExternalLinkLauncher>(
+  (ref) => const UrlLauncherExternalLinkLauncher(),
+);
+
+final bootDependenciesProvider = Provider<BootDependencies>(
+  (ref) => BootDependencies(
+    env: ref.watch(appEnvProvider),
+    appInfo: ref.watch(appInfoSourceProvider),
+    remoteConfig: ref.watch(remoteConfigProvider),
+    preferences: ref.watch(preferencesStoreProvider),
+    secureStore: ref.watch(secureStoreProvider),
+    userPrefs: ref.watch(userPrefsProvider),
+    sessions: ref.watch(sessionRepositoryProvider),
+    warmer: ref.watch(resourceWarmerProvider),
+    crashReporter: ref.watch(crashReporterProvider),
+    crashGate: ref.watch(crashGateProvider),
+    analytics: ref.watch(analyticsProvider),
+    consent: ref.watch(consentServiceProvider),
+    appCheck: ref.watch(appCheckProvider),
+    auth: ref.watch(authServiceProvider),
+    purchases: ref.watch(purchasesServiceProvider),
+    ads: ref.watch(adsServiceProvider),
+    playback: ref.watch(playbackAdapterProvider),
+    realtime: ref.watch(realtimeClientProvider),
+    linkParser: ref.watch(deepLinkParserProvider),
+  ),
+);
+
+/// A fresh initializer per boot attempt chain; `BootController.restart()`
+/// invalidates it (e.g. "check again" on the maintenance screen).
+final appInitializerProvider = Provider<AppInitializer>((ref) {
+  final deps = ref.watch(bootDependenciesProvider);
+  final initializer = AppInitializer(
+    steps: buildBootSteps(),
+    context: InitContext(
+      deps: deps,
+      deepLinks: ref.watch(deepLinkQueueProvider),
+    ),
+    telemetry: AnalyticsBootTelemetry(deps.analytics),
+    onStepError: (stepId, error, stack) => deps.crashGate
+        .recordError(error, stack, reason: 'boot step $stepId')
+        .ignore(),
+  );
+  ref.onDispose(initializer.dispose);
+  return initializer;
+});

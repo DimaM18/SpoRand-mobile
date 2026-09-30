@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Must equal BrandColors.dayMist in lib/app/theme/tokens.dart so the
+         native launch screen hands over to the Flutter splash without a flash. -->
+    <color name="launch_background">#FFF8F6FF</color>
+</resources>

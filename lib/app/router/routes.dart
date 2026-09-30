@@ -10,6 +10,9 @@ abstract final class Routes {
   static const forceUpdate = '/force-update';
   static const maintenance = '/maintenance';
 
+  /// Dev-only: the device timing calibration screen (brief §5/§9).
+  static const debugClock = '/debug/clock';
+
   static const lobbyPattern = '/lobby/:roomId';
   static const gamePattern = '/game/:roomId';
   static const resultsPattern = '/results/:roomId';
@@ -21,7 +24,13 @@ abstract final class Routes {
   static String game(String roomId) => '/game/${Uri.encodeComponent(roomId)}';
   static String results(String roomId) =>
       '/results/${Uri.encodeComponent(roomId)}';
-  static String join(String roomCode) => '/j/$roomCode';
+
+  /// [via] is `room_join.via` (`code` | `link` | `qr`); links carry no
+  /// query unless they came from the in-app QR code or the code field.
+  static String join(String roomCode, {String? via}) => Uri(
+    path: '/j/$roomCode',
+    queryParameters: via == null ? null : {'via': via},
+  ).toString();
   static String paywallFor(String placement) =>
       Uri(path: paywall, queryParameters: {'placement': placement}).toString();
 

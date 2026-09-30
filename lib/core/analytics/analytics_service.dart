@@ -28,8 +28,7 @@ enum AnalyticsConsent {
 /// - gates collection on consent: events are buffered until consent is
 ///   known, flushed when granted and dropped when denied or disabled.
 class AnalyticsService {
-  AnalyticsService({required AnalyticsBackend backend, this.maxBuffered = 100})
-    : _backend = backend;
+  AnalyticsService({required this._backend, this.maxBuffered = 100});
 
   final AnalyticsBackend _backend;
   final int maxBuffered;
@@ -43,14 +42,35 @@ class AnalyticsService {
 
   /// GA4 automatically collected / reserved event names.
   static const reservedEventNames = {
-    'ad_activeview', 'ad_click', 'ad_exposure', 'ad_impression', 'ad_query',
-    'ad_reward', 'adunit_exposure', 'app_background', 'app_clear_data',
-    'app_exception', 'app_remove', 'app_store_refund',
-    'app_store_subscription_cancel', 'app_store_subscription_convert',
-    'app_store_subscription_renew', 'app_update', 'app_upgrade', 'error',
-    'first_open', 'first_visit', 'in_app_purchase', 'notification_dismiss',
-    'notification_foreground', 'notification_open', 'notification_receive',
-    'os_update', 'screen_view', 'session_start', 'user_engagement',
+    'ad_activeview',
+    'ad_click',
+    'ad_exposure',
+    'ad_impression',
+    'ad_query',
+    'ad_reward',
+    'adunit_exposure',
+    'app_background',
+    'app_clear_data',
+    'app_exception',
+    'app_remove',
+    'app_store_refund',
+    'app_store_subscription_cancel',
+    'app_store_subscription_convert',
+    'app_store_subscription_renew',
+    'app_update',
+    'app_upgrade',
+    'error',
+    'first_open',
+    'first_visit',
+    'in_app_purchase',
+    'notification_dismiss',
+    'notification_foreground',
+    'notification_open',
+    'notification_receive',
+    'os_update',
+    'screen_view',
+    'session_start',
+    'user_engagement',
   };
 
   /// Fragments that must never appear in a parameter name (Spotify Terms

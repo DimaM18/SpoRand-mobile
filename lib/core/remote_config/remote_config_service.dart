@@ -45,10 +45,9 @@ final class BootTimings {
 /// boot without Firebase config files.
 class RemoteConfigService {
   RemoteConfigService({
-    required RemoteConfigBackend backend,
-    Map<String, Object> defaultOverrides = const {},
-  }) : _backend = backend,
-       _defaultOverrides = defaultOverrides;
+    required this._backend,
+    this._defaultOverrides = const {},
+  });
 
   final RemoteConfigBackend _backend;
 
@@ -80,7 +79,9 @@ class RemoteConfigService {
   /// Fetches fresh values and activates them if the fetch finishes within
   /// [timeout]. A late fetch is not activated now: its values are applied on
   /// the next cold start, so config never changes under a running session.
-  Future<ConfigFetchResult> fetchAndActivate({required Duration timeout}) async {
+  Future<ConfigFetchResult> fetchAndActivate({
+    required Duration timeout,
+  }) async {
     try {
       // One budget for SDK readiness and the network fetch together.
       await Future(() async {

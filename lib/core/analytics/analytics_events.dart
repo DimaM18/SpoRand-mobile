@@ -44,6 +44,15 @@ abstract final class AnalyticsParams {
   static const productId = 'product_id';
   static const waitMs = 'wait_ms';
   static const gameId = 'game_id';
+  static const roomId = 'room_id';
+  static const mode = 'mode';
+  static const provider = 'provider';
+  static const audioMode = 'audio_mode';
+  static const roundsTotal = 'rounds_total';
+  static const hostTier = 'host_tier';
+  static const via = 'via';
+  static const channel = 'channel';
+  static const reason = 'reason';
 }
 
 /// User properties (brief §4.5).

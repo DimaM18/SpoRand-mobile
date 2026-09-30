@@ -3,52 +3,171 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-/// RFC 9457 problem (`application/problem+json` with a `code`, brief §4.2).
-final class ApiException implements Exception {
-  const ApiException(this.statusCode, {this.code, this.detail});
+import 'package:sporand/core/security/app_check_service.dart';
 
-  final int statusCode;
-  final String? code;
+/// A failed REST call. Server errors carry the RFC 9457 problem `code`
+/// (brief §4.2); transport failures use the client-side codes below.
+final class ApiError implements Exception {
+  const ApiError({
+    required this.code,
+    this.status,
+    this.title,
+    this.detail,
+    this.fieldErrors = const [],
+  });
+
+  /// Client-side codes (never sent by the server).
+  static const network = 'network_error';
+  static const timeout = 'timeout';
+  static const invalidResponse = 'invalid_response';
+
+  /// Problem `code` (see packages/protocol PROBLEM_CODES) or a client code.
+  final String code;
+
+  /// HTTP status; null when no response arrived.
+  final int? status;
+  final String? title;
   final String? detail;
+  final List<({String path, String message})> fieldErrors;
 
-  bool get isUnauthorized => statusCode == 401;
+  bool get isUnauthorized => status == 401;
+  bool get isNetwork => code == network || code == timeout;
 
   @override
-  String toString() => 'ApiException($statusCode, code: $code)';
+  String toString() => 'ApiError($status, $code)';
 }
 
-/// Minimal JSON REST client for `https://api.<domain>`. Adds the bearer
-/// token and the App Check header; never logs tokens.
+/// Which App Check token a call carries (brief §7 "Attestation").
+enum AppCheckUse {
+  /// Standard token: every REST call.
+  standard,
+
+  /// Limited-use (`consume: true`): `POST /v1/auth/guest`, `POST /v1/rooms`,
+  /// `POST /v1/me/entitlements/sync`.
+  limitedUse,
+}
+
+/// Source of access tokens for authenticated calls (implemented by
+/// `AuthService`).
+abstract interface class AccessTokenProvider {
+  /// A valid access token (refreshed first if it expired), or null when the
+  /// app has no session.
+  Future<String?> accessToken();
+
+  /// Called when [rejectedToken] got a 401. Refreshes the session (the
+  /// refresh token rotates) and returns the new access token. Concurrent
+  /// callers share one refresh (single flight).
+  Future<String?> refreshAfterUnauthorized(String rejectedToken);
+}
+
+/// JSON REST client for `https://api.<domain>` (brief §4.2).
+///
+/// - `Authorization: Bearer <access JWT>` on authenticated calls; one 401
+///   triggers a single-flight refresh and one retry.
+/// - `X-Firebase-AppCheck` on every call (standard or limited-use token).
+/// - `application/problem+json` errors become [ApiError] with the `code`.
+/// - Tokens never appear in logs or error messages.
 class ApiClient {
   ApiClient({
     required this.baseUrl,
     http.Client? httpClient,
+    this._tokens,
+    this._appCheck,
     this.timeout = const Duration(seconds: 10),
   }) : _http = httpClient ?? http.Client();
+
+  static const appCheckHeader = 'X-Firebase-AppCheck';
 
   final Uri baseUrl;
   final Duration timeout;
   final http.Client _http;
+  final AccessTokenProvider? _tokens;
+  final AppCheckService? _appCheck;
 
-  Future<Map<String, Object?>> postJson(
+  Future<Map<String, Object?>> get(
     String path, {
-    Map<String, Object?> body = const {},
-    String? bearer,
-    String? appCheckToken,
+    Map<String, String>? query,
+    bool authenticated = true,
+  }) => send('GET', path, query: query, authenticated: authenticated);
+
+  Future<Map<String, Object?>> post(
+    String path, {
+    Object? body,
+    bool authenticated = true,
+    AppCheckUse appCheck = AppCheckUse.standard,
+  }) => send(
+    'POST',
+    path,
+    body: body ?? const <String, Object?>{},
+    authenticated: authenticated,
+    appCheck: appCheck,
+  );
+
+  Future<Map<String, Object?>> put(String path, {Object? body}) =>
+      send('PUT', path, body: body ?? const <String, Object?>{});
+
+  Future<Map<String, Object?>> patch(String path, {Object? body}) =>
+      send('PATCH', path, body: body ?? const <String, Object?>{});
+
+  Future<Map<String, Object?>> delete(String path) => send('DELETE', path);
+
+  Future<Map<String, Object?>> send(
+    String method,
+    String path, {
+    Object? body,
+    Map<String, String>? query,
+    bool authenticated = true,
+    AppCheckUse appCheck = AppCheckUse.standard,
   }) async {
-    final response = await _http
-        .post(
-          baseUrl.resolve(path),
-          headers: {
-            'content-type': 'application/json',
-            'accept': 'application/json, application/problem+json',
-            'authorization': ?(bearer == null ? null : 'Bearer $bearer'),
-            'x-firebase-appcheck': ?appCheckToken,
-          },
-          body: jsonEncode(body),
-        )
-        .timeout(timeout);
+    final tokens = _tokens;
+    if (authenticated && tokens == null) {
+      throw StateError('ApiClient without tokens cannot call $path');
+    }
+    final token = authenticated ? await tokens!.accessToken() : null;
+    var response = await _perform(method, path, body, query, token, appCheck);
+    if (response.statusCode == 401 && authenticated && token != null) {
+      final fresh = await tokens!.refreshAfterUnauthorized(token);
+      if (fresh != null && fresh != token) {
+        response = await _perform(method, path, body, query, fresh, appCheck);
+      }
+    }
     return _decode(response);
+  }
+
+  Future<http.Response> _perform(
+    String method,
+    String path,
+    Object? body,
+    Map<String, String>? query,
+    String? bearer,
+    AppCheckUse appCheck,
+  ) async {
+    final uri = baseUrl.resolve(path).replace(queryParameters: query);
+    // A limited-use token is consumed by the server, so a retry needs a new
+    // one; fetch it per attempt.
+    final appCheckToken = switch (appCheck) {
+      AppCheckUse.standard => await _appCheck?.getToken(),
+      AppCheckUse.limitedUse => await _appCheck?.getLimitedUseToken(),
+    };
+    final request = http.Request(method, uri)
+      ..headers.addAll({
+        'accept': 'application/json, application/problem+json',
+        'authorization': ?(bearer == null ? null : 'Bearer $bearer'),
+        appCheckHeader: ?appCheckToken,
+      });
+    if (body != null) {
+      request
+        ..headers['content-type'] = 'application/json'
+        ..body = jsonEncode(body);
+    }
+    try {
+      final streamed = await _http.send(request).timeout(timeout);
+      return await http.Response.fromStream(streamed).timeout(timeout);
+    } on TimeoutException {
+      throw const ApiError(code: ApiError.timeout);
+    } on http.ClientException {
+      throw const ApiError(code: ApiError.network);
+    }
   }
 
   static Map<String, Object?> _decode(http.Response response) {
@@ -60,14 +179,33 @@ class ApiClient {
         json = null;
       }
     }
-    final map = json is Map<String, Object?> ? json : const <String, Object?>{};
-    if (response.statusCode >= 200 && response.statusCode < 300) return map;
-    final code = map['code'];
-    final detail = map['detail'];
-    throw ApiException(
-      response.statusCode,
-      code: code is String ? code : null,
+    final ok = response.statusCode >= 200 && response.statusCode < 300;
+    if (ok) {
+      if (json is Map<String, Object?>) return json;
+      if (response.body.isEmpty) return const {};
+      throw ApiError(
+        code: ApiError.invalidResponse,
+        status: response.statusCode,
+      );
+    }
+    final problem = json is Map<String, Object?> ? json : const {};
+    final code = problem['code'];
+    final title = problem['title'];
+    final detail = problem['detail'];
+    final errors = problem['errors'];
+    throw ApiError(
+      status: response.statusCode,
+      code: code is String ? code : 'http_${response.statusCode}',
+      title: title is String ? title : null,
       detail: detail is String ? detail : null,
+      fieldErrors: [
+        if (errors is List<Object?>)
+          for (final e in errors)
+            if (e is Map<String, Object?> &&
+                e['path'] is String &&
+                e['message'] is String)
+              (path: e['path']! as String, message: e['message']! as String),
+      ],
     );
   }
 

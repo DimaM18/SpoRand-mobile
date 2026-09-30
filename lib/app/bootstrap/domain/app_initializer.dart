@@ -9,8 +9,11 @@ import 'package:sporand/app/bootstrap/domain/init_context.dart';
 import 'package:sporand/app/bootstrap/domain/init_step.dart';
 import 'package:sporand/core/analytics/analytics_events.dart';
 
-typedef StepErrorHandler =
-    void Function(String stepId, Object error, StackTrace? stack);
+typedef StepErrorHandler = void Function(
+  String stepId,
+  Object error,
+  StackTrace? stack,
+);
 
 /// Runs the boot pipeline (R-BOOT, brief §3 "Boot pipeline").
 ///
@@ -35,10 +38,9 @@ class AppInitializer {
   AppInitializer({
     required List<InitStep> steps,
     required this.context,
-    required BootTelemetry telemetry,
+    required this._telemetry,
     this.onStepError,
-  }) : _steps = List.unmodifiable(steps),
-       _telemetry = telemetry {
+  }) : _steps = List.unmodifiable(steps) {
     _validate();
     _totalWeight = _steps.fold<double>(0, (sum, step) => sum + step.weight);
   }
@@ -82,8 +84,7 @@ class AppInitializer {
 
   /// Finished steps in declaration order.
   List<StepRecord> get records => [
-    for (final step in _steps)
-      if (_finished[step.id] case final record?) record,
+    for (final step in _steps) ?_finished[step.id],
   ];
 
   /// Telemetry still waiting for analytics (visible for tests/diagnostics).
@@ -148,10 +149,16 @@ class AppInitializer {
   /// Sends buffered telemetry if analytics is ready.
   void flushTelemetry() {
     if (!_telemetry.isReady) return;
-    for (final (event, params) in _pendingTelemetry) {
-      _telemetry.log(event, params);
-    }
+    final events = List.of(_pendingTelemetry);
     _pendingTelemetry.clear();
+    for (final (event, params) in events) {
+      try {
+        _telemetry.log(event, params);
+      } catch (error, stack) {
+        // Telemetry must never break the boot.
+        onStepError?.call('telemetry', error, stack);
+      }
+    }
   }
 
   /// After a degraded entry (deadline hit), runs the steps that never got to
@@ -198,25 +205,36 @@ class AppInitializer {
     if (steps.isEmpty) return Future.value();
     _stage = stage;
     _emit();
-    return stage.isSequential ? _runSequential(steps) : _runParallel(steps);
+    // Once boot_max_total_ms has passed, the deadline path owns the
+    // pre-enter stages; enter_app always runs to completion.
+    final stopOnDeadline = stage != InitStage.enterApp;
+    return stage.isSequential
+        ? _runSequential(steps, stopOnDeadline: stopOnDeadline)
+        : _runParallel(steps, stopOnDeadline: stopOnDeadline);
   }
 
-  Future<BootCriticalFailure?> _runSequential(List<InitStep> steps) async {
+  Future<BootCriticalFailure?> _runSequential(
+    List<InitStep> steps, {
+    required bool stopOnDeadline,
+  }) async {
     for (final step in steps) {
-      if (_deadlineHit) return null;
+      if (stopOnDeadline && _deadlineHit) return null;
       final run = await _start(step);
       if (run.criticalFailure) return _attemptFailure;
     }
     return null;
   }
 
-  Future<BootCriticalFailure?> _runParallel(List<InitStep> steps) {
+  Future<BootCriticalFailure?> _runParallel(
+    List<InitStep> steps, {
+    required bool stopOnDeadline,
+  }) {
     final waiting = List<InitStep>.of(steps);
     final done = Completer<BootCriticalFailure?>();
     var active = 0;
 
     void pump() {
-      if (done.isCompleted || _deadlineHit) return;
+      if (done.isCompleted || (stopOnDeadline && _deadlineHit)) return;
       if (_attemptFailure == null) {
         for (final step in List<InitStep>.of(waiting)) {
           if (!step.dependsOn.every(_isSettled)) continue;
@@ -299,7 +317,7 @@ class AppInitializer {
     }
     watch.stop();
     _running.remove(step.id);
-    _inFlight.remove(step.id);
+    unawaited(_inFlight.remove(step.id));
     if (error != null) onStepError?.call(step.id, error, stack);
 
     if (_abandoned.contains(step.id)) {

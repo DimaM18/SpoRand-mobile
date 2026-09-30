@@ -9,7 +9,7 @@ import 'package:sporand/core/purchases/purchases_service.dart';
 /// RevenueCat; our backend learns about entitlements through the RevenueCat
 /// webhook and `POST /v1/me/entitlements/sync` (brief §6).
 final class RevenueCatPurchasesService implements PurchasesService {
-  RevenueCatPurchasesService({required String? apiKey}) : _apiKey = apiKey;
+  RevenueCatPurchasesService({required this._apiKey});
 
   final String? _apiKey;
   bool _configured = false;
@@ -59,8 +59,7 @@ final class RevenueCatPurchasesService implements PurchasesService {
   @override
   Future<List<PaywallPackage>> loadPaywallPackages() async {
     final offerings = await rc.Purchases.getOfferings();
-    final offering =
-        offerings.all[RevenueCatIds.offering] ?? offerings.current;
+    final offering = offerings.all[RevenueCatIds.offering] ?? offerings.current;
     if (offering == null) return const [];
     _packages.clear();
     final result = <PaywallPackage>[];

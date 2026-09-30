@@ -38,9 +38,10 @@ abstract final class VersionGate {
     }
   }
 
-  /// Parses `1.2.3`, `1.2.3+45` and tolerates `1.2` / `1`.
+  /// Parses `1.2.3`, `1.2.3-beta.1` and tolerates `1.2` / `1`. Build
+  /// metadata (`+45`) is ignored, as semver precedence requires.
   static Version? _parse(String raw) {
-    final trimmed = raw.trim();
+    final trimmed = raw.trim().split('+').first;
     if (trimmed.isEmpty) return null;
     try {
       return Version.parse(trimmed);

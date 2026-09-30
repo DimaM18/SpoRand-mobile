@@ -35,18 +35,28 @@ dependencies:
   shared_preferences: ^2.5.5
   package_info_plus: ^10.2.1
   url_launcher: ^6.3.2
+  connectivity_plus: ^7.3.1
+  share_plus: ^13.3.0
+
+  # Native bridges (Pigeon: InputClockApi, ClipPlayerApi); see pigeons/.
+  sporand_native:
+    path: packages/sporand_native
 
   # Pure Dart helpers.
   clock: ^1.1.3
   http: ^1.6.0
   intl: any
   pub_semver: ^2.2.1
+  qr: ^4.0.0
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   fake_async: ^1.3.3
+  # Generates the native bridges from pigeons/*.dart.
+  pigeon: ^29.0.4
 
 flutter:
   uses-material-design: true

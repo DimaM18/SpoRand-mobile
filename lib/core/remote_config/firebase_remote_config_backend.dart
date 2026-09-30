@@ -8,10 +8,9 @@ import 'package:sporand/core/remote_config/remote_config_backend.dart';
 /// Firebase Remote Config (client template) adapter.
 final class FirebaseRemoteConfigBackend implements RemoteConfigBackend {
   FirebaseRemoteConfigBackend({
-    required FirebaseCoreGate firebase,
-    required Duration minimumFetchInterval,
-  }) : _firebase = firebase,
-       _minimumFetchInterval = minimumFetchInterval;
+    required this._firebase,
+    required this._minimumFetchInterval,
+  });
 
   final FirebaseCoreGate _firebase;
   final Duration _minimumFetchInterval;

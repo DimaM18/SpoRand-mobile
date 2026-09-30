@@ -7,8 +7,8 @@ import 'package:sporand/core/platform/app_platform.dart';
 ///
 /// Supported defines (all optional):
 /// - `FLAVOR`: dev | staging | prod | spotifyProto (default dev)
-/// - `API_BASE_URL`: e.g. https://api.<domain>. Empty -> offline fake backend.
-/// - `LINK_HOST`: the public link domain for `https://<domain>/j/{room_code}`.
+/// - `API_BASE_URL`: e.g. `https://api.<domain>`. Empty -> offline fake backend.
+/// - `LINK_HOST`: the public link domain of `https://<domain>/j/{room_code}`.
 /// - `FIREBASE_ENABLED`: true/false. Defaults to false for dev (no
 ///   GoogleService-Info.plist / google-services.json in the repo) and true for
 ///   every other flavor.

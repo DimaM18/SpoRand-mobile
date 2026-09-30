@@ -1,0 +1,455 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Музыкальная вечеринка",
+  "@appTitle": {
+    "description": "Working title shown in the app switcher. TODO(owner): replace with the chosen brand (brief Q3). Never use 'Spotify' or a 'Spo' prefix."
+  },
+  "bootLabelConfig": "Загружаем настройки…",
+  "@bootLabelConfig": {
+    "description": "Splash label while the config stage runs."
+  },
+  "bootLabelWarmup": "Готовим звуки…",
+  "@bootLabelWarmup": {
+    "description": "Splash label while resources warm up."
+  },
+  "bootLabelSdk": "Подключаем сервисы…",
+  "@bootLabelSdk": {
+    "description": "Splash label while SDKs initialize."
+  },
+  "bootLabelEnter": "Поехали!",
+  "@bootLabelEnter": {
+    "description": "Splash label right before entering the app."
+  },
+  "bootProgressSemantics": "Загрузка: {percent}%",
+  "@bootProgressSemantics": {
+    "description": "Screen reader value of the splash progress ring.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "bootFailedTitle": "Не получилось запуститься",
+  "bootFailedBody": "Проверьте интернет и попробуйте ещё раз.",
+  "bootRetry": "Попробовать снова",
+  "forceUpdateTitle": "Пора обновиться",
+  "forceUpdateBody": "Эта версия больше не поддерживается. Обновите приложение, чтобы продолжить играть.",
+  "forceUpdateAction": "Обновить",
+  "maintenanceTitle": "Небольшой перерыв",
+  "maintenanceBody": "Мы настраиваем серверы. Скоро вернёмся — загляните через пару минут.",
+  "maintenanceRetry": "Проверить снова",
+  "onboardingAgeTitle": "Год рождения",
+  "onboardingAgeSubtitle": "Нужен, чтобы настроить приложение под ваш возраст.",
+  "onboardingAgeFieldLabel": "Год",
+  "onboardingAgeFieldHint": "ГГГГ",
+  "onboardingAgeInvalid": "Введите год из четырёх цифр",
+  "onboardingContinue": "Продолжить",
+  "onboardingBlockedTitle": "Пока рано",
+  "onboardingBlockedBody": "Это приложение предназначено для игроков от 13 лет.",
+  "onboardingConsentTitle": "Ваша приватность",
+  "onboardingConsentBody": "Мы не передаём вашу музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.",
+  "onboardingConsentAnalytics": "Отправлять анонимную статистику",
+  "onboardingConsentMinorNote": "Для игроков младше 16 лет статистика отключена.",
+  "onboardingConsentStart": "Начать игру",
+  "homeHeadline": "Чья это песня?",
+  "homeSubtitle": "Игра для компании: слушаем фрагмент и угадываем быстрее всех.",
+  "homeCreateRoom": "Создать комнату",
+  "homeJoinTitle": "Есть код комнаты?",
+  "homeJoinCodeLabel": "Код из 6 символов",
+  "homeJoinAction": "Войти",
+  "homeJoinCodeInvalid": "Код состоит из 6 букв и цифр",
+  "homeRemoveAds": "Играть без рекламы",
+  "homeSettingsTooltip": "Настройки",
+  "settingsTitle": "Настройки",
+  "settingsPrivacySection": "Приватность",
+  "settingsAnalyticsTitle": "Анонимная статистика",
+  "settingsAnalyticsSubtitle": "Помогает находить ошибки и улучшать игру",
+  "settingsAnalyticsUnavailable": "Недоступно для игроков младше 16 лет",
+  "settingsPrivacyOptions": "Реклама и согласия",
+  "settingsPurchasesSection": "Покупки",
+  "settingsRemoveAds": "Убрать рекламу",
+  "settingsRestorePurchases": "Восстановить покупки",
+  "settingsRestoreDone": "Покупки восстановлены",
+  "settingsRestoreNothing": "Покупок не найдено",
+  "settingsRestoreFailed": "Не удалось восстановить покупки",
+  "settingsAboutSection": "О приложении",
+  "settingsVersion": "Версия {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDegraded": "Ограниченный режим: {steps}",
+  "@settingsDegraded": {
+    "description": "Shown when some boot steps degraded; steps is a technical list of step ids.",
+    "placeholders": {
+      "steps": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTerms": "Условия использования",
+  "settingsPrivacyPolicy": "Политика конфиденциальности",
+  "paywallTitle": "Играйте без границ",
+  "paywallSubtitle": "Больше раундов, больше друзей, никакой рекламы.",
+  "paywallPerkNoAds": "Без рекламы после игры",
+  "paywallPerkRounds": "До 50 раундов в игре",
+  "paywallPerkPlayers": "До 12 игроков в комнате",
+  "paywallRemoveAds": "Без рекламы",
+  "paywallRemoveAdsDetail": "Разовая покупка — {price}",
+  "@paywallRemoveAdsDetail": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPremiumMonthly": "Premium на месяц",
+  "paywallPremiumYearly": "Premium на год",
+  "paywallPerMonth": "{price} в месяц",
+  "@paywallPerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPerYear": "{price} в год",
+  "@paywallPerYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallTrial": "{days, plural, one{{days} день бесплатно} few{{days} дня бесплатно} many{{days} дней бесплатно} other{{days} дня бесплатно}}",
+  "@paywallTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallBuy": "Продолжить",
+  "paywallRestore": "Восстановить покупки",
+  "paywallLegal": "Подписка продлевается автоматически, если не отменить её в настройках магазина не позднее чем за 24 часа до конца периода. Оплата списывается с аккаунта магазина.",
+  "paywallUnavailable": "Покупки сейчас недоступны",
+  "paywallLoadFailed": "Не удалось загрузить предложения",
+  "paywallRetry": "Повторить",
+  "paywallPurchased": "Готово! Спасибо за поддержку",
+  "paywallPending": "Покупка ожидает подтверждения",
+  "paywallFailed": "Покупка не прошла",
+  "paywallOwned": "Уже куплено",
+  "placeholderBody": "Этот экран появится в следующей сборке.",
+  "joinTitle": "Комната {code}",
+  "@joinTitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "notFoundTitle": "Страница не найдена",
+  "notFoundAction": "На главную",
+  "createRoomTitle": "Новая комната",
+  "createRoomModeLabel": "Режим игры",
+  "modeWhoseSong": "Чья это песня?",
+  "modeWhoseSongHint": "Угадайте, из чьей музыки фрагмент",
+  "modeGuessTrack": "Угадай трек",
+  "modeGuessTrackHint": "Четыре варианта — назовите песню",
+  "displayNameLabel": "Ваше имя в игре",
+  "displayNameInvalid": "От 2 до 20 символов",
+  "createRoomAction": "Создать комнату",
+  "joinSubtitle": "Как вас называть в игре?",
+  "joinAction": "Войти в комнату",
+  "roomErrorNotFound": "Комната не найдена. Проверьте код",
+  "roomErrorFull": "В комнате нет свободных мест",
+  "roomErrorLocked": "Игра уже началась — дождитесь итогов",
+  "roomErrorRateLimited": "Слишком много попыток. Подождите минуту",
+  "roomErrorNetwork": "Нет связи с сервером",
+  "roomErrorOther": "Что-то пошло не так. Попробуйте ещё раз",
+  "lobbyTitle": "Лобби",
+  "lobbyCodeLabel": "Код комнаты",
+  "lobbyShare": "Пригласить",
+  "lobbyCopyLink": "Скопировать ссылку",
+  "lobbyLinkCopied": "Ссылка скопирована",
+  "lobbyShareText": "Заходи в игру! Код комнаты: {code}\n{link}",
+  "@lobbyShareText": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "lobbyShareTextNoLink": "Заходи в игру! Код комнаты: {code}",
+  "@lobbyShareTextNoLink": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "lobbyQrSemantics": "QR-код для входа в комнату {code}",
+  "@lobbyQrSemantics": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "lobbyPlayersTitle": "Игроки: {count}",
+  "@lobbyPlayersTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyHostBadge": "Ведущий",
+  "lobbyYouBadge": "Вы",
+  "lobbyReady": "Готов",
+  "lobbyNotReady": "Не готов",
+  "lobbyAway": "Переподключается",
+  "lobbyConnecting": "Подключаемся к комнате…",
+  "lobbyReconnecting": "Связь пропала. Переподключаемся…",
+  "lobbySettingsTitle": "Настройки игры",
+  "lobbyRoundsLabel": "Раундов",
+  "lobbyRoundsLocked": "{count} раундов — в Premium",
+  "@lobbyRoundsLocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyStart": "Начать игру",
+  "lobbyNeedPlayers": "{count, plural, one{Нужен минимум {count} игрок} few{Нужно минимум {count} игрока} many{Нужно минимум {count} игроков} other{Нужно минимум {count} игрока}}",
+  "@lobbyNeedPlayers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyNeedContributors": "{count, plural, one{Ещё {count} игроку нужно добавить свои песни} few{Ещё {count} игрокам нужно добавить свои песни} many{Ещё {count} игрокам нужно добавить свои песни} other{Ещё {count} игрокам нужно добавить свои песни}}",
+  "@lobbyNeedContributors": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lobbyWaitingForHost": "Ведущий скоро начнёт игру",
+  "lobbyImReady": "Я готов",
+  "lobbyKick": "Удалить из комнаты",
+  "lobbyReport": "Пожаловаться",
+  "lobbyReportTitle": "Причина жалобы",
+  "reportReasonName": "Оскорбительное имя",
+  "reportReasonCheating": "Жульничает",
+  "reportReasonHarassment": "Травля или оскорбления",
+  "reportReasonSpam": "Спам",
+  "reportReasonOther": "Другое",
+  "lobbyReportSent": "Жалоба отправлена. Спасибо!",
+  "lobbyReportFailed": "Не удалось отправить жалобу",
+  "lobbyLeave": "Выйти",
+  "lobbyLeaveConfirmTitle": "Выйти из комнаты?",
+  "lobbyLeaveConfirmBody": "Вернуться можно по тому же коду, пока игра не началась.",
+  "commonCancel": "Отмена",
+  "lobbyNoRoom": "Вы не в комнате",
+  "lobbyBackHome": "На главную",
+  "roomEndedKicked": "Ведущий удалил вас из комнаты",
+  "roomEndedClosed": "Комната закрыта",
+  "roomEndedReplaced": "Вы открыли эту комнату на другом устройстве",
+  "roomEndedVersion": "Обновите приложение, чтобы играть",
+  "roomEndedLost": "Не удалось восстановить связь с комнатой",
+  "errorNotHost": "Это может сделать только ведущий",
+  "errorPoolInsufficient": "Игрокам не хватает песен для игры",
+  "errorTierRequired": "Для этой настройки нужен Premium",
+  "errorPlaybackUnavailable": "Телефон ведущего не может включить музыку",
+  "errorInvalidState": "Сейчас это сделать нельзя",
+  "errorRateLimited": "Слишком быстро. Подождите секунду",
+  "errorGeneric": "Что-то пошло не так",
+  "gameWaiting": "Ждём начала игры…",
+  "gameStartingTitle": "Приготовьтесь!",
+  "gameStartingRounds": "{count, plural, one{{count} раунд} few{{count} раунда} many{{count} раундов} other{{count} раунда}}",
+  "@gameStartingRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gameRoundOf": "Раунд {current} из {total}",
+  "@gameRoundOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "gameBonusRound": "Бонусный раунд",
+  "gamePromptWhoseSong": "Чья это песня?",
+  "gamePromptGuessTrack": "Что за трек?",
+  "gameListen": "Слушайте…",
+  "gameTapFast": "Жмите быстрее всех!",
+  "gameYourTrack": "Это твой трек!",
+  "gameYourTrackHint": "Смотрите, кто угадает",
+  "gameAnswerSent": "Ответ отправлен",
+  "gameAnswerAccepted": "Ответ принят!",
+  "gameAnswerRejected": "Ответ не засчитан",
+  "gameTimeUp": "Время вышло",
+  "gameProgress": "Ответили {answered} из {eligible}",
+  "@gameProgress": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "eligible": {
+        "type": "int"
+      }
+    }
+  },
+  "gameAirplayWarning": "AirPlay задерживает звук примерно на 2 секунды. Лучше включить динамик телефона.",
+  "revealCorrect": "Верно! +{points}",
+  "@revealCorrect": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "revealWrong": "Мимо",
+  "revealNoAnswer": "Без ответа",
+  "revealOwnerYou": "Это был ваш трек",
+  "revealReaction": "Реакция: {seconds} с",
+  "@revealReaction": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "revealOwner": "Это трек: {names}",
+  "@revealOwner": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "revealAnswer": "Ответ: {label}",
+  "@revealAnswer": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "revealStandings": "Таблица",
+  "revealGained": "+{points}",
+  "@revealGained": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "pointsShort": "{points, plural, one{{points} очко} few{{points} очка} many{{points} очков} other{{points} очка}}",
+  "@pointsShort": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gameVoided": "Раунд отменён — сыграем запасной",
+  "gameVoidedPlayback": "Не получилось включить музыку",
+  "gameVoidedHost": "Ведущий отключился",
+  "gameVoidedServer": "Сервер перезапустился",
+  "gamePaused": "Ждём ведущего…",
+  "gamePausedHint": "Игра продолжится, когда он вернётся",
+  "bonusOfferTitle": "Посмотри рекламу — +1 раунд для всех",
+  "bonusOfferAction": "Смотреть",
+  "bonusOfferWaiting": "Бонусный раунд? Кто-то может посмотреть рекламу",
+  "bonusSponsorWatching": "{name} смотрит рекламу…",
+  "@bonusSponsorWatching": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bonusYouWatching": "Готовим рекламу…",
+  "bonusVerifying": "Проверяем награду…",
+  "bonusGranted": "+1 раунд для всех! Спасибо, {name}",
+  "@bonusGranted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bonusCancelled": "Бонусного раунда не будет",
+  "bonusCancelledSsv": "Не удалось подтвердить просмотр. Извините!",
+  "adBreakCounting": "Считаем очки…",
+  "upsellTitle": "Играть без рекламы",
+  "upsellPrice": "Играть без рекламы — {price}",
+  "@upsellPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "upsellAction": "Подробнее",
+  "resultsTitle": "Итоги",
+  "resultsPlayAgain": "Сыграть ещё",
+  "resultsWaitingHost": "Ведущий может начать новую игру",
+  "resultsRounds": "{count, plural, one{Сыгран {count} раунд} few{Сыграно {count} раунда} many{Сыграно {count} раундов} other{Сыграно {count} раунда}}",
+  "@resultsRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsBonusUsed": "С бонусным раундом",
+  "resultsCorrect": "Верно: {count}",
+  "@resultsCorrect": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "debugClockTitle": "Калибровка часов",
+  "debugClockHint": "Нажимайте на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.",
+  "debugClockTapArea": "Нажмите здесь",
+  "debugClockPassed": "Часы совпадают ({count} замеров)",
+  "@debugClockPassed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "debugClockFailed": "Часы НЕ совпадают ({count} замеров)",
+  "@debugClockFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "debugClockCopy": "Скопировать отчёт",
+  "debugClockClear": "Очистить",
+  "settingsClockCalibration": "Калибровка часов (для разработчиков)"
+}

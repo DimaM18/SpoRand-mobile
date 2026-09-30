@@ -7,7 +7,8 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sporand</string>
+	<!-- TODO(owner): working title until the brand is chosen (brief Q3). -->
+	<string>Music Party</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +16,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>sporand</string>
+	<string>Music Party</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -47,6 +48,23 @@
 			</array>
 		</dict>
 	</dict>
+	<!-- Join links https://<domain>/j/{room_code} go to go_router; they are
+	     queued during boot. TODO(owner): add the Associated Domains
+	     entitlement (applinks:<domain>) and apple-app-site-association. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+	<!-- TODO(owner): replace Google's sample AdMob app id before release. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

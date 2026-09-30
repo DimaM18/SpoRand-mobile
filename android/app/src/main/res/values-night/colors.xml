@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Must equal BrandColors.nightInk in lib/app/theme/tokens.dart. -->
+    <color name="launch_background">#FF0E0B1F</color>
+</resources>

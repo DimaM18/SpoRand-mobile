@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TODO(owner): working title until the brand is chosen (brief Q3).
+         Never "Spotify" or a "Spo" prefix in anything user-facing. -->
+    <string name="app_name">Music Party</string>
+</resources>

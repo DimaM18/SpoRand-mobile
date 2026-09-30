@@ -26,20 +26,39 @@ sealed class AppLink {
   String get location;
 }
 
+/// `room_join.via` (brief §4.5).
+enum JoinVia {
+  code('code'),
+  link('link'),
+  qr('qr');
+
+  const JoinVia(this.wire);
+
+  final String wire;
+
+  static JoinVia fromQuery(String? raw) => switch (raw) {
+    'qr' => JoinVia.qr,
+    'code' => JoinVia.code,
+    _ => JoinVia.link,
+  };
+}
+
 final class JoinRoomLink extends AppLink {
-  const JoinRoomLink(this.roomCode);
+  const JoinRoomLink(this.roomCode, {this.via = JoinVia.link});
 
   final String roomCode;
+  final JoinVia via;
 
   @override
-  String get location => Routes.join(roomCode);
+  String get location =>
+      Routes.join(roomCode, via: via == JoinVia.link ? null : via.wire);
 
   @override
   bool operator ==(Object other) =>
-      other is JoinRoomLink && other.roomCode == roomCode;
+      other is JoinRoomLink && other.roomCode == roomCode && other.via == via;
 
   @override
-  int get hashCode => roomCode.hashCode;
+  int get hashCode => Object.hash(roomCode, via);
 }
 
 /// Parses incoming links into [AppLink]s. Only the join link exists in the
@@ -68,7 +87,12 @@ final class DeepLinkParser {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.length == 2 && segments[0] == 'j') {
       final code = normalizeRoomCode(segments[1]);
-      if (code != null) return JoinRoomLink(code);
+      if (code != null) {
+        return JoinRoomLink(
+          code,
+          via: JoinVia.fromQuery(uri.queryParameters['via']),
+        );
+      }
     }
     return null;
   }

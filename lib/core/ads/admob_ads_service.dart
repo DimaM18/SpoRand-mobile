@@ -11,7 +11,7 @@ import 'package:sporand/core/ads/ads_service.dart';
 /// (`com.google.android.gms.ads.APPLICATION_ID`) and Info.plist
 /// (`GADApplicationIdentifier`) and pass real ad unit ids via --dart-define.
 final class AdMobAdsService implements AdsService {
-  AdMobAdsService({required AdUnitIds units}) : _units = units;
+  AdMobAdsService({required this._units});
 
   final AdUnitIds _units;
   bool _initialized = false;
@@ -45,8 +45,9 @@ final class AdMobAdsService implements AdsService {
     _initialized = true;
   }
 
-  gma.AdRequest get _request =>
-      gma.AdRequest(nonPersonalizedAds: _options.personalizedAllowed ? null : true);
+  gma.AdRequest get _request => gma.AdRequest(
+    nonPersonalizedAds: _options.personalizedAllowed ? null : true,
+  );
 
   @override
   Future<void> preloadInterstitial() async {
@@ -58,19 +59,20 @@ final class AdMobAdsService implements AdsService {
     final unit = _units.interstitial;
     if (loaded != null) return Future.value(loaded);
     if (!_initialized || unit == null) return Future.value();
-    return _interstitialLoading ??= _load<gma.InterstitialAd>((done) {
-      return gma.InterstitialAd.load(
-        adUnitId: unit,
-        request: _request,
-        adLoadCallback: gma.InterstitialAdLoadCallback(
-          onAdLoaded: done,
-          onAdFailedToLoad: (_) => done(null),
-        ),
-      );
-    }).then((ad) {
-      _interstitialLoading = null;
-      return _interstitial = ad;
-    });
+    return _interstitialLoading ??=
+        _load<gma.InterstitialAd>((done) {
+          return gma.InterstitialAd.load(
+            adUnitId: unit,
+            request: _request,
+            adLoadCallback: gma.InterstitialAdLoadCallback(
+              onAdLoaded: done,
+              onAdFailedToLoad: (_) => done(null),
+            ),
+          );
+        }).then((ad) {
+          _interstitialLoading = null;
+          return _interstitial = ad;
+        });
   }
 
   @override
@@ -97,13 +99,18 @@ final class AdMobAdsService implements AdsService {
       },
       onAdFailedToShowFullScreenContent: (ad, _) {
         unawaited(ad.dispose());
-        if (!result.isCompleted) result.complete(InterstitialResult.failedToShow);
+        if (!result.isCompleted) {
+          result.complete(InterstitialResult.failedToShow);
+        }
       },
     );
     try {
       await ad.show();
     } on Object {
-      return InterstitialOutcome(InterstitialResult.failedToShow, waited.elapsed);
+      return InterstitialOutcome(
+        InterstitialResult.failedToShow,
+        waited.elapsed,
+      );
     }
     return InterstitialOutcome(await result.future, waited.elapsed);
   }
@@ -121,19 +128,20 @@ final class AdMobAdsService implements AdsService {
     final unit = _units.rewarded;
     if (loaded != null) return Future.value(loaded);
     if (!_initialized || unit == null) return Future.value();
-    return _rewardedLoading ??= _load<gma.RewardedAd>((done) {
-      return gma.RewardedAd.load(
-        adUnitId: unit,
-        request: _request,
-        rewardedAdLoadCallback: gma.RewardedAdLoadCallback(
-          onAdLoaded: done,
-          onAdFailedToLoad: (_) => done(null),
-        ),
-      );
-    }).then((ad) {
-      _rewardedLoading = null;
-      return _rewarded = ad;
-    });
+    return _rewardedLoading ??=
+        _load<gma.RewardedAd>((done) {
+          return gma.RewardedAd.load(
+            adUnitId: unit,
+            request: _request,
+            rewardedAdLoadCallback: gma.RewardedAdLoadCallback(
+              onAdLoaded: done,
+              onAdFailedToLoad: (_) => done(null),
+            ),
+          );
+        }).then((ad) {
+          _rewardedLoading = null;
+          return _rewarded = ad;
+        });
   }
 
   @override

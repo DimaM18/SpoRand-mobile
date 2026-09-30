@@ -29,11 +29,15 @@ abstract final class PrefKeys {
   static const onboardingCompleted = 'onboarding_completed';
   static const analyticsConsent = 'analytics_consent';
 
+  /// Last display name typed at create/join [новое имя — согласовать].
+  static const displayName = 'display_name';
+
   static const all = {
     ageBand,
     ageGateBlocked,
     onboardingCompleted,
     analyticsConsent,
+    displayName,
   };
 }
 
@@ -83,8 +87,10 @@ final class SharedPreferencesStore implements PreferencesStore {
 }
 
 final class InMemoryPreferencesStore implements PreferencesStore {
-  InMemoryPreferencesStore({Map<String, Object>? initial, this.failOpen = false})
-    : values = {...?initial};
+  InMemoryPreferencesStore({
+    Map<String, Object>? initial,
+    this.failOpen = false,
+  }) : values = {...?initial};
 
   final Map<String, Object> values;
   bool failOpen;

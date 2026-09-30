@@ -51,15 +51,13 @@ final class InitStep {
     required this.id,
     required this.stage,
     required this.timeout,
-    required InitStepBody body,
+    required this._body,
     this.critical = false,
     this.weight = 1,
     this.dependsOn = const {},
     this.runsWhenGated = false,
-    Duration Function(InitContext context)? resolveTimeout,
-  }) : assert(weight >= 0, 'weight must not be negative'),
-       _body = body,
-       _resolveTimeout = resolveTimeout;
+    this._resolveTimeout,
+  }) : assert(weight >= 0, 'weight must not be negative');
 
   /// `app_init_step.step` value.
   final String id;
@@ -86,7 +84,8 @@ final class InitStep {
   Duration timeoutFor(InitContext context) =>
       _resolveTimeout?.call(context) ?? timeout;
 
-  Future<StepResult?> run(InitContext context) => Future.sync(() => _body(context));
+  Future<StepResult?> run(InitContext context) =>
+      Future.sync(() => _body(context));
 
   @override
   String toString() => 'InitStep($id)';
