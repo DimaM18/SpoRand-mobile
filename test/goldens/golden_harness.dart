@@ -334,7 +334,7 @@ final class GoldenGame {
     await tester.tap(find.text('Создать комнату'));
     await settle(tester);
     await tester.enterText(
-      find.widgetWithText(TextField, 'Ваше имя в игре'),
+      find.widgetWithText(TextField, 'Твоё имя в игре'),
       'Ania',
     );
     final create = find.widgetWithText(FilledButton, 'Создать комнату').last;

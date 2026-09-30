@@ -76,7 +76,7 @@ class _ResultsBody extends StatelessWidget {
   }
 }
 
-/// One line of the final table: rank, avatar, name with «Вы», correct
+/// One line of the final table: rank, avatar, name with «Ты», correct
 /// answers and points. The winner's rank is gold with a trophy.
 class _ResultRow extends StatelessWidget {
   const _ResultRow({required this.row});

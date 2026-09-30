@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootFailedBody.
   ///
   /// In ru, this message translates to:
-  /// **'Проверьте интернет и попробуйте ещё раз.'**
+  /// **'Проверь интернет и попробуй ещё раз.'**
   String get bootFailedBody;
 
   /// No description provided for @bootRetry.
@@ -163,7 +163,7 @@ abstract class AppLocalizations {
   /// No description provided for @forceUpdateBody.
   ///
   /// In ru, this message translates to:
-  /// **'Эта версия больше не поддерживается. Обновите приложение, чтобы продолжить играть.'**
+  /// **'Эта версия больше не поддерживается. Обнови приложение, чтобы продолжить играть.'**
   String get forceUpdateBody;
 
   /// No description provided for @forceUpdateAction.
@@ -181,7 +181,7 @@ abstract class AppLocalizations {
   /// No description provided for @maintenanceBody.
   ///
   /// In ru, this message translates to:
-  /// **'Мы настраиваем серверы. Скоро вернёмся — загляните через пару минут.'**
+  /// **'Мы настраиваем серверы. Скоро вернёмся — загляни через пару минут.'**
   String get maintenanceBody;
 
   /// No description provided for @maintenanceRetry.
@@ -199,7 +199,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingAgeSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Нужен, чтобы настроить приложение под ваш возраст.'**
+  /// **'Нужен, чтобы настроить приложение под твой возраст.'**
   String get onboardingAgeSubtitle;
 
   /// No description provided for @onboardingAgeFieldLabel.
@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingAgeInvalid.
   ///
   /// In ru, this message translates to:
-  /// **'Введите год из четырёх цифр'**
+  /// **'Введи год из четырёх цифр'**
   String get onboardingAgeInvalid;
 
   /// No description provided for @onboardingContinue.
@@ -241,13 +241,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingConsentTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Ваша приватность'**
+  /// **'Твоя приватность'**
   String get onboardingConsentTitle;
 
   /// No description provided for @onboardingConsentBody.
   ///
   /// In ru, this message translates to:
-  /// **'Мы не передаём вашу музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.'**
+  /// **'Мы не передаём твою музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.'**
   String get onboardingConsentBody;
 
   /// No description provided for @onboardingConsentAnalytics.
@@ -427,7 +427,7 @@ abstract class AppLocalizations {
   /// No description provided for @paywallTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Играйте без границ'**
+  /// **'Играй без границ'**
   String get paywallTitle;
 
   /// No description provided for @paywallSubtitle.
@@ -601,7 +601,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeWhoseSongHint.
   ///
   /// In ru, this message translates to:
-  /// **'Угадайте, из чьей музыки фрагмент'**
+  /// **'Угадай, из чьей музыки фрагмент'**
   String get modeWhoseSongHint;
 
   /// No description provided for @modeGuessTrack.
@@ -613,13 +613,13 @@ abstract class AppLocalizations {
   /// No description provided for @modeGuessTrackHint.
   ///
   /// In ru, this message translates to:
-  /// **'Четыре варианта — назовите песню'**
+  /// **'Четыре варианта — назови песню'**
   String get modeGuessTrackHint;
 
   /// No description provided for @displayNameLabel.
   ///
   /// In ru, this message translates to:
-  /// **'Ваше имя в игре'**
+  /// **'Твоё имя в игре'**
   String get displayNameLabel;
 
   /// No description provided for @displayNameInvalid.
@@ -637,7 +637,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Как вас называть в игре?'**
+  /// **'Как тебя называть в игре?'**
   String get joinSubtitle;
 
   /// No description provided for @joinAction.
@@ -649,7 +649,7 @@ abstract class AppLocalizations {
   /// No description provided for @roomErrorNotFound.
   ///
   /// In ru, this message translates to:
-  /// **'Комната не найдена. Проверьте код'**
+  /// **'Комната не найдена. Проверь код'**
   String get roomErrorNotFound;
 
   /// No description provided for @roomErrorFull.
@@ -661,13 +661,13 @@ abstract class AppLocalizations {
   /// No description provided for @roomErrorLocked.
   ///
   /// In ru, this message translates to:
-  /// **'Игра уже началась — дождитесь итогов'**
+  /// **'Игра уже началась — дождись итогов'**
   String get roomErrorLocked;
 
   /// No description provided for @roomErrorRateLimited.
   ///
   /// In ru, this message translates to:
-  /// **'Слишком много попыток. Подождите минуту'**
+  /// **'Слишком много попыток. Подожди минуту'**
   String get roomErrorRateLimited;
 
   /// No description provided for @roomErrorNetwork.
@@ -679,7 +679,7 @@ abstract class AppLocalizations {
   /// No description provided for @roomErrorOther.
   ///
   /// In ru, this message translates to:
-  /// **'Что-то пошло не так. Попробуйте ещё раз'**
+  /// **'Что-то пошло не так. Попробуй ещё раз'**
   String get roomErrorOther;
 
   /// No description provided for @lobbyTitle.
@@ -745,19 +745,19 @@ abstract class AppLocalizations {
   /// No description provided for @lobbyYouBadge.
   ///
   /// In ru, this message translates to:
-  /// **'Вы'**
+  /// **'Ты'**
   String get lobbyYouBadge;
 
   /// No description provided for @lobbyReady.
   ///
   /// In ru, this message translates to:
-  /// **'Готов'**
+  /// **'На старте'**
   String get lobbyReady;
 
   /// No description provided for @lobbyNotReady.
   ///
   /// In ru, this message translates to:
-  /// **'Не готов'**
+  /// **'Не на старте'**
   String get lobbyNotReady;
 
   /// No description provided for @lobbyAway.
@@ -823,7 +823,7 @@ abstract class AppLocalizations {
   /// No description provided for @lobbyImReady.
   ///
   /// In ru, this message translates to:
-  /// **'Я готов'**
+  /// **'Я на старте'**
   String get lobbyImReady;
 
   /// No description provided for @lobbyKick.
@@ -919,7 +919,7 @@ abstract class AppLocalizations {
   /// No description provided for @lobbyNoRoom.
   ///
   /// In ru, this message translates to:
-  /// **'Вы не в комнате'**
+  /// **'Ты не в комнате'**
   String get lobbyNoRoom;
 
   /// No description provided for @lobbyBackHome.
@@ -931,7 +931,7 @@ abstract class AppLocalizations {
   /// No description provided for @roomEndedKicked.
   ///
   /// In ru, this message translates to:
-  /// **'Ведущий удалил вас из комнаты'**
+  /// **'Ведущий удалил тебя из комнаты'**
   String get roomEndedKicked;
 
   /// No description provided for @roomEndedClosed.
@@ -943,13 +943,13 @@ abstract class AppLocalizations {
   /// No description provided for @roomEndedReplaced.
   ///
   /// In ru, this message translates to:
-  /// **'Вы открыли эту комнату на другом устройстве'**
+  /// **'Комната открыта на другом твоём устройстве'**
   String get roomEndedReplaced;
 
   /// No description provided for @roomEndedVersion.
   ///
   /// In ru, this message translates to:
-  /// **'Обновите приложение, чтобы играть'**
+  /// **'Обнови приложение, чтобы играть'**
   String get roomEndedVersion;
 
   /// No description provided for @roomEndedLost.
@@ -991,7 +991,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorRateLimited.
   ///
   /// In ru, this message translates to:
-  /// **'Слишком быстро. Подождите секунду'**
+  /// **'Слишком быстро. Подожди секунду'**
   String get errorRateLimited;
 
   /// No description provided for @errorGeneric.
@@ -1009,7 +1009,7 @@ abstract class AppLocalizations {
   /// No description provided for @gameStartingTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Приготовьтесь!'**
+  /// **'Приготовься!'**
   String get gameStartingTitle;
 
   /// No description provided for @gameStartingRounds.
@@ -1045,13 +1045,13 @@ abstract class AppLocalizations {
   /// No description provided for @gameListen.
   ///
   /// In ru, this message translates to:
-  /// **'Слушайте…'**
+  /// **'Слушай…'**
   String get gameListen;
 
   /// No description provided for @gameTapFast.
   ///
   /// In ru, this message translates to:
-  /// **'Жмите быстрее всех!'**
+  /// **'Жми быстрее всех!'**
   String get gameTapFast;
 
   /// No description provided for @gameYourTrack.
@@ -1063,7 +1063,7 @@ abstract class AppLocalizations {
   /// No description provided for @gameYourTrackHint.
   ///
   /// In ru, this message translates to:
-  /// **'Смотрите, кто угадает'**
+  /// **'Смотри, кто угадает'**
   String get gameYourTrackHint;
 
   /// No description provided for @gameAnswerSent.
@@ -1123,7 +1123,7 @@ abstract class AppLocalizations {
   /// No description provided for @revealOwnerYou.
   ///
   /// In ru, this message translates to:
-  /// **'Это был ваш трек'**
+  /// **'Это был твой трек'**
   String get revealOwnerYou;
 
   /// No description provided for @revealReaction.
@@ -1249,7 +1249,7 @@ abstract class AppLocalizations {
   /// No description provided for @bonusCancelledSsv.
   ///
   /// In ru, this message translates to:
-  /// **'Не удалось подтвердить просмотр. Извините!'**
+  /// **'Не удалось подтвердить просмотр. Извини!'**
   String get bonusCancelledSsv;
 
   /// No description provided for @adBreakCounting.
@@ -1321,13 +1321,13 @@ abstract class AppLocalizations {
   /// No description provided for @debugClockHint.
   ///
   /// In ru, this message translates to:
-  /// **'Нажимайте на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.'**
+  /// **'Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.'**
   String get debugClockHint;
 
   /// No description provided for @debugClockTapArea.
   ///
   /// In ru, this message translates to:
-  /// **'Нажмите здесь'**
+  /// **'Нажми здесь'**
   String get debugClockTapArea;
 
   /// No description provided for @debugClockPassed.
@@ -1387,7 +1387,7 @@ abstract class AppLocalizations {
   /// No description provided for @gameDjOpenAppFailed.
   ///
   /// In ru, this message translates to:
-  /// **'Не получилось открыть приложение — найдите песню вручную'**
+  /// **'Не получилось открыть приложение — найди песню вручную'**
   String get gameDjOpenAppFailed;
 
   /// The DJ taps it the moment the song starts; the touch time is the round's audio start (dj_tap).
@@ -1399,13 +1399,13 @@ abstract class AppLocalizations {
   /// No description provided for @gameDjMusicPlayingHint.
   ///
   /// In ru, this message translates to:
-  /// **'Нажмите, как только песня зазвучит'**
+  /// **'Нажми, как только песня зазвучит'**
   String get gameDjMusicPlayingHint;
 
   /// guess_track: the DJ may not answer (dj_ineligible).
   ///
   /// In ru, this message translates to:
-  /// **'Вы диджей!'**
+  /// **'Ты диджей!'**
   String get gameDjWatchingTitle;
 
   /// No description provided for @gameDjWatchingHint.
@@ -1423,13 +1423,13 @@ abstract class AppLocalizations {
   /// Text round (provider none): no audio.
   ///
   /// In ru, this message translates to:
-  /// **'Раунд без музыки: читаем и угадываем'**
+  /// **'Раунд без музыки: читай и угадывай'**
   String get gameTextRoundHint;
 
   /// Text round before the answer buttons unlock.
   ///
   /// In ru, this message translates to:
-  /// **'Приготовьтесь…'**
+  /// **'Приготовься…'**
   String get gameTextRoundLocked;
 
   /// No description provided for @homeMySongs.
@@ -1459,7 +1459,7 @@ abstract class AppLocalizations {
   /// No description provided for @mySongsSearchFailed.
   ///
   /// In ru, this message translates to:
-  /// **'Поиск не сработал. Проверьте интернет.'**
+  /// **'Поиск не сработал. Проверь интернет.'**
   String get mySongsSearchFailed;
 
   /// No description provided for @mySongsSelected.
@@ -1471,7 +1471,7 @@ abstract class AppLocalizations {
   /// No description provided for @mySongsNeedMore.
   ///
   /// In ru, this message translates to:
-  /// **'{count, plural, one{Добавьте ещё {count} песню} few{Добавьте ещё {count} песни} many{Добавьте ещё {count} песен} other{Добавьте ещё {count} песни}}'**
+  /// **'{count, plural, one{Добавь ещё {count} песню} few{Добавь ещё {count} песни} many{Добавь ещё {count} песен} other{Добавь ещё {count} песни}}'**
   String mySongsNeedMore(int count);
 
   /// No description provided for @mySongsFull.
@@ -1501,13 +1501,13 @@ abstract class AppLocalizations {
   /// No description provided for @mySongsLoadFailed.
   ///
   /// In ru, this message translates to:
-  /// **'Не получилось загрузить ваши песни'**
+  /// **'Не получилось загрузить твои песни'**
   String get mySongsLoadFailed;
 
   /// No description provided for @mySongsEmpty.
   ///
   /// In ru, this message translates to:
-  /// **'Найдите от {min} до {max} любимых песен — друзья будут угадывать, чьи они'**
+  /// **'Найди от {min} до {max} любимых песен — друзья будут угадывать, чьи они'**
   String mySongsEmpty(int min, int max);
 
   /// No description provided for @mySongsAdd.
@@ -1531,7 +1531,7 @@ abstract class AppLocalizations {
   /// No description provided for @mySongsPreviewBody.
   ///
   /// In ru, this message translates to:
-  /// **'Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.'**
+  /// **'Если в игре выпадет твоя песня, все увидят её название, исполнителя и что она твоя. Весь список целиком не увидит никто.'**
   String get mySongsPreviewBody;
 
   /// No description provided for @lobbyAddMySongs.
@@ -1555,7 +1555,7 @@ abstract class AppLocalizations {
   /// Consent line before PUT /v1/rooms/{room_id}/pool.
   ///
   /// In ru, this message translates to:
-  /// **'Эти песни будут показаны комнате как ваши'**
+  /// **'Эти песни будут показаны комнате как твои'**
   String get lobbyPoolConsentBody;
 
   /// No description provided for @lobbyPoolConsentConfirm.
@@ -1567,7 +1567,7 @@ abstract class AppLocalizations {
   /// No description provided for @lobbyPoolSent.
   ///
   /// In ru, this message translates to:
-  /// **'Ваши песни в игре'**
+  /// **'Твои песни в игре'**
   String get lobbyPoolSent;
 
   /// No description provided for @lobbyPoolFailed.
@@ -1579,7 +1579,7 @@ abstract class AppLocalizations {
   /// No description provided for @lobbyPoolNeedPicks.
   ///
   /// In ru, this message translates to:
-  /// **'Сначала выберите хотя бы {min} песен в «Мои песни»'**
+  /// **'Сначала выбери хотя бы {min} песен в «Мои песни»'**
   String lobbyPoolNeedPicks(int min);
 
   /// No description provided for @lobbyPoolTrackCount.
@@ -1603,7 +1603,7 @@ abstract class AppLocalizations {
   /// Lobby hint for the host of an external_player (BYOP) room.
   ///
   /// In ru, this message translates to:
-  /// **'Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче'**
+  /// **'Ты диджей: включай песни в своём музыкальном приложении, на колонке погромче'**
   String get lobbyDjHint;
 
   /// «Мои песни» still holds legacy catalogue picks (test_catalog); they cannot be saved as songs.
@@ -1621,7 +1621,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeEmojiQuizHint.
   ///
   /// In ru, this message translates to:
-  /// **'Угадайте песню по эмодзи — музыка не нужна'**
+  /// **'Угадай песню по эмодзи — музыка не нужна'**
   String get modeEmojiQuizHint;
 
   /// Question of an emoji round.
@@ -1771,19 +1771,19 @@ abstract class AppLocalizations {
   /// No description provided for @gameYouTubeConsentDecline.
   ///
   /// In ru, this message translates to:
-  /// **'Нет, включу сам'**
+  /// **'Нет, включу вручную'**
   String get gameYouTubeConsentDecline;
 
   /// youtube_embed DJ fell back to the BYOP cue (every video failed).
   ///
   /// In ru, this message translates to:
-  /// **'Видео не играет — включи песню сам'**
+  /// **'Видео не играет — включи песню вручную'**
   String get gameYouTubeFallback;
 
   /// youtube_embed DJ: the window (split screen, a small window) cannot hold a legal player right now, so the DJ gets the cue until it grows [новое имя — согласовать].
   ///
   /// In ru, this message translates to:
-  /// **'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам'**
+  /// **'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню вручную'**
   String get gameYouTubeWindowTooSmall;
 
   /// youtube_embed DJ declined the player consent.
@@ -1963,7 +1963,7 @@ abstract class AppLocalizations {
   /// Tooltip of the ready badge on a player avatar.
   ///
   /// In ru, this message translates to:
-  /// **'Готов'**
+  /// **'На старте'**
   String get playerBadgeReady;
 
   /// The DJ's «Музыка играет!» after the tap: a tonal done state under the YouTube player (never a SnackBar).

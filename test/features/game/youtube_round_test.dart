@@ -204,7 +204,7 @@ void main() {
     }
 
     // The BYOP cue takes over; «Музыка играет!» still works.
-    expect(find.text('Видео не играет — включи песню сам'), findsOneWidget);
+    expect(find.text('Видео не играет — включи песню вручную'), findsOneWidget);
     expect(
       find.text('Включи эту песню в своём музыкальном приложении'),
       findsOneWidget,
@@ -382,7 +382,7 @@ void main() {
     expect(
       find.text(
         'Окно слишком маленькое для плеера YouTube. Разверни его или '
-        'включи песню сам',
+        'включи песню вручную',
       ),
       findsOneWidget,
     );

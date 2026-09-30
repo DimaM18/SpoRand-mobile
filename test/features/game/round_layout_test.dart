@@ -200,7 +200,7 @@ void main() {
     );
 
     // One instruction: no button hint and no repeated status.
-    expect(find.text('Нажмите, как только песня зазвучит'), findsNothing);
+    expect(find.text('Нажми, как только песня зазвучит'), findsNothing);
     expect(
       find.text('Когда зазвучит песня, жми «Музыка играет!»'),
       findsNothing,

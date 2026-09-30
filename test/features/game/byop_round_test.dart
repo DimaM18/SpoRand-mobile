@@ -137,7 +137,7 @@ void main() {
 
     // The room lets the whose_song DJ answer: from their own start.
     await tester.pump();
-    expect(find.text('Жмите быстрее всех!'), findsOneWidget);
+    expect(find.text('Жми быстрее всех!'), findsOneWidget);
     expect(_answer('opt-a'), findsOneWidget);
     expect(find.byKey(const ValueKey('dj-music-playing')), findsNothing);
 
@@ -210,7 +210,7 @@ void main() {
     h.send(const RoundStart(roundId: 'round-1', audioStartServerMs: 1));
     await tester.pump();
     await tester.pump();
-    expect(find.text('Жмите быстрее всех!'), findsOneWidget);
+    expect(find.text('Жми быстрее всех!'), findsOneWidget);
     await _end(tester, h);
   });
 
@@ -286,17 +286,17 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Чья это песня?'), findsOneWidget);
-    expect(find.text('Раунд без музыки: читаем и угадываем'), findsOneWidget);
+    expect(find.text('Раунд без музыки: читай и угадывай'), findsOneWidget);
     expect(find.text('Paper Boats'), findsOneWidget);
     expect(find.text('Sample Band'), findsOneWidget);
     expect(find.byType(EqualizerBars), findsNothing);
-    expect(find.text('Слушайте…'), findsNothing);
-    expect(find.text('Приготовьтесь…'), findsOneWidget);
+    expect(find.text('Слушай…'), findsNothing);
+    expect(find.text('Приготовься…'), findsOneWidget);
     expect(_answer('opt-c'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pump();
-    expect(find.text('Жмите быстрее всех!'), findsOneWidget);
+    expect(find.text('Жми быстрее всех!'), findsOneWidget);
     await _pointerDown(tester, _answer('opt-c'), osUs: h.inputClock.nowUs);
     expect(h.received<RoundAnswer>().single.optionId, 'opt-c');
     expect(h.received<RoundPlaybackStarted>(), isEmpty);

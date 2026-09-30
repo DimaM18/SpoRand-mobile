@@ -64,7 +64,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get onboardingAgeSubtitle =>
-      'Dzięki temu dopasujemy aplikację do Twojego wieku.';
+      'Dzięki temu dopasujemy aplikację do twojego wieku.';
 
   @override
   String get onboardingAgeFieldLabel => 'Rok';
@@ -90,7 +90,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get onboardingConsentBody =>
-      'Nigdy nie przekazujemy Twojej muzyki do analityki ani reklam. Możesz pomóc nam ulepszać grę anonimowymi statystykami — to opcjonalne i możesz to zmienić w ustawieniach.';
+      'Nigdy nie przekazujemy twojej muzyki do analityki ani reklam. Możesz pomóc nam ulepszać grę anonimowymi statystykami — to opcjonalne i możesz to zmienić w ustawieniach.';
 
   @override
   String get onboardingConsentAnalytics => 'Wysyłaj anonimowe statystyki';
@@ -377,10 +377,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lobbyYouBadge => 'Ty';
 
   @override
-  String get lobbyReady => 'Gotowy';
+  String get lobbyReady => 'Na starcie';
 
   @override
-  String get lobbyNotReady => 'Niegotowy';
+  String get lobbyNotReady => 'Nie na starcie';
 
   @override
   String get lobbyAway => 'Łączy się ponownie';
@@ -435,7 +435,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lobbyWaitingForHost => 'Gospodarz zaraz zacznie grę';
 
   @override
-  String get lobbyImReady => 'Jestem gotowy';
+  String get lobbyImReady => 'Jestem na starcie';
 
   @override
   String get lobbyKick => 'Usuń z pokoju';
@@ -496,7 +496,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get roomEndedClosed => 'Pokój został zamknięty';
 
   @override
-  String get roomEndedReplaced => 'Otworzyłeś ten pokój na innym urządzeniu';
+  String get roomEndedReplaced =>
+      'Ten pokój jest otwarty na innym twoim urządzeniu';
 
   @override
   String get roomEndedVersion => 'Zaktualizuj aplikację, aby grać';
@@ -800,7 +801,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get gameTextRoundHint => 'Runda bez muzyki: czytaj i zgaduj';
 
   @override
-  String get gameTextRoundLocked => 'Przygotujcie się…';
+  String get gameTextRoundLocked => 'Przygotuj się…';
 
   @override
   String get homeMySongs => 'Moje piosenki';
@@ -932,7 +933,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get modeEmojiQuizHint =>
-      'Zgadnijcie piosenkę z emoji — muzyka niepotrzebna';
+      'Zgadnij piosenkę z emoji — muzyka niepotrzebna';
 
   @override
   String get gamePromptEmoji => 'Jaka to piosenka?';
@@ -1014,20 +1015,20 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gameYouTubeConsentBody =>
-      'Piosenka zagra w oficjalnym odtwarzaczu YouTube. Podczas ładowania YouTube (Google) otrzymuje dane o Twoim urządzeniu i może pokazać reklamę.';
+      'Piosenka zagra w oficjalnym odtwarzaczu YouTube. Podczas ładowania YouTube (Google) otrzymuje dane o twoim urządzeniu i może pokazać reklamę.';
 
   @override
   String get gameYouTubeConsentAllow => 'Zezwól';
 
   @override
-  String get gameYouTubeConsentDecline => 'Nie, włączę sam';
+  String get gameYouTubeConsentDecline => 'Nie, włączę ręcznie';
 
   @override
-  String get gameYouTubeFallback => 'Wideo nie działa — włącz piosenkę sam';
+  String get gameYouTubeFallback => 'Wideo nie działa — włącz piosenkę ręcznie';
 
   @override
   String get gameYouTubeWindowTooSmall =>
-      'Okno jest za małe na odtwarzacz YouTube. Powiększ je albo włącz piosenkę sam';
+      'Okno jest za małe na odtwarzacz YouTube. Powiększ je albo włącz piosenkę ręcznie';
 
   @override
   String get gameYouTubeDeclined =>
@@ -1131,7 +1132,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get playerBadgeDj => 'DJ';
 
   @override
-  String get playerBadgeReady => 'Gotowy';
+  String get playerBadgeReady => 'Na starcie';
 
   @override
   String get gameDjTapped => 'Zaznaczono';

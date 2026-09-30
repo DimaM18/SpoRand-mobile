@@ -33,7 +33,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bootFailedTitle => 'Не получилось запуститься';
 
   @override
-  String get bootFailedBody => 'Проверьте интернет и попробуйте ещё раз.';
+  String get bootFailedBody => 'Проверь интернет и попробуй ещё раз.';
 
   @override
   String get bootRetry => 'Попробовать снова';
@@ -43,7 +43,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get forceUpdateBody =>
-      'Эта версия больше не поддерживается. Обновите приложение, чтобы продолжить играть.';
+      'Эта версия больше не поддерживается. Обнови приложение, чтобы продолжить играть.';
 
   @override
   String get forceUpdateAction => 'Обновить';
@@ -53,7 +53,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get maintenanceBody =>
-      'Мы настраиваем серверы. Скоро вернёмся — загляните через пару минут.';
+      'Мы настраиваем серверы. Скоро вернёмся — загляни через пару минут.';
 
   @override
   String get maintenanceRetry => 'Проверить снова';
@@ -63,7 +63,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get onboardingAgeSubtitle =>
-      'Нужен, чтобы настроить приложение под ваш возраст.';
+      'Нужен, чтобы настроить приложение под твой возраст.';
 
   @override
   String get onboardingAgeFieldLabel => 'Год';
@@ -72,7 +72,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingAgeFieldHint => 'ГГГГ';
 
   @override
-  String get onboardingAgeInvalid => 'Введите год из четырёх цифр';
+  String get onboardingAgeInvalid => 'Введи год из четырёх цифр';
 
   @override
   String get onboardingContinue => 'Продолжить';
@@ -85,11 +85,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Это приложение предназначено для игроков от 13 лет.';
 
   @override
-  String get onboardingConsentTitle => 'Ваша приватность';
+  String get onboardingConsentTitle => 'Твоя приватность';
 
   @override
   String get onboardingConsentBody =>
-      'Мы не передаём вашу музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.';
+      'Мы не передаём твою музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.';
 
   @override
   String get onboardingConsentAnalytics => 'Отправлять анонимную статистику';
@@ -187,7 +187,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsPrivacyPolicy => 'Политика конфиденциальности';
 
   @override
-  String get paywallTitle => 'Играйте без границ';
+  String get paywallTitle => 'Играй без границ';
 
   @override
   String get paywallSubtitle =>
@@ -294,16 +294,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get modeWhoseSong => 'Чья это песня?';
 
   @override
-  String get modeWhoseSongHint => 'Угадайте, из чьей музыки фрагмент';
+  String get modeWhoseSongHint => 'Угадай, из чьей музыки фрагмент';
 
   @override
   String get modeGuessTrack => 'Угадай трек';
 
   @override
-  String get modeGuessTrackHint => 'Четыре варианта — назовите песню';
+  String get modeGuessTrackHint => 'Четыре варианта — назови песню';
 
   @override
-  String get displayNameLabel => 'Ваше имя в игре';
+  String get displayNameLabel => 'Твоё имя в игре';
 
   @override
   String get displayNameInvalid => 'От 2 до 20 символов';
@@ -312,28 +312,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get createRoomAction => 'Создать комнату';
 
   @override
-  String get joinSubtitle => 'Как вас называть в игре?';
+  String get joinSubtitle => 'Как тебя называть в игре?';
 
   @override
   String get joinAction => 'Войти в комнату';
 
   @override
-  String get roomErrorNotFound => 'Комната не найдена. Проверьте код';
+  String get roomErrorNotFound => 'Комната не найдена. Проверь код';
 
   @override
   String get roomErrorFull => 'В комнате нет свободных мест';
 
   @override
-  String get roomErrorLocked => 'Игра уже началась — дождитесь итогов';
+  String get roomErrorLocked => 'Игра уже началась — дождись итогов';
 
   @override
-  String get roomErrorRateLimited => 'Слишком много попыток. Подождите минуту';
+  String get roomErrorRateLimited => 'Слишком много попыток. Подожди минуту';
 
   @override
   String get roomErrorNetwork => 'Нет связи с сервером';
 
   @override
-  String get roomErrorOther => 'Что-то пошло не так. Попробуйте ещё раз';
+  String get roomErrorOther => 'Что-то пошло не так. Попробуй ещё раз';
 
   @override
   String get lobbyTitle => 'Лобби';
@@ -374,13 +374,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lobbyHostBadge => 'Ведущий';
 
   @override
-  String get lobbyYouBadge => 'Вы';
+  String get lobbyYouBadge => 'Ты';
 
   @override
-  String get lobbyReady => 'Готов';
+  String get lobbyReady => 'На старте';
 
   @override
-  String get lobbyNotReady => 'Не готов';
+  String get lobbyNotReady => 'Не на старте';
 
   @override
   String get lobbyAway => 'Переподключается';
@@ -435,7 +435,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lobbyWaitingForHost => 'Ведущий скоро начнёт игру';
 
   @override
-  String get lobbyImReady => 'Я готов';
+  String get lobbyImReady => 'Я на старте';
 
   @override
   String get lobbyKick => 'Удалить из комнаты';
@@ -484,22 +484,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonLoading => 'Загрузка…';
 
   @override
-  String get lobbyNoRoom => 'Вы не в комнате';
+  String get lobbyNoRoom => 'Ты не в комнате';
 
   @override
   String get lobbyBackHome => 'На главную';
 
   @override
-  String get roomEndedKicked => 'Ведущий удалил вас из комнаты';
+  String get roomEndedKicked => 'Ведущий удалил тебя из комнаты';
 
   @override
   String get roomEndedClosed => 'Комната закрыта';
 
   @override
-  String get roomEndedReplaced => 'Вы открыли эту комнату на другом устройстве';
+  String get roomEndedReplaced => 'Комната открыта на другом твоём устройстве';
 
   @override
-  String get roomEndedVersion => 'Обновите приложение, чтобы играть';
+  String get roomEndedVersion => 'Обнови приложение, чтобы играть';
 
   @override
   String get roomEndedLost => 'Не удалось восстановить связь с комнатой';
@@ -521,7 +521,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorInvalidState => 'Сейчас это сделать нельзя';
 
   @override
-  String get errorRateLimited => 'Слишком быстро. Подождите секунду';
+  String get errorRateLimited => 'Слишком быстро. Подожди секунду';
 
   @override
   String get errorGeneric => 'Что-то пошло не так';
@@ -530,7 +530,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameWaiting => 'Ждём начала игры…';
 
   @override
-  String get gameStartingTitle => 'Приготовьтесь!';
+  String get gameStartingTitle => 'Приготовься!';
 
   @override
   String gameStartingRounds(int count) {
@@ -560,16 +560,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gamePromptGuessTrack => 'Что за трек?';
 
   @override
-  String get gameListen => 'Слушайте…';
+  String get gameListen => 'Слушай…';
 
   @override
-  String get gameTapFast => 'Жмите быстрее всех!';
+  String get gameTapFast => 'Жми быстрее всех!';
 
   @override
   String get gameYourTrack => 'Это твой трек!';
 
   @override
-  String get gameYourTrackHint => 'Смотрите, кто угадает';
+  String get gameYourTrackHint => 'Смотри, кто угадает';
 
   @override
   String get gameAnswerSent => 'Ответ отправлен';
@@ -604,7 +604,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get revealNoAnswer => 'Без ответа';
 
   @override
-  String get revealOwnerYou => 'Это был ваш трек';
+  String get revealOwnerYou => 'Это был твой трек';
 
   @override
   String revealReaction(String seconds) {
@@ -690,7 +690,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bonusCancelled => 'Бонусного раунда не будет';
 
   @override
-  String get bonusCancelledSsv => 'Не удалось подтвердить просмотр. Извините!';
+  String get bonusCancelledSsv => 'Не удалось подтвердить просмотр. Извини!';
 
   @override
   String get adBreakCounting => 'Считаем очки…';
@@ -741,10 +741,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get debugClockHint =>
-      'Нажимайте на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.';
+      'Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.';
 
   @override
-  String get debugClockTapArea => 'Нажмите здесь';
+  String get debugClockTapArea => 'Нажми здесь';
 
   @override
   String debugClockPassed(int count) {
@@ -781,16 +781,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameDjOpenAppFailed =>
-      'Не получилось открыть приложение — найдите песню вручную';
+      'Не получилось открыть приложение — найди песню вручную';
 
   @override
   String get gameDjMusicPlaying => 'Музыка играет!';
 
   @override
-  String get gameDjMusicPlayingHint => 'Нажмите, как только песня зазвучит';
+  String get gameDjMusicPlayingHint => 'Нажми, как только песня зазвучит';
 
   @override
-  String get gameDjWatchingTitle => 'Вы диджей!';
+  String get gameDjWatchingTitle => 'Ты диджей!';
 
   @override
   String get gameDjWatchingHint => 'В этом раунде отвечают гости';
@@ -799,10 +799,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameAnswerRejectedDj => 'Диджей в этом раунде не отвечает';
 
   @override
-  String get gameTextRoundHint => 'Раунд без музыки: читаем и угадываем';
+  String get gameTextRoundHint => 'Раунд без музыки: читай и угадывай';
 
   @override
-  String get gameTextRoundLocked => 'Приготовьтесь…';
+  String get gameTextRoundLocked => 'Приготовься…';
 
   @override
   String get homeMySongs => 'Мои песни';
@@ -817,7 +817,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mySongsSearchEmpty => 'Ничего не нашлось';
 
   @override
-  String get mySongsSearchFailed => 'Поиск не сработал. Проверьте интернет.';
+  String get mySongsSearchFailed => 'Поиск не сработал. Проверь интернет.';
 
   @override
   String mySongsSelected(int count, int max) {
@@ -829,10 +829,10 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Добавьте ещё $count песни',
-      many: 'Добавьте ещё $count песен',
-      few: 'Добавьте ещё $count песни',
-      one: 'Добавьте ещё $count песню',
+      other: 'Добавь ещё $count песни',
+      many: 'Добавь ещё $count песен',
+      few: 'Добавь ещё $count песни',
+      one: 'Добавь ещё $count песню',
     );
     return '$_temp0';
   }
@@ -852,11 +852,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mySongsSaveFailed => 'Не получилось сохранить';
 
   @override
-  String get mySongsLoadFailed => 'Не получилось загрузить ваши песни';
+  String get mySongsLoadFailed => 'Не получилось загрузить твои песни';
 
   @override
   String mySongsEmpty(int min, int max) {
-    return 'Найдите от $min до $max любимых песен — друзья будут угадывать, чьи они';
+    return 'Найди от $min до $max любимых песен — друзья будут угадывать, чьи они';
   }
 
   @override
@@ -870,7 +870,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mySongsPreviewBody =>
-      'Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.';
+      'Если в игре выпадет твоя песня, все увидят её название, исполнителя и что она твоя. Весь список целиком не увидит никто.';
 
   @override
   String get lobbyAddMySongs => 'Добавить мои песни';
@@ -883,20 +883,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lobbyPoolConsentBody =>
-      'Эти песни будут показаны комнате как ваши';
+      'Эти песни будут показаны комнате как твои';
 
   @override
   String get lobbyPoolConsentConfirm => 'Подтвердить';
 
   @override
-  String get lobbyPoolSent => 'Ваши песни в игре';
+  String get lobbyPoolSent => 'Твои песни в игре';
 
   @override
   String get lobbyPoolFailed => 'Не получилось добавить песни';
 
   @override
   String lobbyPoolNeedPicks(int min) {
-    return 'Сначала выберите хотя бы $min песен в «Мои песни»';
+    return 'Сначала выбери хотя бы $min песен в «Мои песни»';
   }
 
   @override
@@ -923,7 +923,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lobbyDjHint =>
-      'Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче';
+      'Ты диджей: включай песни в своём музыкальном приложении, на колонке погромче';
 
   @override
   String get mySongsLegacyHint =>
@@ -933,7 +933,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get modeEmojiQuiz => 'Угадай песню';
 
   @override
-  String get modeEmojiQuizHint => 'Угадайте песню по эмодзи — музыка не нужна';
+  String get modeEmojiQuizHint => 'Угадай песню по эмодзи — музыка не нужна';
 
   @override
   String get gamePromptEmoji => 'Какая это песня?';
@@ -1020,14 +1020,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameYouTubeConsentAllow => 'Разрешить';
 
   @override
-  String get gameYouTubeConsentDecline => 'Нет, включу сам';
+  String get gameYouTubeConsentDecline => 'Нет, включу вручную';
 
   @override
-  String get gameYouTubeFallback => 'Видео не играет — включи песню сам';
+  String get gameYouTubeFallback => 'Видео не играет — включи песню вручную';
 
   @override
   String get gameYouTubeWindowTooSmall =>
-      'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам';
+      'Окно слишком маленькое для плеера YouTube. Разверни его или включи песню вручную';
 
   @override
   String get gameYouTubeDeclined =>
@@ -1130,7 +1130,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get playerBadgeDj => 'DJ';
 
   @override
-  String get playerBadgeReady => 'Готов';
+  String get playerBadgeReady => 'На старте';
 
   @override
   String get gameDjTapped => 'Отмечено';

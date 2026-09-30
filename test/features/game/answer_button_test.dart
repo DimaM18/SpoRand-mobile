@@ -61,13 +61,13 @@ void main() {
     h.send(Samples.prepare(startAtMonoUs: startAt));
     await tester.pump();
     expect(find.text('Celina'), findsOneWidget);
-    expect(find.text('Слушайте…'), findsOneWidget);
+    expect(find.text('Слушай…'), findsOneWidget);
 
     // Past start_at_mono_us: the unlock timer fires and the next frame
     // shows enabled buttons.
     await tester.pump(const Duration(milliseconds: 150));
     await tester.pump();
-    expect(find.text('Жмите быстрее всех!'), findsOneWidget);
+    expect(find.text('Жми быстрее всех!'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 400));
     // The OS stamped the touch 12 ms before Flutter handled it. Pointer

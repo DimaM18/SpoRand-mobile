@@ -140,7 +140,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   - consent (`YouTubeConsentGate`, `requires_consent_before_load`): outside
     the EEA/UK (UMP `notRequired`) the player loads; otherwise the DJ sees a
     short consent sheet first. «Разрешить» is stored
-    (`youtube_player_consent`); «Нет, включу сам» sends
+    (`youtube_player_consent`); «Нет, включу вручную» sends
     `playback_failed{consent_declined}` and shows the cue, and is not asked
     again in this app session;
   - analytics drop `video` / `youtube` parameter names and YouTube-looking
@@ -166,7 +166,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   lobby pool carries the video id. Title and channel stay in memory only.
   No share-extension target yet. In the lobby, «Добавить мои песни» sends the pool
   with `PUT /v1/rooms/{room_id}/pool` only after the consent «Эти песни будут
-  показаны комнате как ваши»; the host's start stays disabled until the
+  показаны комнате как твои»; the host's start stays disabled until the
   pools meet `pool_min_tracks_per_contributor` and the mode's minimums.
 - **Playback** (`lib/core/playback/`): `PlaybackAdapter`; `ClipPlayerAdapter`
   over Pigeon `ClipPlayerApi`; `NoAudioPlaybackAdapter` for
@@ -217,7 +217,9 @@ The Swift and Kotlin code has not been compiled in the sandbox that wrote it
 - `lib/features/<feature>/{data,domain,presentation}`: onboarding, home,
   lobby (rooms API, room session), my_songs, game, results, paywall,
   settings, debug
-- `lib/core/l10n/arb/` ARB files (ru template, en, pl); `flutter gen-l10n`
+- `lib/core/l10n/arb/` ARB files (ru template, en, pl); `flutter gen-l10n`.
+  ru/pl copy addresses the player with informal singular «ты»/«ty»,
+  gender-neutral (no gendered past tense or short adjectives)
 - `lib/contracts/` reserved for code generated from `packages/protocol`
 - `pigeons/` Pigeon definitions; `packages/sporand_native/` generated code +
   native implementations

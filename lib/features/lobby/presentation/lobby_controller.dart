@@ -470,7 +470,7 @@ class LobbyController extends Notifier<LobbyUiState> {
   }
 
   /// Step 2, after the player confirmed «Эти песни будут показаны комнате
-  /// как ваши»: `PUT /v1/rooms/{room_id}/pool`. The server then updates
+  /// как твои»: `PUT /v1/rooms/{room_id}/pool`. The server then updates
   /// `pool_track_count` with `room.player_updated`.
   Future<bool> submitPool(PoolReady draft) async {
     final session = _session;

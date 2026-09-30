@@ -84,7 +84,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '1990');
       await _tap(tester, find.text('Продолжить'));
       await tester.pumpAndSettle();
-      expect(find.text('Ваша приватность'), findsOneWidget);
+      expect(find.text('Твоя приватность'), findsOneWidget);
       await _tap(tester, find.byType(Switch));
       await tester.pumpAndSettle();
       await _tap(tester, find.text('Начать игру'));
@@ -150,7 +150,7 @@ void main() {
         (Routes.join('7KQ2MX'), 'Комната 7KQ2MX'),
         (Routes.settings, 'Настройки'),
         (Routes.mySongs, 'Выбрано 3 из 10'),
-        (Routes.paywallFor('settings'), 'Играйте без границ'),
+        (Routes.paywallFor('settings'), 'Играй без границ'),
       ]) {
         unawaited(router.push(location));
         await tester.pump();
@@ -192,7 +192,7 @@ void main() {
       await _tap(tester, find.text('Создать комнату'));
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(TextField, 'Ваше имя в игре'),
+        find.widgetWithText(TextField, 'Твоё имя в игре'),
         'Ania',
       );
       await _tap(
@@ -216,7 +216,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Приготовьтесь!'), findsOneWidget);
+      expect(find.text('Приготовься!'), findsOneWidget);
 
       server.send(
         Samples.prepare(

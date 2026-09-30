@@ -17,7 +17,7 @@ enum PlayerBadge { host, dj, ready, away }
 /// avatar identifies the player.
 ///
 /// Decorative for screen readers: the surrounding row names the player,
-/// «Вы» and the role. [isMe] adds a 2 dp `primary` ring.
+/// «Ты» and the role. [isMe] adds a 2 dp `primary` ring.
 class PlayerAvatar extends StatelessWidget {
   const PlayerAvatar({
     super.key,

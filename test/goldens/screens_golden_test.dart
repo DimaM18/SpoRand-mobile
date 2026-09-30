@@ -404,7 +404,7 @@ void main() {
           container.read(routerProvider).push(Routes.paywallFor('settings')),
         );
         await settle(tester);
-        expect(find.text('Играйте без границ'), findsOneWidget);
+        expect(find.text('Играй без границ'), findsOneWidget);
         await expectScreen(tester, 'paywall', brightness);
         await closeGolden(tester);
       });
@@ -424,7 +424,7 @@ void main() {
         await tester.enterText(find.byType(TextField), '1995');
         await tester.tap(find.text('Продолжить'));
         await settle(tester);
-        expect(find.text('Ваша приватность'), findsOneWidget);
+        expect(find.text('Твоя приватность'), findsOneWidget);
         await expectScreen(tester, 'onboarding_consent', brightness);
         await closeGolden(tester);
       });
@@ -487,7 +487,7 @@ void main() {
         await closeGolden(tester);
       });
 
-      testWidgets('lobby, a guest («Я готов») ($theme)', (tester) async {
+      testWidgets('lobby, a guest («Я на старте») ($theme)', (tester) async {
         useGoldenPhone(tester, brightness: brightness);
         final game = await GoldenGame.launch(tester);
         await game.enterLobby(tester, _youtubeRoom(), me: _fourthId);

@@ -350,7 +350,7 @@ class _MySongsCard extends ConsumerWidget {
 }
 
 /// «Что увидят друзья»: exactly the list that may be revealed as this
-/// player's, and the consent «Эти песни будут показаны комнате как ваши».
+/// player's, and the consent «Эти песни будут показаны комнате как твои».
 class _PoolConsentDialog extends StatelessWidget {
   const _PoolConsentDialog({required this.picks});
 

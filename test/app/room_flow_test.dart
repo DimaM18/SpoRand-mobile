@@ -66,7 +66,7 @@ void main() {
     expect(find.text('Новая комната'), findsOneWidget);
     await tester.tap(find.text('Угадай трек'));
     await tester.enterText(
-      find.widgetWithText(TextField, 'Ваше имя в игре'),
+      find.widgetWithText(TextField, 'Твоё имя в игре'),
       'Ania',
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Создать комнату').last);
@@ -95,7 +95,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Приготовьтесь!'), findsOneWidget);
+    expect(find.text('Приготовься!'), findsOneWidget);
 
     final startAt = clock.nowUs + 200000;
     server.send(Samples.prepare(startAtMonoUs: startAt, clip: Samples.urlClip));
@@ -186,11 +186,11 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     server.send(Samples.welcome());
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FilledButton, 'Готов'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'На старте'), findsOneWidget);
 
     server.current.serverClose(4403);
     await tester.pumpAndSettle();
-    expect(find.text('Ведущий удалил вас из комнаты'), findsOneWidget);
+    expect(find.text('Ведущий удалил тебя из комнаты'), findsOneWidget);
     expect(find.text('Чья это песня?'), findsOneWidget);
     // Let the snackbar time out so no timer is left behind.
     await tester.pump(const Duration(seconds: 5));
@@ -198,7 +198,7 @@ void main() {
   });
 
   testWidgets('a guest adds «Мои песни» to a BYOP room after the consent '
-      '«Эти песни будут показаны комнате как ваши»', (tester) async {
+      '«Эти песни будут показаны комнате как твои»', (tester) async {
     tester.view.physicalSize = const Size(1200, 3200);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -243,7 +243,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Что увидят друзья'), findsOneWidget);
     expect(
-      find.text('Эти песни будут показаны комнате как ваши'),
+      find.text('Эти песни будут показаны комнате как твои'),
       findsOneWidget,
     );
     expect(find.text('Northern Lights — Test Artist'), findsOneWidget);
@@ -253,7 +253,7 @@ void main() {
     await tester.pumpAndSettle();
     final pool = rooms.pools.single.pool;
     expect(pool.tracks.whereType<SongPoolTrack>(), hasLength(5));
-    expect(find.text('Ваши песни в игре'), findsOneWidget);
+    expect(find.text('Твои песни в игре'), findsOneWidget);
     // Let the snackbar time out and leave, so no timer is left behind.
     await tester.pump(const Duration(seconds: 5));
     unawaited(container.read(activeRoomProvider.notifier).leave());
@@ -287,7 +287,7 @@ void main() {
     await tester.tap(find.text('Создать комнату'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Угадайте песню по эмодзи — музыка не нужна'),
+      find.text('Угадай песню по эмодзи — музыка не нужна'),
       findsOneWidget,
     );
     // modes_enabled (default): whose_song and the emoji quiz, which the UI
@@ -297,7 +297,7 @@ void main() {
     expect(find.text('Угадай трек'), findsNothing);
     await tester.tap(find.text('Угадай песню'));
     await tester.enterText(
-      find.widgetWithText(TextField, 'Ваше имя в игре'),
+      find.widgetWithText(TextField, 'Твоё имя в игре'),
       'Ania',
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Создать комнату').last);
@@ -380,7 +380,7 @@ void main() {
       RoomPlayerUpdated(Samples.player(Samples.guestId, 'Bartek', canDj: true)),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('Вы · DJ'), findsOneWidget);
+    expect(find.textContaining('Ты · DJ'), findsOneWidget);
     final toggle = tester.widget<SwitchListTile>(
       find.byKey(const ValueKey('lobby-can-dj')),
     );

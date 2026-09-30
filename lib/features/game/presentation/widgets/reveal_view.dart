@@ -180,7 +180,7 @@ class RevealScreen extends ConsumerWidget {
   }
 }
 
-/// «Это был ваш трек»: the owner did not answer this round.
+/// «Это был твой трек»: the owner did not answer this round.
 class _OwnerPill extends StatelessWidget {
   const _OwnerPill({required this.text});
 

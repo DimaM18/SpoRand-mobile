@@ -89,7 +89,7 @@ void main() {
       await _add(tester, _song(api, title));
     }
     expect(find.text('Выбрано 3 из 10'), findsOneWidget);
-    expect(find.text('Добавьте ещё 2 песни'), findsOneWidget);
+    expect(find.text('Добавь ещё 2 песни'), findsOneWidget);
     expect(_saveButton(tester).onPressed, isNull);
 
     await _search(tester, 'Sample');
@@ -143,7 +143,7 @@ void main() {
     final api = await _pumpPage(tester);
     api.failWith = const ApiError(code: ApiError.network);
     await _search(tester, 'Neon');
-    expect(find.text('Поиск не сработал. Проверьте интернет.'), findsOneWidget);
+    expect(find.text('Поиск не сработал. Проверь интернет.'), findsOneWidget);
   });
 
   test('limits follow the room config within the protocol bounds', () {

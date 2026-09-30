@@ -93,7 +93,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Какая это песня?'), findsOneWidget);
-    expect(find.text('Приготовьтесь…'), findsOneWidget);
+    expect(find.text('Приготовься…'), findsOneWidget);
     expect(find.text('🎭'), findsNothing, reason: 'not before start_at');
     expect(find.text('?'), findsNWidgets(3));
     expect(find.byType(EqualizerBars), findsNothing, reason: 'no audio');
@@ -103,7 +103,7 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 1100));
     await tester.pump();
-    expect(find.text('Жмите быстрее всех!'), findsOneWidget);
+    expect(find.text('Жми быстрее всех!'), findsOneWidget);
     for (final glyph in ['🎭', '🎼', '👑']) {
       expect(find.text(glyph), findsOneWidget);
     }

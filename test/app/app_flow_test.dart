@@ -20,7 +20,7 @@ void main() {
     await tester.tap(find.text('Продолжить'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ваша приватность'), findsOneWidget);
+    expect(find.text('Твоя приватность'), findsOneWidget);
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Начать игру'));

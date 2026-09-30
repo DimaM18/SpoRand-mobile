@@ -30,24 +30,24 @@
     }
   },
   "bootFailedTitle": "Не получилось запуститься",
-  "bootFailedBody": "Проверьте интернет и попробуйте ещё раз.",
+  "bootFailedBody": "Проверь интернет и попробуй ещё раз.",
   "bootRetry": "Попробовать снова",
   "forceUpdateTitle": "Пора обновиться",
-  "forceUpdateBody": "Эта версия больше не поддерживается. Обновите приложение, чтобы продолжить играть.",
+  "forceUpdateBody": "Эта версия больше не поддерживается. Обнови приложение, чтобы продолжить играть.",
   "forceUpdateAction": "Обновить",
   "maintenanceTitle": "Небольшой перерыв",
-  "maintenanceBody": "Мы настраиваем серверы. Скоро вернёмся — загляните через пару минут.",
+  "maintenanceBody": "Мы настраиваем серверы. Скоро вернёмся — загляни через пару минут.",
   "maintenanceRetry": "Проверить снова",
   "onboardingAgeTitle": "Год рождения",
-  "onboardingAgeSubtitle": "Нужен, чтобы настроить приложение под ваш возраст.",
+  "onboardingAgeSubtitle": "Нужен, чтобы настроить приложение под твой возраст.",
   "onboardingAgeFieldLabel": "Год",
   "onboardingAgeFieldHint": "ГГГГ",
-  "onboardingAgeInvalid": "Введите год из четырёх цифр",
+  "onboardingAgeInvalid": "Введи год из четырёх цифр",
   "onboardingContinue": "Продолжить",
   "onboardingBlockedTitle": "Пока рано",
   "onboardingBlockedBody": "Это приложение предназначено для игроков от 13 лет.",
-  "onboardingConsentTitle": "Ваша приватность",
-  "onboardingConsentBody": "Мы не передаём вашу музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.",
+  "onboardingConsentTitle": "Твоя приватность",
+  "onboardingConsentBody": "Мы не передаём твою музыку в аналитику и рекламу. Можно помочь нам улучшать игру анонимной статистикой — это по желанию, и выбор можно поменять в настройках.",
   "onboardingConsentAnalytics": "Отправлять анонимную статистику",
   "onboardingConsentMinorNote": "Для игроков младше 16 лет статистика отключена.",
   "onboardingConsentStart": "Начать игру",
@@ -92,7 +92,7 @@
   },
   "settingsTerms": "Условия использования",
   "settingsPrivacyPolicy": "Политика конфиденциальности",
-  "paywallTitle": "Играйте без границ",
+  "paywallTitle": "Играй без границ",
   "paywallSubtitle": "Больше раундов, больше друзей, никакой рекламы.",
   "paywallPerkNoAds": "Без рекламы после игры",
   "paywallPerkRounds": "До 50 раундов в игре",
@@ -156,20 +156,20 @@
   "createRoomTitle": "Новая комната",
   "createRoomModeLabel": "Режим игры",
   "modeWhoseSong": "Чья это песня?",
-  "modeWhoseSongHint": "Угадайте, из чьей музыки фрагмент",
+  "modeWhoseSongHint": "Угадай, из чьей музыки фрагмент",
   "modeGuessTrack": "Угадай трек",
-  "modeGuessTrackHint": "Четыре варианта — назовите песню",
-  "displayNameLabel": "Ваше имя в игре",
+  "modeGuessTrackHint": "Четыре варианта — назови песню",
+  "displayNameLabel": "Твоё имя в игре",
   "displayNameInvalid": "От 2 до 20 символов",
   "createRoomAction": "Создать комнату",
-  "joinSubtitle": "Как вас называть в игре?",
+  "joinSubtitle": "Как тебя называть в игре?",
   "joinAction": "Войти в комнату",
-  "roomErrorNotFound": "Комната не найдена. Проверьте код",
+  "roomErrorNotFound": "Комната не найдена. Проверь код",
   "roomErrorFull": "В комнате нет свободных мест",
-  "roomErrorLocked": "Игра уже началась — дождитесь итогов",
-  "roomErrorRateLimited": "Слишком много попыток. Подождите минуту",
+  "roomErrorLocked": "Игра уже началась — дождись итогов",
+  "roomErrorRateLimited": "Слишком много попыток. Подожди минуту",
   "roomErrorNetwork": "Нет связи с сервером",
-  "roomErrorOther": "Что-то пошло не так. Попробуйте ещё раз",
+  "roomErrorOther": "Что-то пошло не так. Попробуй ещё раз",
   "lobbyTitle": "Лобби",
   "lobbyCodeLabel": "Код комнаты",
   "lobbyShare": "Пригласить",
@@ -211,9 +211,9 @@
     }
   },
   "lobbyHostBadge": "Ведущий",
-  "lobbyYouBadge": "Вы",
-  "lobbyReady": "Готов",
-  "lobbyNotReady": "Не готов",
+  "lobbyYouBadge": "Ты",
+  "lobbyReady": "На старте",
+  "lobbyNotReady": "Не на старте",
   "lobbyAway": "Переподключается",
   "lobbyConnecting": "Подключаемся к комнате…",
   "lobbyReconnecting": "Связь пропала. Переподключаемся…",
@@ -245,7 +245,7 @@
     }
   },
   "lobbyWaitingForHost": "Ведущий скоро начнёт игру",
-  "lobbyImReady": "Я готов",
+  "lobbyImReady": "Я на старте",
   "lobbyKick": "Удалить из комнаты",
   "lobbyReport": "Пожаловаться",
   "lobbyReportTitle": "Причина жалобы",
@@ -264,22 +264,22 @@
   "@commonLoading": {
     "description": "Screen-reader value of a button that is busy (spinner) [новое имя — согласовать]."
   },
-  "lobbyNoRoom": "Вы не в комнате",
+  "lobbyNoRoom": "Ты не в комнате",
   "lobbyBackHome": "На главную",
-  "roomEndedKicked": "Ведущий удалил вас из комнаты",
+  "roomEndedKicked": "Ведущий удалил тебя из комнаты",
   "roomEndedClosed": "Комната закрыта",
-  "roomEndedReplaced": "Вы открыли эту комнату на другом устройстве",
-  "roomEndedVersion": "Обновите приложение, чтобы играть",
+  "roomEndedReplaced": "Комната открыта на другом твоём устройстве",
+  "roomEndedVersion": "Обнови приложение, чтобы играть",
   "roomEndedLost": "Не удалось восстановить связь с комнатой",
   "errorNotHost": "Это может сделать только ведущий",
   "errorPoolInsufficient": "Игрокам не хватает песен для игры",
   "errorTierRequired": "Для этой настройки нужен Premium",
   "errorPlaybackUnavailable": "Телефон ведущего не может включить музыку",
   "errorInvalidState": "Сейчас это сделать нельзя",
-  "errorRateLimited": "Слишком быстро. Подождите секунду",
+  "errorRateLimited": "Слишком быстро. Подожди секунду",
   "errorGeneric": "Что-то пошло не так",
   "gameWaiting": "Ждём начала игры…",
-  "gameStartingTitle": "Приготовьтесь!",
+  "gameStartingTitle": "Приготовься!",
   "gameStartingRounds": "{count, plural, one{{count} раунд} few{{count} раунда} many{{count} раундов} other{{count} раунда}}",
   "@gameStartingRounds": {
     "placeholders": {
@@ -302,10 +302,10 @@
   "gameBonusRound": "Бонусный раунд",
   "gamePromptWhoseSong": "Чья это песня?",
   "gamePromptGuessTrack": "Что за трек?",
-  "gameListen": "Слушайте…",
-  "gameTapFast": "Жмите быстрее всех!",
+  "gameListen": "Слушай…",
+  "gameTapFast": "Жми быстрее всех!",
   "gameYourTrack": "Это твой трек!",
-  "gameYourTrackHint": "Смотрите, кто угадает",
+  "gameYourTrackHint": "Смотри, кто угадает",
   "gameAnswerSent": "Ответ отправлен",
   "gameAnswerAccepted": "Ответ принят!",
   "gameAnswerRejected": "Ответ не засчитан",
@@ -332,7 +332,7 @@
   },
   "revealWrong": "Мимо",
   "revealNoAnswer": "Без ответа",
-  "revealOwnerYou": "Это был ваш трек",
+  "revealOwnerYou": "Это был твой трек",
   "revealReaction": "Реакция: {seconds} с",
   "@revealReaction": {
     "placeholders": {
@@ -402,7 +402,7 @@
     }
   },
   "bonusCancelled": "Бонусного раунда не будет",
-  "bonusCancelledSsv": "Не удалось подтвердить просмотр. Извините!",
+  "bonusCancelledSsv": "Не удалось подтвердить просмотр. Извини!",
   "adBreakCounting": "Считаем очки…",
   "upsellTitle": "Играть без рекламы",
   "upsellPrice": "Играть без рекламы — {price}",
@@ -435,8 +435,8 @@
     }
   },
   "debugClockTitle": "Калибровка часов",
-  "debugClockHint": "Нажимайте на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.",
-  "debugClockTapArea": "Нажмите здесь",
+  "debugClockHint": "Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.",
+  "debugClockTapArea": "Нажми здесь",
   "debugClockPassed": "Часы совпадают ({count} замеров)",
   "@debugClockPassed": {
     "placeholders": {
@@ -472,13 +472,13 @@
   "@gameDjOpenApp": {
     "description": "DJ card button: hands the song to the DJ's own music app (Android play-from-search, iOS the server's hint link)."
   },
-  "gameDjOpenAppFailed": "Не получилось открыть приложение — найдите песню вручную",
+  "gameDjOpenAppFailed": "Не получилось открыть приложение — найди песню вручную",
   "gameDjMusicPlaying": "Музыка играет!",
   "@gameDjMusicPlaying": {
     "description": "The DJ taps it the moment the song starts; the touch time is the round's audio start (dj_tap)."
   },
-  "gameDjMusicPlayingHint": "Нажмите, как только песня зазвучит",
-  "gameDjWatchingTitle": "Вы диджей!",
+  "gameDjMusicPlayingHint": "Нажми, как только песня зазвучит",
+  "gameDjWatchingTitle": "Ты диджей!",
   "@gameDjWatchingTitle": {
     "description": "guess_track: the DJ may not answer (dj_ineligible)."
   },
@@ -487,11 +487,11 @@
   "@gameAnswerRejectedDj": {
     "description": "round.answer_ack with reason dj_ineligible."
   },
-  "gameTextRoundHint": "Раунд без музыки: читаем и угадываем",
+  "gameTextRoundHint": "Раунд без музыки: читай и угадывай",
   "@gameTextRoundHint": {
     "description": "Text round (provider none): no audio."
   },
-  "gameTextRoundLocked": "Приготовьтесь…",
+  "gameTextRoundLocked": "Приготовься…",
   "@gameTextRoundLocked": {
     "description": "Text round before the answer buttons unlock."
   },
@@ -499,7 +499,7 @@
   "mySongsTitle": "Мои песни",
   "mySongsSearchLabel": "Песня или исполнитель",
   "mySongsSearchEmpty": "Ничего не нашлось",
-  "mySongsSearchFailed": "Поиск не сработал. Проверьте интернет.",
+  "mySongsSearchFailed": "Поиск не сработал. Проверь интернет.",
   "mySongsSelected": "Выбрано {count} из {max}",
   "@mySongsSelected": {
     "placeholders": {
@@ -511,7 +511,7 @@
       }
     }
   },
-  "mySongsNeedMore": "{count, plural, one{Добавьте ещё {count} песню} few{Добавьте ещё {count} песни} many{Добавьте ещё {count} песен} other{Добавьте ещё {count} песни}}",
+  "mySongsNeedMore": "{count, plural, one{Добавь ещё {count} песню} few{Добавь ещё {count} песни} many{Добавь ещё {count} песен} other{Добавь ещё {count} песни}}",
   "@mySongsNeedMore": {
     "placeholders": {
       "count": {
@@ -530,8 +530,8 @@
   "mySongsSave": "Сохранить",
   "mySongsSaved": "Песни сохранены",
   "mySongsSaveFailed": "Не получилось сохранить",
-  "mySongsLoadFailed": "Не получилось загрузить ваши песни",
-  "mySongsEmpty": "Найдите от {min} до {max} любимых песен — друзья будут угадывать, чьи они",
+  "mySongsLoadFailed": "Не получилось загрузить твои песни",
+  "mySongsEmpty": "Найди от {min} до {max} любимых песен — друзья будут угадывать, чьи они",
   "@mySongsEmpty": {
     "placeholders": {
       "min": {
@@ -548,18 +548,18 @@
   "@mySongsPreviewTitle": {
     "description": "Privacy preview of the pool (design doc S1.9)."
   },
-  "mySongsPreviewBody": "Если в игре выпадет ваша песня, все увидят её название, исполнителя и что она ваша. Весь список целиком не увидит никто.",
+  "mySongsPreviewBody": "Если в игре выпадет твоя песня, все увидят её название, исполнителя и что она твоя. Весь список целиком не увидит никто.",
   "lobbyAddMySongs": "Добавить мои песни",
   "lobbyUpdateMySongs": "Обновить мои песни",
   "lobbyOpenMySongs": "Открыть «Мои песни»",
-  "lobbyPoolConsentBody": "Эти песни будут показаны комнате как ваши",
+  "lobbyPoolConsentBody": "Эти песни будут показаны комнате как твои",
   "@lobbyPoolConsentBody": {
     "description": "Consent line before PUT /v1/rooms/{room_id}/pool."
   },
   "lobbyPoolConsentConfirm": "Подтвердить",
-  "lobbyPoolSent": "Ваши песни в игре",
+  "lobbyPoolSent": "Твои песни в игре",
   "lobbyPoolFailed": "Не получилось добавить песни",
-  "lobbyPoolNeedPicks": "Сначала выберите хотя бы {min} песен в «Мои песни»",
+  "lobbyPoolNeedPicks": "Сначала выбери хотя бы {min} песен в «Мои песни»",
   "@lobbyPoolNeedPicks": {
     "placeholders": {
       "min": {
@@ -587,7 +587,7 @@
     }
   },
   "lobbyNeedAnyPool": "Хотя бы одному игроку нужно добавить свои песни",
-  "lobbyDjHint": "Вы диджей: включайте песни в своём музыкальном приложении, на колонке погромче",
+  "lobbyDjHint": "Ты диджей: включай песни в своём музыкальном приложении, на колонке погромче",
   "@lobbyDjHint": {
     "description": "Lobby hint for the host of an external_player (BYOP) room."
   },
@@ -599,7 +599,7 @@
   "@modeEmojiQuiz": {
     "description": "emoji_quiz game mode; since wave 4 the UI calls it «Угадай песню» (owner decision) [новое имя — согласовать]."
   },
-  "modeEmojiQuizHint": "Угадайте песню по эмодзи — музыка не нужна",
+  "modeEmojiQuizHint": "Угадай песню по эмодзи — музыка не нужна",
   "gamePromptEmoji": "Какая это песня?",
   "@gamePromptEmoji": {
     "description": "Question of an emoji round."
@@ -690,12 +690,12 @@
   },
   "gameYouTubeConsentBody": "Песня сыграет в официальном плеере YouTube. Когда он загружается, YouTube (Google) получает данные о твоём устройстве и может показать рекламу.",
   "gameYouTubeConsentAllow": "Разрешить",
-  "gameYouTubeConsentDecline": "Нет, включу сам",
-  "gameYouTubeFallback": "Видео не играет — включи песню сам",
+  "gameYouTubeConsentDecline": "Нет, включу вручную",
+  "gameYouTubeFallback": "Видео не играет — включи песню вручную",
   "@gameYouTubeFallback": {
     "description": "youtube_embed DJ fell back to the BYOP cue (every video failed)."
   },
-  "gameYouTubeWindowTooSmall": "Окно слишком маленькое для плеера YouTube. Разверни его или включи песню сам",
+  "gameYouTubeWindowTooSmall": "Окно слишком маленькое для плеера YouTube. Разверни его или включи песню вручную",
   "@gameYouTubeWindowTooSmall": {
     "description": "youtube_embed DJ: the window (split screen, a small window) cannot hold a legal player right now, so the DJ gets the cue until it grows [новое имя — согласовать]."
   },
@@ -790,7 +790,7 @@
   "@playerBadgeDj": {
     "description": "Tooltip of the DJ badge on a player avatar."
   },
-  "playerBadgeReady": "Готов",
+  "playerBadgeReady": "На старте",
   "@playerBadgeReady": {
     "description": "Tooltip of the ready badge on a player avatar."
   },

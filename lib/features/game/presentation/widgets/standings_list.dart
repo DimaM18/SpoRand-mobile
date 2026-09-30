@@ -15,7 +15,7 @@ import 'package:sporand/features/game/domain/game_state.dart';
 ///
 /// A row: rank, a rank-change arrow (with its words for screen readers),
 /// avatar, name, «+N» and the points. The leader's rank is gold with a
-/// trophy; the viewer's row is `primaryContainer` with «Вы».
+/// trophy; the viewer's row is `primaryContainer` with «Ты».
 class StandingsList extends StatelessWidget {
   const StandingsList({super.key, required this.rows});
 
@@ -209,7 +209,7 @@ class _StandingTile extends StatelessWidget {
   }
 }
 
-/// A player's name, then the leader's trophy and «Вы». The badges are
+/// A player's name, then the leader's trophy and «Ты». The badges are
 /// capped at [maxBadgeWidth] (they shrink first), so the name keeps its
 /// room. Shared by the standings and the final results.
 /// [новое имя — согласовать]

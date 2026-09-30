@@ -622,7 +622,7 @@ class YouTubePressPlayNote extends StatelessWidget {
 
 /// The round's status line in a slot tall enough for every text in
 /// [reserve] at the current width and text scale, so the answers below
-/// never move when the line changes from «Слушайте…» to «Жмите быстрее
+/// never move when the line changes from «Слушай…» to «Жми быстрее
 /// всех!».
 class _StatusSlot extends StatelessWidget {
   const _StatusSlot({required this.text, this.reserve = const []});
@@ -845,7 +845,7 @@ class DjMusicPlayingButton extends ConsumerWidget {
   final double minHeight;
   final bool done;
 
-  /// «Нажмите, как только песня зазвучит» under the label (and as the
+  /// «Нажми, как только песня зазвучит» under the label (and as the
   /// screen-reader hint); off under the YouTube player, whose note already
   /// says it.
   final bool showHint;
