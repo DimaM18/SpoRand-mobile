@@ -5,7 +5,7 @@
 ## Что нужно
 
 - Flutter 3.47.5 (stable); Xcode и Android SDK для нативных сборок.
-- Доступ на чтение к репозиторию шаблона `DimaM18/mobile-template` (после первого релиза v0.1.4+ — `DimaM18/mobile-template-flutter`): `flutter pub get` клонирует `mobile_kit` и `mobile_kit_clock` git'ом (на Mac хватит `gh auth setup-git`).
+- Доступ на чтение к репозиторию шаблона `DimaM18/mobile-template-flutter`: `flutter pub get` клонирует `mobile_kit` и `mobile_kit_clock` git'ом (на Mac хватит `gh auth setup-git`).
 - Для игры против локального сервера и для сквозного прогона — клон `DimaM18/SpoRand` рядом (`../SpoRand`) с Node 22+, pnpm и токеном пакетов шаблона (`README.md` там, «Пакеты шаблона»).
 
 ## Запуск
@@ -71,5 +71,5 @@ SKIP_BUILD=1 E2E_MOBILE_DIR="$PWD" ../SpoRand/scripts/e2e.sh     # бэкенд 
 
 ## CI и секреты
 
-- `mobile.yml`: `tool/template-check.mjs`, `flutter analyze`, `flutter test`. Секрет `TEMPLATE_READ_TOKEN` — fine-grained PAT с Contents: Read на `DimaM18/mobile-template`. Kit'ы переезжают в `DimaM18/mobile-template-flutter` (тегов там нет до первого релиза v0.1.4+; до тех пор оставь старый url и `ref: v0.1.3`). При первом переходе на него в одном коммите смени оба url в `pubspec.yaml`, область токена `TEMPLATE_READ_TOKEN` и правило `insteadOf` в `mobile.yml` и `e2e.yml` (`docs/CONSUMING.md` шаблона, §3.3 и §4).
+- `mobile.yml`: `tool/template-check.mjs`, `flutter analyze`, `flutter test`. Секрет `TEMPLATE_READ_TOKEN` — fine-grained PAT с Contents: Read на `DimaM18/mobile-template-flutter`. Kit'ы приходят оттуда с `ref: v0.1.4`. Версии идут в ногу с серверной частью: пакеты `@dimam18/*` в `DimaM18/SpoRand` нужно поднять до 0.1.4 отдельным PR после публикации серверных пакетов.
 - `e2e.yml`: выкачивает бэкенд на закреплённом коммите, `tool/contract.sh check`, сквозной прогон. Секреты: `BACKEND_READ_TOKEN` (fine-grained PAT с Contents: Read на `DimaM18/SpoRand`), `PACKAGES_READ_TOKEN` (classic PAT с `read:packages` для пакетов `@dimam18/*`, которые собирает бэкенд; без него — `GITHUB_TOKEN`, если владелец пакетов дал этому репозиторию доступ на чтение) и `TEMPLATE_READ_TOKEN`.

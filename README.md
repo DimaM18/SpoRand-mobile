@@ -260,7 +260,7 @@ sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --d
 ## Template packages (wave 8b)
 
 Since wave 8b the app's base is the template's Flutter packages, git dependencies on the private
-repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.3`; `pubspec.lock` pins the commit):
+repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.4`; `pubspec.lock` pins the commit):
 
 - `mobile_kit`: boot pipeline and runner (`runKitApp`), env and flavors, router and route guard,
   services (analytics, consent, auth, security, Remote Config, ads, purchases, links, crash),
@@ -269,13 +269,12 @@ repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.3`; `pubspec.lo
 - `mobile_kit_clock`: the anchored `InputClock`, pointer and frame timestamps, the timed tap
   target, the clock calibration page and the native input clock plugin (`InputClockApi`).
 
-`flutter pub get` needs read access to that repository: `gh auth setup-git` on a Mac, the
+`flutter pub get` needs read access to that repository (`TEMPLATE_READ_TOKEN` there: Contents: Read): `gh auth setup-git` on a Mac, the
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
 the same release tag `v<template version>`, the version the backend pins for `@dimam18/*`
 (`node tool/template-check.mjs` checks the tag format only; keep both repositories in lockstep by
-hand on a bump). From v0.1.4 the kits live in `DimaM18/mobile-template-flutter` (no tags until its
-first release; keep the url and `ref: v0.1.3` until then; mobile-template `docs/CONSUMING.md` §3.3
-and §4). For local
+hand on a bump; the backend's `@dimam18/*` packages must be bumped to 0.1.4 in a separate PR in
+`DimaM18/SpoRand`). For local
 co-development with the template use `pubspec_overrides.yaml` (git-ignored, never
 committed; the template's `docs/CONSUMING.md` §5.5).
 
