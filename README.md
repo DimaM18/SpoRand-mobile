@@ -272,8 +272,8 @@ repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.4`; `pu
 `flutter pub get` needs read access to that repository (`TEMPLATE_READ_TOKEN` there: Contents: Read): `gh auth setup-git` on a Mac, the
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
 the same release tag `v<template version>`, the same version as the backend's `@dimam18/*`
-(bump the backend first; `node tool/template-check.mjs` checks the tag format only, so keep both
-repositories in lockstep by hand). Order for 0.1.4: (1) the server packages `@dimam18/*` 0.1.4 are
+(bump the backend first; `node tool/template-check.mjs` checks the tag format and that the two refs are equal, but not the
+backend's version, so keep both repositories in lockstep by hand). Order for 0.1.4: (1) the server packages `@dimam18/*` 0.1.4 are
 published and the `DimaM18/SpoRand` PR bumping them merges; (2) here, run
 `tool/contract.sh sync <SpoRand checkout at that commit>` so `contract/SOURCE` pins a backend
 commit on 0.1.4, and commit; (3) merge this branch. For local
@@ -571,7 +571,7 @@ differ (Skia SIMD paths move a few anti-aliased pixels between CPUs).
 ```sh
 flutter analyze
 flutter test
-node tool/template-check.mjs            # each template ref is a release tag vX.Y.Z, no overrides
+node tool/template-check.mjs            # each template ref is a release tag vX.Y.Z, both refs equal, no overrides
 tool/contract.sh check <SpoRand checkout>   # contract/ is that checkout's contract and pin
 ```
 
