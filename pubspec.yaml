@@ -48,9 +48,9 @@ dependencies:
   # Template kits: git dependencies on the private template repository, pinned to the
   # release tag (mobile-template docs/CONSUMING.md, section 4; `pnpm run template:check`).
   mobile_kit:
-    git: { url: https://github.com/DimaM18/mobile-template.git, path: flutter/mobile_kit, ref: v0.1.0 }
+    git: { url: https://github.com/DimaM18/mobile-template.git, path: flutter/mobile_kit, ref: v0.1.2 }
   mobile_kit_clock:
-    git: { url: https://github.com/DimaM18/mobile-template.git, path: flutter/mobile_kit_clock, ref: v0.1.0 }
+    git: { url: https://github.com/DimaM18/mobile-template.git, path: flutter/mobile_kit_clock, ref: v0.1.2 }
 
   # Pure Dart helpers.
   # Grapheme clusters of emoji prompts (already in the lockfile via Flutter).
