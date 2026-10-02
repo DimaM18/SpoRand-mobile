@@ -39,10 +39,11 @@ The app is a thin client: the server builds the randomized plan, validates answe
 ## Template packages
 
 The base code (boot, services, screens, the input clock plugin) comes from the private template `mobile-template`, version **0.1.3**: `mobile_kit` and `mobile_kit_clock`, git dependencies in `pubspec.yaml` on `https://github.com/DimaM18/mobile-template.git` (`path: flutter/mobile_kit` / `flutter/mobile_kit_clock`, `ref: v0.1.3`; `pubspec.lock` pins the commit).
-- Both refs are the same release tag; `node tool/template-check.mjs` (a copy of the template's `scripts/template-check.mjs`) fails otherwise, and CI runs it. The backend pins the same version of the npm packages; a template bump is a PR in each repository.
+- `node tool/template-check.mjs` (a copy of the template's `scripts/template-check.mjs`) checks that each ref is a release tag `vX.Y.Z` and that no co-development overrides are committed; CI runs it. It does not compare the two refs with each other or with the backend's `@dimam18/*` version (there is no `package.json` here): keep both refs equal and in lockstep with the backend by hand on a bump. A template bump is a PR in each repository.
+- The template's Flutter kits are moving to `https://github.com/DimaM18/mobile-template-flutter.git`, which has no tags until its first release (v0.1.4 or later). Until then keep the url above with `ref: v0.1.3`. On the first bump to it, change both urls, the `TEMPLATE_READ_TOKEN` scope and the `insteadOf` rule in `mobile.yml` and `e2e.yml` in one commit (mobile-template `docs/CONSUMING.md` §3.3 and §4). Co-development then uses `../mobile-template-flutter`.
 - `flutter pub get` needs read access to the template repository: `gh auth setup-git` on a Mac, the `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session.
 - Shims (old base files kept as re-exports and adapters) are the 8b compatibility layer and go away in wave 8c. New code imports `package:mobile_kit/…` or SpoRand's own `sporand*` code directly.
-- A change to the base goes to the template first, then this repository bumps the refs. Never edit `~/.pub-cache` or a copy of a kit file here. Co-development uses `pubspec_overrides.yaml` (git-ignored); never commit it.
+- A change to the base goes to the template first, then this repository bumps the refs (mind the url change above). Never edit `~/.pub-cache` or a copy of a kit file here. Co-development uses `pubspec_overrides.yaml` (git-ignored); never commit it.
 
 ## Commands
 

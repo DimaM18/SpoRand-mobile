@@ -77,9 +77,9 @@ File? e2eServerLog() {
 }
 
 /// The emoji catalogue the server loaded (`E2E_EMOJI_CATALOG`, passed as
-/// `EMOJI_CATALOG_PATH` to the server by `scripts/e2e.sh`), else the seed
-/// file in the repository.
+/// `EMOJI_CATALOG_PATH` to the server by `scripts/e2e.sh`), else the backend's
+/// seed file in the sibling checkout `../SpoRand`.
 File e2eEmojiCatalogFile() {
   final path = Platform.environment['E2E_EMOJI_CATALOG'] ?? '';
-  return File(path.isNotEmpty ? path : '../server/data/emoji-songs.seed.json');
+  return File(path.isNotEmpty ? path : '../SpoRand/apps/server/data/emoji-songs.seed.json');
 }

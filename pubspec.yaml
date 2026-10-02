@@ -47,7 +47,8 @@ dependencies:
     path: packages/sporand_native
 
   # Template kits: git dependencies on the private template repository, pinned to the
-  # release tag (mobile-template docs/CONSUMING.md, section 4; `pnpm run template:check`).
+  # release tag (mobile-template docs/CONSUMING.md, section 4; `node tool/template-check.mjs`). From v0.1.4 the kits move to
+  # https://github.com/DimaM18/mobile-template-flutter.git (sections 3.3 and 4); change both urls then.
   mobile_kit:
     git: { url: https://github.com/DimaM18/mobile-template.git, path: flutter/mobile_kit, ref: v0.1.3 }
   mobile_kit_clock:

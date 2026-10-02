@@ -271,7 +271,11 @@ repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.3`; `pubspec.lo
 
 `flutter pub get` needs read access to that repository: `gh auth setup-git` on a Mac, the
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
-`v<the npm version of @dimam18/*>` (`pnpm run template:check` from the repository root). For local
+the same release tag `v<template version>`, the version the backend pins for `@dimam18/*`
+(`node tool/template-check.mjs` checks the tag format only; keep both repositories in lockstep by
+hand on a bump). From v0.1.4 the kits live in `DimaM18/mobile-template-flutter` (no tags until its
+first release; keep the url and `ref: v0.1.3` until then; mobile-template `docs/CONSUMING.md` §3.3
+and §4). For local
 co-development with the template use `pubspec_overrides.yaml` (git-ignored, never
 committed; the template's `docs/CONSUMING.md` §5.5).
 
@@ -566,7 +570,7 @@ differ (Skia SIMD paths move a few anti-aliased pixels between CPUs).
 ```sh
 flutter analyze
 flutter test
-node tool/template-check.mjs            # both template refs are one release tag, no overrides
+node tool/template-check.mjs            # each template ref is a release tag vX.Y.Z, no overrides
 tool/contract.sh check <SpoRand checkout>   # contract/ is that checkout's contract and pin
 ```
 

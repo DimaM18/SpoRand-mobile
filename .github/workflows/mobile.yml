@@ -30,7 +30,8 @@ jobs:
           flutter-version: 3.47.5
           cache: true
 
-      # Both pubspec refs are the same release tag vX.Y.Z, and no co-development overrides are
+      # Each pubspec ref is a release tag vX.Y.Z (equality of the two refs and lockstep with the
+      # backend are checked by hand on a bump), and no co-development overrides are
       # committed (a copy of the template's scripts/template-check.mjs).
       - name: Template packages pinned
         run: node tool/template-check.mjs
@@ -39,6 +40,8 @@ jobs:
       # GITHUB_TOKEN cannot read it. TEMPLATE_READ_TOKEN: a fine-grained PAT with Contents: Read on
       # the template repository only (mobile-template docs/CONSUMING.md, section 4). After every
       # third-party action, so the token sits in ~/.gitconfig only for the steps that need it.
+      # From v0.1.4 the kits live in DimaM18/mobile-template-flutter: change both pubspec urls,
+      # the token scope and this insteadOf rule in one commit (mobile-template docs/CONSUMING.md 3.3, 4).
       - name: Read access to the template repository
         env:
           TEMPLATE_READ_TOKEN: ${{ secrets.TEMPLATE_READ_TOKEN }}
