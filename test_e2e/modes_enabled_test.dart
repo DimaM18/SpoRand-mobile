@@ -1,7 +1,7 @@
 // End-to-end: `modes_enabled` (wave 4) with its default value, whose_song and
 // emoji_quiz. The audio mode guess_track stays in the code but is hidden: the
 // server refuses it at POST /v1/rooms and in lobby.update_settings, and the
-// app's mode picker offers only the enabled modes. See apps/mobile/README.md,
+// app's mode picker offers only the enabled modes. See README.md,
 // "End-to-end suite".
 @Timeout(Duration(minutes: 2))
 library;

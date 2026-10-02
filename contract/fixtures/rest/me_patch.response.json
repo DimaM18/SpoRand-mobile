@@ -1,0 +1,30 @@
+{
+  "user": {
+    "user_id": "0192b1a0-0000-7000-8000-000000000201",
+    "analytics_uid": "a1f3c9e07b5d4e2f8c6a0b1d9e7f3a5c",
+    "created_at": "2026-09-30T10:00:00Z",
+    "display_name": "Ania",
+    "locale": "pl-PL",
+    "age_band": "18_plus",
+    "country_code": "PL",
+    "consent_analytics": true,
+    "consent_ads_personalized": false,
+    "consent_updated_at": "2026-09-30T10:01:00Z",
+    "games_completed": 3
+  },
+  "entitlements": {
+    "no_ads": true,
+    "premium": false,
+    "items": [
+      {
+        "entitlement_id": "no_ads",
+        "active": true,
+        "product_id": "remove_ads",
+        "store": "app_store",
+        "source": "revenuecat",
+        "updated_at": "2026-09-30T10:05:00Z"
+      }
+    ]
+  },
+  "music_links": []
+}

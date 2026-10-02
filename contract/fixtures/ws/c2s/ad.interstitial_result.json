@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "type": "ad.interstitial_result",
+  "seq": 14,
+  "payload": {
+    "game_id": "0192b1a0-0000-7000-8000-000000000002",
+    "result": "shown",
+    "wait_ms": 640
+  }
+}

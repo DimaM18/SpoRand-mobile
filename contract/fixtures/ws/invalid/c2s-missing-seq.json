@@ -1,0 +1,12 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_envelope",
+  "note": "seq is required.",
+  "frame": {
+    "v": 1,
+    "type": "lobby.ready",
+    "payload": {
+      "ready": true
+    }
+  }
+}

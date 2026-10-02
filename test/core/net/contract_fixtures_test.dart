@@ -1,5 +1,5 @@
 // Contract drift test: every JSON fixture of packages/protocol (the single
-// source of truth for wire contracts) must round-trip through the app's
+// source of truth for wire contracts; pinned in contract/) must round-trip through the app's
 // hand-written DTOs in lib/core/net/protocol/, or be listed below with the
 // reason the app does not consume it. A new fixture therefore fails this test
 // until someone decides which of the two it is.
@@ -99,7 +99,7 @@ Object? _withoutNulls(Object? json) => switch (json) {
 
 Object? _normalize(Object? json) => _withoutNulls(jsonDecode(jsonEncode(json)));
 
-final _root = Directory('../../packages/protocol/fixtures');
+final _root = Directory('contract/fixtures');
 
 List<File> _jsonFiles(String relative) {
   final dir = relative.isEmpty ? _root : Directory('${_root.path}/$relative');
@@ -149,7 +149,7 @@ bool _rejects(String direction, JsonMap frame) {
 void main() {
   final skip = _root.existsSync()
       ? false
-      : 'packages/protocol is not checked out next to apps/mobile';
+      : 'contract/ is missing (tool/contract.sh sync)';
 
   group('packages/protocol fixtures round-trip through the app DTOs', () {
     test('every fixture is classified', () {

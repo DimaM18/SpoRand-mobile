@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Room is full",
+  "status": 409,
+  "code": "room_full",
+  "detail": "The room already has 8 players.",
+  "instance": "/v1/rooms/join"
+}

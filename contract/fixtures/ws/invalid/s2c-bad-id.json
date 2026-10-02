@@ -1,0 +1,14 @@
+{
+  "direction": "s2c",
+  "expected_kind": "invalid_payload",
+  "note": "Ids are UUIDv7.",
+  "frame": {
+    "v": 1,
+    "type": "round.start",
+    "seq": 8,
+    "payload": {
+      "round_id": "round-1",
+      "audio_start_server_ms": 1759212345678
+    }
+  }
+}

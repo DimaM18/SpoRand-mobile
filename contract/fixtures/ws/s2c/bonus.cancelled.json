@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "bonus.cancelled",
+  "seq": 20,
+  "payload": {
+    "bonus_id": "0192b1a0-0000-7000-8000-000000000601",
+    "reason": "offer_timeout"
+  }
+}

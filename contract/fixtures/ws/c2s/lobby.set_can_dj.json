@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "type": "lobby.set_can_dj",
+  "seq": 5,
+  "payload": {
+    "can_dj": true
+  }
+}

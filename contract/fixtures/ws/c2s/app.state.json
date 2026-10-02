@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "type": "app.state",
+  "seq": 3,
+  "payload": {
+    "state": "foreground"
+  }
+}

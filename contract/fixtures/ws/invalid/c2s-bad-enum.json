@@ -1,0 +1,13 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "Enum values are closed.",
+  "frame": {
+    "v": 1,
+    "type": "app.state",
+    "seq": 3,
+    "payload": {
+      "state": "suspended"
+    }
+  }
+}

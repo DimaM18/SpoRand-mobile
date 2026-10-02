@@ -1,0 +1,19 @@
+{
+  "v": 1,
+  "type": "lobby.update_settings",
+  "seq": 6,
+  "payload": {
+    "mode": "emoji_quiz",
+    "rounds_total": 10,
+    "explicit_filter": false,
+    "pool_sources": [
+      "catalog_picks"
+    ],
+    "emoji_markets": [
+      "intl",
+      "cis"
+    ],
+    "emoji_max_difficulty": 3,
+    "emoji_retro": true
+  }
+}

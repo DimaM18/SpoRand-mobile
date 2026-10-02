@@ -1,0 +1,22 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "Emoji markets are intl and pl only: owner decision, no Russian/CIS content.",
+  "frame": {
+    "v": 1,
+    "type": "lobby.update_settings",
+    "seq": 5,
+    "payload": {
+      "mode": "emoji_quiz",
+      "rounds_total": 10,
+      "explicit_filter": true,
+      "pool_sources": [
+        "catalog_picks"
+      ],
+      "emoji_markets": [
+        "ru"
+      ],
+      "emoji_max_difficulty": 2
+    }
+  }
+}

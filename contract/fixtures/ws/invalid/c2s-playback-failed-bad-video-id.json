@@ -1,0 +1,16 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "round.playback_failed.video_id is an 11-character YouTube id (wave 4).",
+  "frame": {
+    "v": 1,
+    "type": "round.playback_failed",
+    "seq": 10,
+    "payload": {
+      "round_id": "0192b1a0-0000-7000-8000-000000000301",
+      "reason": "embed_disabled",
+      "code": 150,
+      "video_id": "tEsTvIdEo01xx"
+    }
+  }
+}

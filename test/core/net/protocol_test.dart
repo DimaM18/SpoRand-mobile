@@ -158,9 +158,9 @@ void main() {
     });
   });
 
-  // Contract check against the golden fixtures of packages/protocol (read
-  // only). Skipped when the monorepo sibling is not checked out.
-  final fixtures = Directory('../../packages/protocol/fixtures/ws');
+  // Contract check against the golden fixtures of packages/protocol (the
+  // pinned copy in contract/, read only).
+  final fixtures = Directory('contract/fixtures/ws');
   group('packages/protocol golden fixtures', () {
     test('server fixtures parse into typed messages', () {
       final files = Directory('${fixtures.path}/s2c')
@@ -205,5 +205,5 @@ void main() {
         throwsA(isA<ProtocolFormatException>()),
       );
     });
-  }, skip: fixtures.existsSync() ? false : 'packages/protocol not present');
+  }, skip: fixtures.existsSync() ? false : 'contract/ is missing (tool/contract.sh sync)');
 }

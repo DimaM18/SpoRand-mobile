@@ -1,0 +1,40 @@
+{
+  "v": 1,
+  "type": "game.results",
+  "seq": 22,
+  "payload": {
+    "game_id": "0192b1a0-0000-7000-8000-000000000002",
+    "standings": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "rank": 1,
+        "points": 900,
+        "correct_count": 1,
+        "correct_reaction_ms_sum": 3120
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      }
+    ],
+    "rounds_played": 10,
+    "bonus_used": false
+  }
+}

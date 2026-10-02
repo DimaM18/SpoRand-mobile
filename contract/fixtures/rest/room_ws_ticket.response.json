@@ -1,0 +1,5 @@
+{
+  "ticket": "wst_4f9d2c7a1b8e6f3d0c5a9b2e",
+  "ticket_ttl_ms": 30000,
+  "ws_url": "wss://api.example.invalid/v1/ws"
+}

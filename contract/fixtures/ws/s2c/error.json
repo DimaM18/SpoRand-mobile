@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "type": "error",
+  "seq": 25,
+  "payload": {
+    "code": "not_host",
+    "message": "Only the host can start the game.",
+    "ref_type": "game.start"
+  }
+}

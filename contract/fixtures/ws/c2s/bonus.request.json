@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "bonus.request",
+  "seq": 12,
+  "payload": {
+    "bonus_id": "0192b1a0-0000-7000-8000-000000000601",
+    "app_check_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImV4YW1wbGUifQ.eyJzdWIiOiJleGFtcGxlIn0.c2lnbmF0dXJl"
+  }
+}

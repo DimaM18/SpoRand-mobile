@@ -1,0 +1,60 @@
+{
+  "pool_id": "0192b1a0-0000-7000-8000-000000000b01",
+  "room_id": "0192b1a0-0000-7000-8000-000000000001",
+  "player_id": "0192b1a0-0000-7000-8000-000000000101",
+  "provider": "external_player",
+  "pool_source": "catalog_picks",
+  "entries": [
+    {
+      "track_ref_id": "0192b1a0-0000-7000-8000-000000000a01",
+      "rank": 1,
+      "title": "Northern Lights",
+      "artists": [
+        "Test Artist",
+        "Example Choir"
+      ],
+      "primary_artist": "Test Artist"
+    },
+    {
+      "track_ref_id": "0192b1a0-0000-7000-8000-000000000a02",
+      "rank": 2,
+      "title": "Paper Boats",
+      "artists": [
+        "Sample Band"
+      ],
+      "primary_artist": "Sample Band"
+    },
+    {
+      "track_ref_id": "0192b1a0-0000-7000-8000-000000000a03",
+      "rank": 3,
+      "title": "Neon Rain",
+      "artists": [
+        "Placeholder Trio"
+      ],
+      "primary_artist": "Placeholder Trio"
+    },
+    {
+      "track_ref_id": "0192b1a0-0000-7000-8000-000000000a04",
+      "rank": 4,
+      "title": "Slow River",
+      "artists": [
+        "Test Artist"
+      ],
+      "primary_artist": "Test Artist"
+    },
+    {
+      "track_ref_id": "0192b1a0-0000-7000-8000-000000000a05",
+      "rank": 5,
+      "title": "Glass Hearts",
+      "artists": [
+        "Example Choir"
+      ],
+      "primary_artist": "Example Choir"
+    }
+  ],
+  "hidden_track_ref_ids": [
+    "0192b1a0-0000-7000-8000-000000000a05"
+  ],
+  "submitted_at": "2026-09-30T11:00:00Z",
+  "expires_at": "2026-09-30T14:00:00Z"
+}

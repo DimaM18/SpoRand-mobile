@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "hello",
+  "seq": 1,
+  "payload": {
+    "ticket": "wst_4f9d2c7a1b8e6f3d0c5a9b2e",
+    "app_version": "1.0.0",
+    "platform": "ios",
+    "last_seq": 41
+  }
+}

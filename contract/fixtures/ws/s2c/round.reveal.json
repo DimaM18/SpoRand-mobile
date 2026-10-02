@@ -1,0 +1,87 @@
+{
+  "v": 1,
+  "type": "round.reveal",
+  "seq": 15,
+  "payload": {
+    "round_id": "0192b1a0-0000-7000-8000-000000000301",
+    "correct_option_ids": [
+      "0192b1a0-0000-7000-8000-000000000403"
+    ],
+    "commit_salt": "b3c1f0e9d8a7b6c5d4e3f2a1b0c9d8e7",
+    "track": {
+      "title": "Northern Lights",
+      "artists": [
+        "Test Artist"
+      ],
+      "attribution": {
+        "provider": "test_catalog",
+        "text": "Music: Test Artist (commissioned, licensed)"
+      }
+    },
+    "owner_player_ids": [
+      "0192b1a0-0000-7000-8000-000000000103"
+    ],
+    "results": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "option_id": "0192b1a0-0000-7000-8000-000000000403",
+        "correct": true,
+        "reaction_ms": 3120,
+        "points": 900,
+        "streak": 1,
+        "validation": "ok"
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "option_id": "0192b1a0-0000-7000-8000-000000000401",
+        "correct": false,
+        "reaction_ms": 4410,
+        "points": 0,
+        "streak": 0,
+        "validation": "ok"
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "correct": false,
+        "points": 0,
+        "streak": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "correct": false,
+        "points": 0,
+        "streak": 0
+      }
+    ],
+    "standings": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "rank": 1,
+        "points": 900,
+        "correct_count": 1,
+        "correct_reaction_ms_sum": 3120
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "rank": 2,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      }
+    ]
+  }
+}

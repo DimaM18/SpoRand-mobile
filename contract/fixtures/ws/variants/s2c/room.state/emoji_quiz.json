@@ -1,0 +1,112 @@
+{
+  "v": 1,
+  "type": "room.state",
+  "seq": 4,
+  "payload": {
+    "room_id": "0192b1a0-0000-7000-8000-000000000001",
+    "room_code": "7KQ2MX",
+    "state": "lobby",
+    "host_player_id": "0192b1a0-0000-7000-8000-000000000101",
+    "players": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "display_name": "Ania",
+        "role": "host",
+        "is_contributor": true,
+        "is_playback_device": true,
+        "can_dj": true,
+        "connection": "connected",
+        "platform": "ios",
+        "ready": true,
+        "pool_track_count": 5,
+        "entitlements_snapshot": {
+          "no_ads": false,
+          "premium": false
+        }
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "display_name": "Bartek",
+        "role": "guest",
+        "is_contributor": true,
+        "is_playback_device": false,
+        "can_dj": false,
+        "connection": "connected",
+        "platform": "android",
+        "ready": true,
+        "pool_track_count": 5,
+        "entitlements_snapshot": {
+          "no_ads": true,
+          "premium": false
+        }
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "display_name": "Celina",
+        "role": "guest",
+        "is_contributor": true,
+        "is_playback_device": false,
+        "can_dj": false,
+        "connection": "connected",
+        "platform": "android",
+        "ready": true,
+        "pool_track_count": 5,
+        "entitlements_snapshot": {
+          "no_ads": false,
+          "premium": false
+        }
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "display_name": "Dima",
+        "role": "guest",
+        "is_contributor": false,
+        "is_playback_device": false,
+        "can_dj": false,
+        "connection": "connected",
+        "platform": "android",
+        "ready": true,
+        "pool_track_count": 0,
+        "entitlements_snapshot": {
+          "no_ads": false,
+          "premium": false
+        }
+      }
+    ],
+    "settings": {
+      "mode": "emoji_quiz",
+      "rounds_total": 10,
+      "max_players": 8,
+      "shuffle_strategy": "spread_constrained",
+      "explicit_filter": true,
+      "pool_sources": [
+        "catalog_picks"
+      ],
+      "emoji_markets": [
+        "pl",
+        "intl"
+      ],
+      "emoji_max_difficulty": 2,
+      "emoji_retro": false
+    },
+    "mode": "emoji_quiz",
+    "provider": "test_catalog",
+    "provider_capabilities": {
+      "playback": "scheduled",
+      "audio_source": "in_app",
+      "allows_monetization": true,
+      "allows_prefetch": true,
+      "allows_custom_offset": true,
+      "max_clip_ms": 30000,
+      "reveals_metadata_during_play": false,
+      "licensed_territories": [
+        "*"
+      ],
+      "requires_premium_host": false,
+      "supports_search": true
+    },
+    "audio_mode": "host_device",
+    "host_tier": "free",
+    "locked": false
+  }
+}

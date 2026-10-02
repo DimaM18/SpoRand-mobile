@@ -3,7 +3,7 @@ description: >-
   Native bridges of the SpoRand mobile app (internal code name): the
   scheduled clip player (ClipPlayerApi) and the music-app hand-off
   (MusicAppApi). The input clock lives in mobile_kit_clock. Code is generated
-  by Pigeon from apps/mobile/pigeons/; see README.md.
+  by Pigeon from pigeons/ (repository root); see README.md.
 version: 0.1.0
 publish_to: 'none'
 

@@ -1,0 +1,13 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "lobby.set_can_dj.can_dj is a boolean, not a string.",
+  "frame": {
+    "v": 1,
+    "type": "lobby.set_can_dj",
+    "seq": 5,
+    "payload": {
+      "can_dj": "yes"
+    }
+  }
+}

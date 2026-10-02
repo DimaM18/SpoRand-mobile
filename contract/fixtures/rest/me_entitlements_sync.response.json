@@ -1,0 +1,14 @@
+{
+  "no_ads": true,
+  "premium": false,
+  "items": [
+    {
+      "entitlement_id": "no_ads",
+      "active": true,
+      "product_id": "remove_ads",
+      "store": "app_store",
+      "source": "revenuecat",
+      "updated_at": "2026-09-30T10:05:00Z"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 // Pigeon definition of the scheduled clip player used by the playback device
 // for `test_catalog` and `licensed_clips` (brief §5 "When the audio started").
 //
-// Regenerate from apps/mobile:
+// Regenerate from the repository root:
 //   dart run pigeon --input pigeons/clip_player.dart
 import 'package:pigeon/pigeon.dart';
 

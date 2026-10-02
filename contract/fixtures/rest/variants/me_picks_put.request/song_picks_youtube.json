@@ -1,0 +1,22 @@
+{
+  "song_picks": [
+    {
+      "song_id": "0192b1a0-0000-7000-8000-000000000d01",
+      "youtube_video_id": "tEsTvIdEo01"
+    },
+    {
+      "song_id": "0192b1a0-0000-7000-8000-000000000d02",
+      "youtube_video_id": "tEsTvIdEo02"
+    },
+    {
+      "song_id": "0192b1a0-0000-7000-8000-000000000d03",
+      "youtube_video_id": "tEsTvIdEo03"
+    },
+    {
+      "song_id": "0192b1a0-0000-7000-8000-000000000d04"
+    },
+    {
+      "song_id": "0192b1a0-0000-7000-8000-000000000d05"
+    }
+  ]
+}

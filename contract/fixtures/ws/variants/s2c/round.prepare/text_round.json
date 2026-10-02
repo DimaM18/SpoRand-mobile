@@ -1,0 +1,43 @@
+{
+  "v": 1,
+  "type": "round.prepare",
+  "seq": 10,
+  "payload": {
+    "round_id": "0192b1a0-0000-7000-8000-000000000301",
+    "round_index": 0,
+    "kind": "regular",
+    "nonce": "4f1d9c2b7a6e5d3c2b1a0f9e8d7c6b5a",
+    "prompt": "text_round",
+    "options": [
+      {
+        "option_id": "0192b1a0-0000-7000-8000-000000000402",
+        "label": "Bartek",
+        "avatar": "owl"
+      },
+      {
+        "option_id": "0192b1a0-0000-7000-8000-000000000403",
+        "label": "Celina",
+        "avatar": "cat"
+      },
+      {
+        "option_id": "0192b1a0-0000-7000-8000-000000000401",
+        "label": "Ania",
+        "avatar": "fox"
+      }
+    ],
+    "you_are_owner": false,
+    "you_are_dj": false,
+    "start_at_server_ms": 1759212348178,
+    "start_at_mono_us": 834514845678,
+    "answer_window_ms": 15000,
+    "audio_start_source": "none",
+    "commit_hash": "fcb326c4a60b146025d44fa3758ccf983a9ce51c58ad53ae325186ab48767c35",
+    "text_prompt": {
+      "title": "Northern Lights",
+      "artists": [
+        "Test Artist",
+        "Example Choir"
+      ]
+    }
+  }
+}

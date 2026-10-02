@@ -1,0 +1,68 @@
+name: mobile
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-and-test:
+    name: Flutter analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Flutter 3.47.5
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+
+      # Both pubspec refs are the same release tag vX.Y.Z, and no co-development overrides are
+      # committed (a copy of the template's scripts/template-check.mjs).
+      - name: Template packages pinned
+        run: node tool/template-check.mjs
+
+      # mobile_kit and mobile_kit_clock are git dependencies on the private template repository;
+      # GITHUB_TOKEN cannot read it. TEMPLATE_READ_TOKEN: a fine-grained PAT with Contents: Read on
+      # the template repository only (mobile-template docs/CONSUMING.md, section 4). After every
+      # third-party action, so the token sits in ~/.gitconfig only for the steps that need it.
+      - name: Read access to the template repository
+        env:
+          TEMPLATE_READ_TOKEN: ${{ secrets.TEMPLATE_READ_TOKEN }}
+        run: |
+          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (mobile-template docs/CONSUMING.md)"; exit 1; }
+          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template".insteadOf "https://github.com/DimaM18/mobile-template"
+
+      - name: Install dependencies
+        run: flutter pub get --suppress-analytics
+
+      # Errors and warnings fail the build; infos are reported only.
+      # (`--fatal-infos=false` is rejected by the flutter CLI; this is the
+      # equivalent spelling.)
+      - name: Analyze
+        run: flutter analyze --suppress-analytics --no-fatal-infos
+
+      # The drift tests read the pinned contract copy in contract/.
+      - name: Test
+        run: flutter test --suppress-analytics --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore

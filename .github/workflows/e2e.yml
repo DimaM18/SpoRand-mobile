@@ -1,0 +1,116 @@
+name: e2e
+
+# End-to-end client <-> server suite (test_e2e/): the app's real Dart client stack (ApiClient,
+# WsClient, protocol DTOs, the Riverpod controllers) against the real Node server over real
+# sockets. The server is DimaM18/SpoRand at the commit contract/SOURCE pins; the same checkout
+# proves that contract/ is that commit's contract.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: client <-> server end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app
+
+      - name: Pinned backend commit
+        id: pin
+        run: |
+          commit="$(sed -n 's/^commit=//p' app/contract/SOURCE)"
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::contract/SOURCE has no commit=<sha>"; exit 1; }
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      # BACKEND_READ_TOKEN: a fine-grained PAT with Contents: Read on DimaM18/SpoRand only.
+      - name: Check the backend token
+        env:
+          BACKEND_READ_TOKEN: ${{ secrets.BACKEND_READ_TOKEN }}
+        run: test -n "$BACKEND_READ_TOKEN" || { echo "::error::set the BACKEND_READ_TOKEN secret (README.md, CI)"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          repository: DimaM18/SpoRand
+          ref: ${{ steps.pin.outputs.commit }}
+          token: ${{ secrets.BACKEND_READ_TOKEN }}
+          persist-credentials: false
+          path: backend
+
+      - name: The contract copy is the pinned backend's contract
+        run: app/tool/contract.sh check backend
+
+      # Version comes from the backend's package.json "packageManager" field.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: backend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      # The backend's committed .npmrc has only the @dimam18 scope line; the GitHub Packages token
+      # for the template packages goes to ~/.npmrc: PACKAGES_READ_TOKEN (a classic PAT with
+      # read:packages), or GITHUB_TOKEN when the package owner granted this repository Read access
+      # to each package (mobile-template docs/CONSUMING.md, 2.4).
+      - name: GitHub Packages token (read)
+        env:
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          printf '//npm.pkg.github.com/:_authToken=%s\n' "$PACKAGES_TOKEN" >> ~/.npmrc
+          chmod 600 ~/.npmrc
+
+      - name: Install (pnpm)
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Flutter 3.47.5
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+
+      # See mobile.yml.
+      - name: Read access to the template repository
+        env:
+          TEMPLATE_READ_TOKEN: ${{ secrets.TEMPLATE_READ_TOKEN }}
+        run: |
+          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (mobile-template docs/CONSUMING.md)"; exit 1; }
+          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template".insteadOf "https://github.com/DimaM18/mobile-template"
+
+      - name: Install (Flutter)
+        working-directory: app
+        run: flutter pub get --suppress-analytics
+
+      # Builds the backend workspace, starts apps/server on a free port with short timings (and a
+      # second instance with guess_track enabled), runs `flutter test test_e2e` here against them
+      # and stops them.
+      - name: End-to-end suite
+        env:
+          E2E_WORK_DIR: ${{ runner.temp }}/e2e
+          E2E_MOBILE_DIR: ${{ github.workspace }}/app
+        run: backend/scripts/e2e.sh
+
+      - name: Upload the server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-server-log
+          path: |
+            ${{ runner.temp }}/e2e/server.log
+            ${{ runner.temp }}/e2e/server-guess-track.log
+          if-no-files-found: ignore

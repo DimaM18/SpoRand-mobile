@@ -1,0 +1,84 @@
+{
+  "picks": [
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000801",
+      "position": 1,
+      "track": {
+        "catalog_track_id": "0192b1a0-0000-7000-8000-000000000801",
+        "provider": "test_catalog",
+        "title": "Northern Lights",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "duration_ms": 185000,
+        "explicit": false,
+        "artwork_url": "https://cdn.example.invalid/art/1.jpg"
+      }
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000802",
+      "position": 2,
+      "track": {
+        "catalog_track_id": "0192b1a0-0000-7000-8000-000000000802",
+        "provider": "test_catalog",
+        "title": "Paper Boats",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "duration_ms": 186000,
+        "explicit": false,
+        "artwork_url": "https://cdn.example.invalid/art/2.jpg"
+      }
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000803",
+      "position": 3,
+      "track": {
+        "catalog_track_id": "0192b1a0-0000-7000-8000-000000000803",
+        "provider": "test_catalog",
+        "title": "Neon Rain",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "duration_ms": 187000,
+        "explicit": false,
+        "artwork_url": "https://cdn.example.invalid/art/3.jpg"
+      }
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000804",
+      "position": 4,
+      "track": {
+        "catalog_track_id": "0192b1a0-0000-7000-8000-000000000804",
+        "provider": "test_catalog",
+        "title": "Slow River",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "duration_ms": 188000,
+        "explicit": false,
+        "artwork_url": "https://cdn.example.invalid/art/4.jpg"
+      }
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000805",
+      "position": 5,
+      "track": {
+        "catalog_track_id": "0192b1a0-0000-7000-8000-000000000805",
+        "provider": "test_catalog",
+        "title": "Glass Hearts",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "duration_ms": 189000,
+        "explicit": false,
+        "artwork_url": "https://cdn.example.invalid/art/5.jpg"
+      }
+    }
+  ]
+}

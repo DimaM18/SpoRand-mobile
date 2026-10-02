@@ -1,0 +1,230 @@
+{
+  "v": 1,
+  "type": "welcome",
+  "seq": 1,
+  "payload": {
+    "player_id": "0192b1a0-0000-7000-8000-000000000101",
+    "room": {
+      "room_id": "0192b1a0-0000-7000-8000-000000000001",
+      "room_code": "7KQ2MX",
+      "state": "lobby",
+      "host_player_id": "0192b1a0-0000-7000-8000-000000000101",
+      "players": [
+        {
+          "player_id": "0192b1a0-0000-7000-8000-000000000101",
+          "display_name": "Ania",
+          "role": "host",
+          "is_contributor": true,
+          "is_playback_device": true,
+          "can_dj": true,
+          "connection": "connected",
+          "platform": "ios",
+          "ready": true,
+          "pool_track_count": 5,
+          "entitlements_snapshot": {
+            "no_ads": false,
+            "premium": false
+          }
+        },
+        {
+          "player_id": "0192b1a0-0000-7000-8000-000000000102",
+          "display_name": "Bartek",
+          "role": "guest",
+          "is_contributor": true,
+          "is_playback_device": false,
+          "can_dj": false,
+          "connection": "connected",
+          "platform": "android",
+          "ready": true,
+          "pool_track_count": 5,
+          "entitlements_snapshot": {
+            "no_ads": true,
+            "premium": false
+          }
+        },
+        {
+          "player_id": "0192b1a0-0000-7000-8000-000000000103",
+          "display_name": "Celina",
+          "role": "guest",
+          "is_contributor": true,
+          "is_playback_device": false,
+          "can_dj": false,
+          "connection": "connected",
+          "platform": "android",
+          "ready": true,
+          "pool_track_count": 5,
+          "entitlements_snapshot": {
+            "no_ads": false,
+            "premium": false
+          }
+        },
+        {
+          "player_id": "0192b1a0-0000-7000-8000-000000000104",
+          "display_name": "Dima",
+          "role": "guest",
+          "is_contributor": false,
+          "is_playback_device": false,
+          "can_dj": false,
+          "connection": "connected",
+          "platform": "android",
+          "ready": true,
+          "pool_track_count": 0,
+          "entitlements_snapshot": {
+            "no_ads": false,
+            "premium": false
+          }
+        }
+      ],
+      "settings": {
+        "mode": "whose_song",
+        "rounds_total": 10,
+        "max_players": 8,
+        "shuffle_strategy": "spread_constrained",
+        "explicit_filter": false,
+        "pool_sources": [
+          "catalog_picks"
+        ]
+      },
+      "mode": "whose_song",
+      "provider": "test_catalog",
+      "provider_capabilities": {
+        "playback": "scheduled",
+        "audio_source": "in_app",
+        "allows_monetization": true,
+        "allows_prefetch": true,
+        "allows_custom_offset": true,
+        "max_clip_ms": 30000,
+        "reveals_metadata_during_play": false,
+        "licensed_territories": [
+          "*"
+        ],
+        "requires_premium_host": false,
+        "supports_search": true
+      },
+      "audio_mode": "host_device",
+      "host_tier": "free",
+      "locked": false
+    },
+    "config": {
+      "answer_grace_ms": 500,
+      "answer_window_ms": 15000,
+      "app_check_mode": "monitor",
+      "audio_output_latency_cap_ms": 500,
+      "bonus_offer_timeout_ms": 12000,
+      "bonus_sponsor_timeout_ms": 60000,
+      "byop_dj_interstitial": false,
+      "byop_dj_rotation": false,
+      "byop_start_timeout_ms": 20000,
+      "clock_quality_good_rtt_ms": 150,
+      "clock_quality_poor_rtt_ms": 300,
+      "clock_sync_burst_count": 8,
+      "clock_sync_burst_spacing_ms": 75,
+      "clock_sync_interval_ms": 5000,
+      "clock_sync_max_rtt_ms": 1000,
+      "clock_sync_window": 16,
+      "clock_upper_tolerance_ms": 50,
+      "default_provider": "external_player",
+      "emoji_answer_format": "title_artist",
+      "emoji_distractor_strategy": "mangled",
+      "emoji_markets_by_locale": {
+        "*": [
+          "intl",
+          "pl"
+        ],
+        "pl": [
+          "pl",
+          "intl"
+        ]
+      },
+      "emoji_min_year": 1980,
+      "emoji_mix_every_n_rounds": 0,
+      "exclude_played_in_room": true,
+      "geo_policy_fallback_country": "*",
+      "guess_track_dj_can_answer": false,
+      "host_reconnect_grace_ms": 30000,
+      "interstitial_cooldown_after_rewarded_s": 120,
+      "interstitial_enabled": true,
+      "interstitial_min_games_completed": 1,
+      "interstitial_min_interval_s": 180,
+      "join_fail_limit_per_min": 5,
+      "licensed_provider_enabled": false,
+      "licensed_territories": [],
+      "min_reaction_ms": 150,
+      "modes_enabled": [
+        "emoji_quiz",
+        "whose_song"
+      ],
+      "monetization_enabled": true,
+      "monetized_round_fallback_mode": "emoji_quiz",
+      "options_count": 4,
+      "plan_spare_rounds": 3,
+      "playback_report_timeout_ms": 1500,
+      "playback_start_timeout_ms": 5000,
+      "player_reconnect_grace_ms": 60000,
+      "pool_max_tracks_per_contributor": 50,
+      "pool_min_tracks_per_contributor": 5,
+      "preload_timeout_ms": 8000,
+      "prepare_lead_ms": 2500,
+      "providers_enabled_by_country": {
+        "*": [
+          "external_player",
+          "none"
+        ]
+      },
+      "rarity_alpha": 2,
+      "remove_ads_upsell_enabled": true,
+      "results_reveal_delay_ms": 5000,
+      "reveal_duration_ms": 5000,
+      "rewarded_bonus_cap_per_game": 1,
+      "rewarded_enabled": true,
+      "rewarded_in_premium_rooms": false,
+      "rewarded_who": "any",
+      "room_max_players_free": 8,
+      "room_max_players_premium": 12,
+      "room_ttl_s": 10800,
+      "rounds_free_default": 10,
+      "rounds_free_options": [
+        5,
+        10
+      ],
+      "rounds_premium_default": 15,
+      "rounds_premium_options": [
+        5,
+        10,
+        15,
+        25,
+        50
+      ],
+      "score_max_points": 1000,
+      "score_min_correct_points": 500,
+      "score_streak_bonus_cap": 300,
+      "score_streak_bonus_points": 100,
+      "shared_track_policy": "exclude",
+      "shuffle_strategy_guess_track": "spread_constrained",
+      "shuffle_strategy_whose_song": "spread_constrained",
+      "snippet_duration_ms": 15000,
+      "snippet_start_max_pct": 70,
+      "snippet_start_min_pct": 20,
+      "snippet_start_mode": "random_window",
+      "spotify_proto_enabled": false,
+      "spread_artist_gap": 3,
+      "spread_owner_gap": 1,
+      "ssv_optimistic_grant": false,
+      "ssv_wait_ms": 8000,
+      "starting_countdown_ms": 3000,
+      "suspicious_reaction_ms": 400,
+      "timing_tolerance_ms": 500,
+      "void_notice_ms": 1500,
+      "whose_song_dj_can_answer": false,
+      "whose_song_min_contributors": 3,
+      "whose_song_owner_can_answer": false,
+      "ws_max_msgs_per_s": 20,
+      "youtube_embed_enabled": true,
+      "youtube_metadata_ttl_days": 30,
+      "youtube_official_channel_ids": [],
+      "youtube_require_official_channel": false
+    },
+    "config_version": "e1eb9dfb9c654e15",
+    "server_version": "0.1.0"
+  }
+}

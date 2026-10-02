@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "room.player_left",
+  "seq": 6,
+  "payload": {
+    "player_id": "0192b1a0-0000-7000-8000-000000000104",
+    "reason": "left"
+  }
+}

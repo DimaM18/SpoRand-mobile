@@ -2,7 +2,7 @@
 // the real server. No audio and no DJ: every phone reads the same emoji,
 // gets the same four «Title — Artist» options in its own order, unlocks at
 // start_at on its own clock, and the host answers too. See
-// apps/mobile/README.md, "End-to-end suite".
+// README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;
 

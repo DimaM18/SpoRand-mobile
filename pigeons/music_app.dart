@@ -2,7 +2,7 @@
 // (external_player / BYOP, addendum A2.2). The app never plays the song: it
 // only asks the system to find it in whatever music app the DJ uses.
 //
-// Regenerate from apps/mobile:
+// Regenerate from the repository root:
 //   dart run pigeon --input pigeons/music_app.dart
 import 'package:pigeon/pigeon.dart';
 

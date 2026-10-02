@@ -1,0 +1,11 @@
+{
+  "direction": "c2s",
+  "expected_kind": "wrong_direction",
+  "note": "welcome is server -> client only.",
+  "frame": {
+    "v": 1,
+    "type": "welcome",
+    "seq": 6,
+    "payload": {}
+  }
+}

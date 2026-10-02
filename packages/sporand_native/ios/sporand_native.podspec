@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.version          = '0.0.1'
   s.summary          = 'SpoRand native bridges: scheduled clip player and music-app hand-off.'
   s.description      = <<-DESC
-Pigeon host APIs ClipPlayerApi and MusicAppApi (see apps/mobile/pigeons). The
+Pigeon host APIs ClipPlayerApi and MusicAppApi (see pigeons/ at the repository root). The
 input clock lives in the mobile_kit_clock plugin.
                        DESC
   s.homepage         = 'http://example.com'

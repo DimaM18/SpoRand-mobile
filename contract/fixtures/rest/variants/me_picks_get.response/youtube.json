@@ -1,0 +1,96 @@
+{
+  "picks": [
+    {
+      "position": 1,
+      "song_id": "0192b1a0-0000-7000-8000-000000000d01",
+      "song": {
+        "song_id": "0192b1a0-0000-7000-8000-000000000d01",
+        "title": "Northern Lights",
+        "artist_credit": "Test Artist feat. Example Choir",
+        "artists": [
+          "Test Artist",
+          "Example Choir"
+        ],
+        "primary_artist": "Test Artist",
+        "year": 2019,
+        "explicit": false,
+        "isrcs": [
+          "PLA011900001"
+        ],
+        "mbid": "3f2a9c1e-7b4d-4e8a-9c2f-1a2b3c4d5e6f"
+      },
+      "youtube_video_id": "tEsTvIdEo01"
+    },
+    {
+      "position": 2,
+      "song_id": "0192b1a0-0000-7000-8000-000000000d02",
+      "song": {
+        "song_id": "0192b1a0-0000-7000-8000-000000000d02",
+        "title": "Paper Boats",
+        "artist_credit": "Sample Band",
+        "artists": [
+          "Sample Band"
+        ],
+        "primary_artist": "Sample Band",
+        "year": 2021,
+        "explicit": false,
+        "isrcs": [
+          "PLA012100002"
+        ],
+        "mbid": "8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f"
+      },
+      "youtube_video_id": "tEsTvIdEo02"
+    },
+    {
+      "position": 3,
+      "song_id": "0192b1a0-0000-7000-8000-000000000d03",
+      "song": {
+        "song_id": "0192b1a0-0000-7000-8000-000000000d03",
+        "title": "Neon Rain",
+        "artist_credit": "Placeholder Trio",
+        "artists": [
+          "Placeholder Trio"
+        ],
+        "primary_artist": "Placeholder Trio",
+        "year": 2015,
+        "explicit": true,
+        "isrcs": []
+      }
+    },
+    {
+      "position": 4,
+      "song_id": "0192b1a0-0000-7000-8000-000000000d04",
+      "song": {
+        "song_id": "0192b1a0-0000-7000-8000-000000000d04",
+        "title": "Slow River",
+        "artist_credit": "Test Artist",
+        "artists": [
+          "Test Artist"
+        ],
+        "primary_artist": "Test Artist",
+        "year": 2008,
+        "explicit": false,
+        "isrcs": [
+          "PLA010800004",
+          "DEA010800004"
+        ],
+        "mbid": "0b9e8d7c-6f5a-4b3c-9d2e-1f0a9b8c7d6e"
+      }
+    },
+    {
+      "position": 5,
+      "song_id": "0192b1a0-0000-7000-8000-000000000d05",
+      "song": {
+        "song_id": "0192b1a0-0000-7000-8000-000000000d05",
+        "title": "Glass Hearts",
+        "artist_credit": "Example Choir",
+        "artists": [
+          "Example Choir"
+        ],
+        "primary_artist": "Example Choir",
+        "explicit": false,
+        "isrcs": []
+      }
+    }
+  ]
+}

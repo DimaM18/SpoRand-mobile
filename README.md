@@ -1,7 +1,20 @@
-# Mobile app (Flutter)
+# SpoRand-mobile
 
-Party music game client. Internal code name `sporand`; the public brand,
+Party music game client (Flutter). Internal code name `sporand`; the public brand,
 bundle ids and domain are still placeholders (owner question Q3, `docs/DEVELOPMENT.md` §12).
+
+**Two repositories.** Since 2026-10-02 the app lives here and the backend in
+`DimaM18/SpoRand` (contracts, game logic, server, admin console, all documentation).
+This repository was `apps/mobile` there; its history came along. References in this
+README and in code comments to `docs/DEVELOPMENT.md`, `docs/DEPLOY.md`, `packages/protocol`,
+`packages/game-core`, `apps/server` and `scripts/` point into `DimaM18/SpoRand`.
+
+- **The contract** is `contract/`: a copy of the backend's `packages/protocol/fixtures/` and
+  `generated/client-registry.json` at the commit `contract/SOURCE` pins. The drift tests read
+  only this copy. Update it with `tool/contract.sh sync <SpoRand checkout>`; never edit it by
+  hand (`contract/README.md`).
+- **How to run, check and sync** (in Russian): [`docs/RUN.md`](docs/RUN.md). Rules for AI
+  sessions: [`CLAUDE.md`](CLAUDE.md).
 
 ## Run
 
@@ -240,6 +253,9 @@ sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --d
 - `lib/contracts/` reserved for code generated from `packages/protocol`
 - `pigeons/` Pigeon definitions; `packages/sporand_native/` generated code +
   native implementations
+- `contract/` the pinned backend contract (fixtures, `client-registry.json`, `SOURCE`);
+  `tool/contract.sh` syncs and checks it, `tool/template-check.mjs` checks the template refs
+- `docs/RUN.md` how to run, check and sync (Russian); `.vscode/launch.json` run configurations
 
 ## Template packages (wave 8b)
 
@@ -256,7 +272,7 @@ repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.3`; `pubspec.lo
 `flutter pub get` needs read access to that repository: `gh auth setup-git` on a Mac, the
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
 `v<the npm version of @dimam18/*>` (`pnpm run template:check` from the repository root). For local
-co-development with the template use `apps/mobile/pubspec_overrides.yaml` (git-ignored, never
+co-development with the template use `pubspec_overrides.yaml` (git-ignored, never
 committed; the template's `docs/CONSUMING.md` §5.5).
 
 The old paths under `lib/` stay as shims, typedefs and adapters, so imports and tests did not
@@ -550,11 +566,14 @@ differ (Skia SIMD paths move a few anti-aliased pixels between CPUs).
 ```sh
 flutter analyze
 flutter test
+node tool/template-check.mjs            # both template refs are one release tag, no overrides
+tool/contract.sh check <SpoRand checkout>   # contract/ is that checkout's contract and pin
 ```
 
 ## End-to-end suite (`test_e2e/`)
 
-`scripts/e2e.sh` (repository root) builds the pnpm workspace, starts
+The backend's `scripts/e2e.sh` (in a `DimaM18/SpoRand` checkout; this app from
+`E2E_MOBILE_DIR`, default `../SpoRand-mobile`) builds the pnpm workspace, starts
 `apps/server` on a free port (`PORT=0` + `PORT_FILE`) with short timings, a
 memory analytics sink, the seed song source and `APP_CHECK_MODE=off`, then
 runs `flutter test test_e2e --dart-define=API_BASE_URL=http://127.0.0.1:<port>`
@@ -606,8 +625,8 @@ Without `API_BASE_URL` (or `E2E_API_BASE_URL`) the suites skip, so a plain
   WebView is not exercised.
 
 ```sh
-scripts/e2e.sh                                          # from the repo root
-SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
+E2E_MOBILE_DIR="$PWD" ../SpoRand/scripts/e2e.sh          # from this repository's root
+SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart E2E_MOBILE_DIR="$PWD" ../SpoRand/scripts/e2e.sh
 ```
 
 ## TODO(owner) before a store build
@@ -644,14 +663,17 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
 
 ## CI
 
-`.github/workflows/e2e.yml` runs `scripts/e2e.sh` (Node 22, pnpm, Flutter
-3.47.5) when the server, the packages or the app change.
+`.github/workflows/mobile.yml` runs on every push and pull request: Flutter 3.47.5,
+`node tool/template-check.mjs`, read access to the template repository
+(`TEMPLATE_READ_TOKEN`), `flutter pub get`, `flutter analyze --no-fatal-infos` (errors and
+warnings fail; infos are reported) and `flutter test --coverage` (the lcov report is uploaded as
+an artifact). The drift tests read `contract/`, so no backend access is needed.
 
-`.github/workflows/mobile.yml` runs on pushes and pull requests that touch
-`apps/mobile/`, `packages/protocol/fixtures/` or `packages/protocol/generated/`: Flutter 3.47.5, read access to the template
-repository (`TEMPLATE_READ_TOKEN`), `flutter pub get`, `flutter analyze --no-fatal-infos`
-(errors and warnings fail; infos are reported) and `flutter test --coverage` (the lcov report is
-uploaded as an artifact). The generated files are in the filter because
-`test/app/client_registry_test.dart` and `test/core/content_guard_test.dart` read
-`generated/client-registry.json`. Both workflows ran green on GitHub on the wave 8b branch
-(2026-10-02).
+`.github/workflows/e2e.yml` checks out `DimaM18/SpoRand` at the commit `contract/SOURCE` pins
+(`BACKEND_READ_TOKEN`: a fine-grained PAT with Contents: Read on that repository), runs
+`tool/contract.sh check` against it, installs the backend (`PACKAGES_READ_TOKEN` for the
+`@dimam18/*` packages, or `GITHUB_TOKEN` when each package grants this repository Read access)
+and runs its `scripts/e2e.sh` against this checkout.
+
+Before the split both workflows ran green on GitHub in `DimaM18/SpoRand` (wave 8b branch,
+2026-10-02); here they have not run yet.

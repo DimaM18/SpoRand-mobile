@@ -1,0 +1,18 @@
+{
+  "v": 1,
+  "type": "game.starting",
+  "seq": 9,
+  "payload": {
+    "game_id": "0192b1a0-0000-7000-8000-000000000002",
+    "rounds_total": 10,
+    "countdown_ms": 3000,
+    "prefetch": [
+      {
+        "clip_ref": "clip_0a1b2c3d4e5f6a7b",
+        "clip_url": "https://clips.example.invalid/c/0a1b2c3d4e5f6a7b.m4a?exp=1759213245&sig=Zm9vYmFyYmF6",
+        "expires_at_server_ms": 1759213245678,
+        "round_id": "0192b1a0-0000-7000-8000-000000000301"
+      }
+    ]
+  }
+}

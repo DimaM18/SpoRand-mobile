@@ -1,0 +1,11 @@
+{
+  "mode": "whose_song",
+  "provider": "test_catalog",
+  "settings": {
+    "rounds_total": 10,
+    "explicit_filter": false,
+    "pool_sources": [
+      "catalog_picks"
+    ]
+  }
+}

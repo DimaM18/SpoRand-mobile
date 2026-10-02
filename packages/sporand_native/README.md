@@ -19,8 +19,8 @@ on the same base as `mobile_kit_clock`. Native code never knows the process anch
 the Dart `InputClock` converts before anything reaches the protocol (Apple
 required-reason API 35F9.1: raw uptime never leaves the device).
 
-The `*.g.*` files are generated. Edit `apps/mobile/pigeons/*.dart` and run,
-from `apps/mobile`:
+The `*.g.*` files are generated. Edit `pigeons/*.dart` and run, from the
+repository root:
 
 ```sh
 dart run pigeon --input pigeons/clip_player.dart

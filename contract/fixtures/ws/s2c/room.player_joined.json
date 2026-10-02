@@ -1,0 +1,23 @@
+{
+  "v": 1,
+  "type": "room.player_joined",
+  "seq": 5,
+  "payload": {
+    "player": {
+      "player_id": "0192b1a0-0000-7000-8000-000000000104",
+      "display_name": "Dima",
+      "role": "guest",
+      "is_contributor": false,
+      "is_playback_device": false,
+      "can_dj": false,
+      "connection": "connected",
+      "platform": "android",
+      "ready": true,
+      "pool_track_count": 0,
+      "entitlements_snapshot": {
+        "no_ads": false,
+        "premium": false
+      }
+    }
+  }
+}

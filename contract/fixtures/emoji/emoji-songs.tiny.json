@@ -1,0 +1,360 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-30T00:00:00Z",
+  "license_note": "Test fixture: song titles and artist names only (facts, no lyrics, no audio, no artwork); emoji and decoys written by the SpoRand team. No Russian/CIS content (owner decision).",
+  "count": 16,
+  "songs": [
+    {
+      "id": "emo_intl_0001",
+      "title": "Bohemian Rhapsody",
+      "artist": "Queen",
+      "year": 1975,
+      "market": "intl",
+      "language": "en",
+      "genre": "rock",
+      "emoji": "🎭🎼👑",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Qveen",
+        "Queens",
+        "The Queen"
+      ],
+      "title_decoys": [
+        "Bohemian Rapsody",
+        "Bohemia Rhapsody",
+        "Bohemian Rhapsodie"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0002",
+      "title": "Yellow Submarine",
+      "artist": "The Beatles",
+      "year": 1966,
+      "market": "intl",
+      "language": "en",
+      "genre": "rock",
+      "emoji": "🟡🌊🚢",
+      "difficulty": 1,
+      "artist_decoys": [
+        "The Beatels",
+        "Beatles",
+        "The Beetles"
+      ],
+      "title_decoys": [
+        "Yelow Submarine",
+        "Yellow Submarines",
+        "Yellow Submarin"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0003",
+      "title": "Purple Rain",
+      "artist": "Prince",
+      "year": 1984,
+      "market": "intl",
+      "language": "en",
+      "genre": "pop",
+      "emoji": "🟣🌧️",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Prinse",
+        "Princes",
+        "Prince & The Revolutions"
+      ],
+      "title_decoys": [
+        "Purple Rains",
+        "Purpel Rain",
+        "Purple Reign"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0004",
+      "title": "Hotel California",
+      "artist": "Eagles",
+      "year": 1976,
+      "market": "intl",
+      "language": "en",
+      "genre": "rock",
+      "emoji": "🏨🌴☀️",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Eagels",
+        "The Eagle",
+        "Egles"
+      ],
+      "title_decoys": [
+        "Hotel Kalifornia",
+        "Hotell California",
+        "Hotel Californya"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0005",
+      "title": "Smells Like Teen Spirit",
+      "artist": "Nirvana",
+      "year": 1991,
+      "market": "intl",
+      "language": "en",
+      "genre": "rock",
+      "emoji": "👃🧒👻",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Nirwana",
+        "Nirvanna",
+        "Nirvanas"
+      ],
+      "title_decoys": [
+        "Smells Like Teen Spirits",
+        "Smell Like Teen Spirit",
+        "Smells Like Teen Sprit"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0006",
+      "title": "Billie Jean",
+      "artist": "Michael Jackson",
+      "year": 1982,
+      "market": "intl",
+      "language": "en",
+      "genre": "pop",
+      "emoji": "👧👖",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Michael Jacksons",
+        "Micheal Jackson",
+        "Michael Jakson"
+      ],
+      "title_decoys": [
+        "Billy Jean",
+        "Billie Jeans",
+        "Bille Jean"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0007",
+      "title": "Umbrella",
+      "artist": "Rihanna",
+      "year": 2007,
+      "market": "intl",
+      "language": "en",
+      "genre": "rnb",
+      "emoji": "☂️🌧️",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Rhianna",
+        "Rihana",
+        "Rihannah"
+      ],
+      "title_decoys": [
+        "Umbrela",
+        "Umbrellas",
+        "Umberella"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0008",
+      "title": "Despacito",
+      "artist": "Luis Fonsi",
+      "year": 2017,
+      "market": "intl",
+      "language": "es",
+      "genre": "latin",
+      "emoji": "🐌💃",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Louis Fonsi",
+        "Luis Fonzi",
+        "Luiz Fonsi"
+      ],
+      "title_decoys": [
+        "Despasito",
+        "Despacitos",
+        "Despaccito"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0009",
+      "title": "Wonderwall",
+      "artist": "Oasis",
+      "year": 1995,
+      "market": "intl",
+      "language": "en",
+      "genre": "rock",
+      "emoji": "🤩🧱",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Oasys",
+        "Oases",
+        "The Oasis"
+      ],
+      "title_decoys": [
+        "Wonder Wall",
+        "Wonderwal",
+        "Wanderwall"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0010",
+      "title": "Blinding Lights",
+      "artist": "The Weeknd",
+      "year": 2019,
+      "market": "intl",
+      "language": "en",
+      "genre": "pop",
+      "emoji": "🙈💡💡",
+      "difficulty": 2,
+      "artist_decoys": [
+        "The Weekend",
+        "Weeknd",
+        "The Weeknds"
+      ],
+      "title_decoys": [
+        "Blinding Light",
+        "Blindin Lights",
+        "Blinded Lights"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0011",
+      "title": "Wake Me Up",
+      "artist": "Avicii",
+      "year": 2013,
+      "market": "intl",
+      "language": "en",
+      "genre": "electronic",
+      "emoji": "⏰😴⬆️",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Avici",
+        "Aviccii",
+        "Avicci"
+      ],
+      "title_decoys": [
+        "Wake Me Upp",
+        "Wake Mi Up",
+        "Wakes Me Up"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_intl_0012",
+      "title": "Lose Yourself",
+      "artist": "Eminem",
+      "year": 2002,
+      "market": "intl",
+      "language": "en",
+      "genre": "hiphop",
+      "emoji": "❌🫵🪞",
+      "difficulty": 3,
+      "artist_decoys": [
+        "Eminen",
+        "Emimem",
+        "M&M"
+      ],
+      "title_decoys": [
+        "Loose Yourself",
+        "Lose Yourselves",
+        "Lose Urself"
+      ],
+      "explicit": true
+    },
+    {
+      "id": "emo_pl_0001",
+      "title": "Dziwny jest ten świat",
+      "artist": "Czesław Niemen",
+      "year": 1967,
+      "market": "pl",
+      "language": "pl",
+      "genre": "rock",
+      "emoji": "🤔🌍",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Czesław Nieman",
+        "Czesiek Niemen",
+        "Czeslaw Niemenn"
+      ],
+      "title_decoys": [
+        "Dziwny jest ten swiat",
+        "Dziwny był ten świat",
+        "Dziwny jest ten kwiat"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_pl_0002",
+      "title": "Autobiografia",
+      "artist": "Perfect",
+      "year": 1981,
+      "market": "pl",
+      "language": "pl",
+      "genre": "rock",
+      "emoji": "🚗📖✍️",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Perfekt",
+        "Perfecto",
+        "The Perfect"
+      ],
+      "title_decoys": [
+        "Autobiografija",
+        "Autobiografie",
+        "Autobjografia"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_pl_0003",
+      "title": "Małomiasteczkowy",
+      "artist": "Dawid Podsiadło",
+      "year": 2018,
+      "market": "pl",
+      "language": "pl",
+      "genre": "pop",
+      "emoji": "🤏🏘️",
+      "difficulty": 2,
+      "artist_decoys": [
+        "Dawid Podsiadlo",
+        "Dawid Podsiadła",
+        "David Podsiadło"
+      ],
+      "title_decoys": [
+        "Malomiasteczkowy",
+        "Małomiasteczkowi",
+        "Małomiastowy"
+      ],
+      "explicit": false
+    },
+    {
+      "id": "emo_pl_0004",
+      "title": "Tamta dziewczyna",
+      "artist": "Sylwia Grzeszczak",
+      "year": 2016,
+      "market": "pl",
+      "language": "pl",
+      "genre": "pop",
+      "emoji": "👉👧",
+      "difficulty": 1,
+      "artist_decoys": [
+        "Sylwia Grzeszczyk",
+        "Sylvia Grzeszczak",
+        "Sylwia Grześczak"
+      ],
+      "title_decoys": [
+        "Tamta dziewczynka",
+        "Ta dziewczyna",
+        "Tamte dziewczyny"
+      ],
+      "explicit": false
+    }
+  ]
+}

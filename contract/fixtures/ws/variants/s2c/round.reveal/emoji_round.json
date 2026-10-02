@@ -1,0 +1,88 @@
+{
+  "v": 1,
+  "type": "round.reveal",
+  "seq": 15,
+  "payload": {
+    "round_id": "0192b1a0-0000-7000-8000-000000000301",
+    "correct_option_ids": [
+      "0192b1a0-0000-7000-8000-000000000403"
+    ],
+    "commit_salt": "b3c1f0e9d8a7b6c5d4e3f2a1b0c9d8e7",
+    "track": {
+      "title": "Bohemian Rhapsody",
+      "artists": [
+        "Queen"
+      ],
+      "attribution": {
+        "provider": "none"
+      },
+      "year": 1975
+    },
+    "owner_player_ids": [],
+    "results": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "option_id": "0192b1a0-0000-7000-8000-000000000403",
+        "correct": true,
+        "reaction_ms": 2480,
+        "points": 917,
+        "streak": 1,
+        "validation": "ok"
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "option_id": "0192b1a0-0000-7000-8000-000000000401",
+        "correct": false,
+        "reaction_ms": 3120,
+        "points": 0,
+        "streak": 0,
+        "validation": "ok"
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "option_id": "0192b1a0-0000-7000-8000-000000000403",
+        "correct": true,
+        "reaction_ms": 6900,
+        "points": 770,
+        "streak": 1,
+        "validation": "ok"
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "correct": false,
+        "points": 0,
+        "streak": 0
+      }
+    ],
+    "standings": [
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000101",
+        "rank": 1,
+        "points": 917,
+        "correct_count": 1,
+        "correct_reaction_ms_sum": 2480
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000103",
+        "rank": 2,
+        "points": 770,
+        "correct_count": 1,
+        "correct_reaction_ms_sum": 6900
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000102",
+        "rank": 3,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      },
+      {
+        "player_id": "0192b1a0-0000-7000-8000-000000000104",
+        "rank": 3,
+        "points": 0,
+        "correct_count": 0,
+        "correct_reaction_ms_sum": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "type": "player.entitlements_updated",
+  "seq": 23,
+  "payload": {
+    "player_id": "0192b1a0-0000-7000-8000-000000000102",
+    "no_ads": true,
+    "premium": false
+  }
+}

@@ -1,0 +1,39 @@
+{
+  // Flutter run configurations. Start the local server first, in a DimaM18/SpoRand checkout:
+  //   pnpm -r build && pnpm --filter @sporand/server dev
+  // Pick the simulator or emulator in the VS Code device selector before launching.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "dev: local server + iOS simulator",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=API_BASE_URL=http://localhost:8080",
+        "--dart-define=ROOM_PROVIDER=external_player"
+      ]
+    },
+    {
+      "name": "dev: local server + Android emulator",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=API_BASE_URL=http://10.0.2.2:8080",
+        "--dart-define=ROOM_PROVIDER=external_player"
+      ]
+    },
+    {
+      "name": "dev: offline fakes",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=FLAVOR=dev"
+      ]
+    }
+  ]
+}

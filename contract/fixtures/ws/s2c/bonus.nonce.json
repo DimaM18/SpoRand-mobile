@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "type": "bonus.nonce",
+  "seq": 18,
+  "payload": {
+    "bonus_id": "0192b1a0-0000-7000-8000-000000000601",
+    "reward_nonce": "9f1c2b3a4d5e6f708192a3b4c5d6e7f8",
+    "ssv_user_id": "u_3q2x9KfPz7LmN4aB8cD1eF"
+  }
+}

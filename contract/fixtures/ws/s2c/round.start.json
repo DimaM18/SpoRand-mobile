@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "round.start",
+  "seq": 11,
+  "payload": {
+    "round_id": "0192b1a0-0000-7000-8000-000000000301",
+    "audio_start_server_ms": 1759212348190
+  }
+}

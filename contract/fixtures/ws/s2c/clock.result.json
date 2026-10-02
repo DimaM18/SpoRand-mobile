@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "clock.result",
+  "seq": 3,
+  "payload": {
+    "offset_us": -1758377833332322,
+    "rtt_min_us": 38000,
+    "samples": 8,
+    "quality": "good"
+  }
+}

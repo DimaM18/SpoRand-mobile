@@ -1,0 +1,6 @@
+{
+  "v": 1,
+  "type": "room.leave",
+  "seq": 16,
+  "payload": {}
+}

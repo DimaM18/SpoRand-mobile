@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "round.playback_failed",
+  "seq": 10,
+  "payload": {
+    "round_id": "0192b1a0-0000-7000-8000-000000000301",
+    "reason": "clip_load_failed"
+  }
+}

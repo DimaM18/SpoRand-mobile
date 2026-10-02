@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "game.ad_break",
+  "seq": 21,
+  "payload": {
+    "game_id": "0192b1a0-0000-7000-8000-000000000002",
+    "results_reveal_at_server_ms": 1759212350678,
+    "show_interstitial": true,
+    "show_remove_ads_upsell": true
+  }
+}

@@ -1,7 +1,7 @@
 // End-to-end: whose_song with provider external_player and
 // byop_dj_rotation on (scripts/e2e.sh). Three of four players opt in with
 // «Могу включать музыку» (`lobby.set_can_dj`; the host is in by default);
-// the server picks each round's DJ among them. See apps/mobile/README.md,
+// the server picks each round's DJ among them. See README.md,
 // "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;

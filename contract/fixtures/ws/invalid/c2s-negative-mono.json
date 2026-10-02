@@ -1,0 +1,17 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "Device clock values are non-negative microseconds.",
+  "frame": {
+    "v": 1,
+    "type": "round.answer",
+    "seq": 4,
+    "payload": {
+      "round_id": "0192b1a0-0000-7000-8000-000000000301",
+      "nonce": "4f1d9c2b7a6e5d3c2b1a0f9e8d7c6b5a",
+      "option_id": "0192b1a0-0000-7000-8000-000000000403",
+      "tap_mono_us": -5,
+      "unlock_mono_us": 834514853678
+    }
+  }
+}

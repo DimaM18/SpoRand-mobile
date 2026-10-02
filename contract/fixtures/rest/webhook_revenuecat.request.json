@@ -1,0 +1,15 @@
+{
+  "api_version": "1.0",
+  "event": {
+    "id": "CD489E0E-5D0B-4E5A-8C4F-5B2C3A1D9E7F",
+    "type": "NON_RENEWING_PURCHASE",
+    "app_user_id": "0192b1a0-0000-7000-8000-000000000201",
+    "product_id": "remove_ads",
+    "store": "APP_STORE",
+    "environment": "SANDBOX",
+    "event_timestamp_ms": 1759212400000,
+    "entitlement_ids": [
+      "no_ads"
+    ]
+  }
+}

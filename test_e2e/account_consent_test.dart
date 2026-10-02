@@ -5,7 +5,7 @@
 //   server analytics for that user, and drops them again after a revoke.
 // The server runs with ANALYTICS_SINK=console (scripts/e2e.sh), so accepted
 // server events are lines of its log (E2E_SERVER_LOG). See
-// apps/mobile/README.md, "End-to-end suite".
+// README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 2))
 library;
 

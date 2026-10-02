@@ -1,0 +1,16 @@
+{
+  "direction": "c2s",
+  "expected_kind": "invalid_payload",
+  "note": "Optional fields must be omitted, never null.",
+  "frame": {
+    "v": 1,
+    "type": "hello",
+    "seq": 2,
+    "payload": {
+      "ticket": "wst_4f9d2c7a1b8e6f3d0c5a9b2e",
+      "app_version": "1.0.0",
+      "platform": "ios",
+      "last_seq": null
+    }
+  }
+}

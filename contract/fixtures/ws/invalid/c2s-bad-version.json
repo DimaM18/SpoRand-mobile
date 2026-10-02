@@ -1,0 +1,13 @@
+{
+  "direction": "c2s",
+  "expected_kind": "unsupported_version",
+  "note": "Only protocol v1 exists.",
+  "frame": {
+    "v": 2,
+    "type": "lobby.ready",
+    "seq": 5,
+    "payload": {
+      "ready": true
+    }
+  }
+}

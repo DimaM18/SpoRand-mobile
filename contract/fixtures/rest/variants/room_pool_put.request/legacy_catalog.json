@@ -1,0 +1,25 @@
+{
+  "pool_source": "catalog_picks",
+  "tracks": [
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000801",
+      "rank": 1
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000802",
+      "rank": 2
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000803",
+      "rank": 3
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000804",
+      "rank": 4
+    },
+    {
+      "catalog_track_id": "0192b1a0-0000-7000-8000-000000000805",
+      "rank": 5
+    }
+  ]
+}

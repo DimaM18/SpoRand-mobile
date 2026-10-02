@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "type": "lobby.ready",
+  "seq": 4,
+  "payload": {
+    "ready": true
+  }
+}

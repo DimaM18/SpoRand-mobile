@@ -1,0 +1,13 @@
+{
+  "direction": "c2s",
+  "expected_kind": "unknown_type",
+  "note": "There is no chat in the MVP.",
+  "frame": {
+    "v": 1,
+    "type": "lobby.chat",
+    "seq": 7,
+    "payload": {
+      "text": "hi"
+    }
+  }
+}

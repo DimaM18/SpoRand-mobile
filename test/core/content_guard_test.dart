@@ -9,7 +9,7 @@ import 'package:sporand/core/analytics/analytics_service.dart';
 // Wave 8b: the Dart content guard is the mirror of SPORAND_CONTENT_GUARD
 // (packages/protocol), which generate publishes in client-registry.json.
 final _registry = File(
-  '../../packages/protocol/generated/client-registry.json',
+  'contract/generated/client-registry.json',
 );
 
 void main() {
@@ -19,7 +19,7 @@ void main() {
       readClientRegistry(_registry.path),
       contentGuard: sporandContentGuard,
     );
-  }, skip: _registry.existsSync() ? false : 'packages/protocol is missing');
+  }, skip: _registry.existsSync() ? false : 'contract/ is missing (tool/contract.sh sync)');
 
   test('the analytics service always uses it', () {
     final analytics = AnalyticsService(backend: InMemoryAnalyticsBackend());

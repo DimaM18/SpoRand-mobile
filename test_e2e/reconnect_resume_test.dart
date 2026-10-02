@@ -1,6 +1,6 @@
 // End-to-end: a guest loses its connection in the middle of a BYOP round and
 // resumes with `hello.last_seq` (brief §4.3 replay), then answers the round
-// it half missed. See apps/mobile/README.md, "End-to-end suite".
+// it half missed. See README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;
 

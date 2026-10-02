@@ -5,7 +5,7 @@
 // `flutter test`): the suite drives what the player widget reports to
 // `GameController` (consent answer, player errors) and checks what goes over
 // the wire. Video ids are made up; nothing calls YouTube. See
-// apps/mobile/README.md, "End-to-end suite".
+// README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 4))
 library;
 

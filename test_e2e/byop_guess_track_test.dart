@@ -3,7 +3,7 @@
 // the DJ never starts is voided after `byop_start_timeout_ms` and replaced
 // by a spare `void_notice_ms` later. guess_track is hidden by default since
 // wave 4 (`modes_enabled`), so this suite runs on the second server of
-// scripts/e2e.sh, which enables it. See apps/mobile/README.md, "End-to-end
+// scripts/e2e.sh, which enables it. See README.md, "End-to-end
 // suite".
 @Timeout(Duration(minutes: 3))
 library;

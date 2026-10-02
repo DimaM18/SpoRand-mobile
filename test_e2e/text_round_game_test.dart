@@ -1,6 +1,6 @@
 // End-to-end: a whose_song game with provider none (text rounds without
 // audio, addendum A2.1 plan C) between three simulated phones and the real
-// server. See apps/mobile/README.md, "End-to-end suite".
+// server. See README.md, "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;
 

@@ -1,0 +1,14 @@
+{
+  "v": 1,
+  "type": "lobby.update_settings",
+  "seq": 5,
+  "payload": {
+    "mode": "whose_song",
+    "rounds_total": 10,
+    "shuffle_strategy": "spread_constrained",
+    "explicit_filter": false,
+    "pool_sources": [
+      "catalog_picks"
+    ]
+  }
+}

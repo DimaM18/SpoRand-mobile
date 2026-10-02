@@ -1,0 +1,12 @@
+{
+  "type": "about:blank",
+  "title": "Request body is invalid",
+  "status": 400,
+  "code": "validation_failed",
+  "errors": [
+    {
+      "path": "/room_code",
+      "message": "must match pattern \"^[0-9A-HJKMNP-TV-Z]{6}$\""
+    }
+  ]
+}

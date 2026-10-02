@@ -1,0 +1,11 @@
+{
+  "packs": [
+    {
+      "pack_id": "0192b1a0-0000-7000-8000-000000000901",
+      "name": "Party Hits (test catalogue)",
+      "track_count": 120,
+      "explicit": false,
+      "locale": "pl"
+    }
+  ]
+}

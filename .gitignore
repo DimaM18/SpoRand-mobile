@@ -46,3 +46,15 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# SpoRand
+# Local co-development with the template (mobile-template docs/CONSUMING.md 5.5); never committed.
+pubspec_overrides.yaml
+/ios/Pods/
+/ios/.symlinks/
+/android/.gradle/
+/android/local.properties
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+# A backend checkout for tool/contract.sh or the e2e suite, if you keep it inside this one.
+/backend/

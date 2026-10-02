@@ -1,6 +1,6 @@
 // End-to-end: a whose_song game with provider external_player (BYOP,
 // addendum A2.2) between three simulated phones running the app's client
-// stack and the real server, over real sockets. See apps/mobile/README.md,
+// stack and the real server, over real sockets. See README.md,
 // "End-to-end suite".
 @Timeout(Duration(minutes: 3))
 library;

@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "type": "server.draining",
+  "seq": 24,
+  "payload": {
+    "reconnect_after_ms": 2000
+  }
+}

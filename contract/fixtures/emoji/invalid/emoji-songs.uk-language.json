@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-30T00:00:00Z",
+  "license_note": "Negative test fixture: an invented song tagged as Ukrainian (language uk), written in Latin script so that only the language rule rejects it. Owner decision: no Russian, CIS or Ukrainian content.",
+  "count": 1,
+  "songs": [
+    {
+      "id": "emo_intl_0001",
+      "title": "Test Pisnia",
+      "artist": "Test Hurt",
+      "year": 2020,
+      "market": "intl",
+      "language": "uk",
+      "genre": "pop",
+      "emoji": "🎵🧪",
+      "difficulty": 1,
+      "artist_decoys": ["Test Hurtt", "Tset Hurt", "Test Hurts"],
+      "title_decoys": ["Test Pisnja", "Test Pesnia", "Tset Pisnia"],
+      "explicit": false
+    }
+  ]
+}

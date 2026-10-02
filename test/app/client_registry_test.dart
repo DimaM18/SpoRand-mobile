@@ -15,9 +15,9 @@ import 'package:sporand/features/paywall/presentation/paywall_page.dart';
 // client-registry.json (mobile_kit's `expectClientRegistryMatches`), config
 // keys included (names in the registry's order, reader, type, default, range).
 final _registry = File(
-  '../../packages/protocol/generated/client-registry.json',
+  'contract/generated/client-registry.json',
 );
-final _skip = _registry.existsSync() ? false : 'packages/protocol is missing';
+final _skip = _registry.existsSync() ? false : 'contract/ is missing (tool/contract.sh sync)';
 
 void main() {
   test('the content guard of the app config is SPORAND_CONTENT_GUARD', () {
