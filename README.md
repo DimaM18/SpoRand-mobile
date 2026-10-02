@@ -310,7 +310,7 @@ old paths stay, so no import changes:
   `paywall_variant` longer than 64 characters falls back to the default
   (the registry's `max_length`); RevenueCat packages report the catalogue
   product id; the calibration page marks a pass with `colorScheme.primary`.
-- **New names** «[новое имя — согласовать]»: `sporandContentGuard`,
+- **New names** (agreed by the owner on 2026-10-02, `docs/DEVELOPMENT.md` W8b-1): `sporandContentGuard`,
   `sporandThemeSpec`, `PartyColors.kitBrand`, `SporandKitStrings`
   (`SporandKitStringsRu`/`En`/`Pl`), `sporandKitStrings`, `SporandConfig`,
   `SporandPrefs`, `SporandUserProfile`, `SporandMeResponse`,
@@ -372,7 +372,7 @@ old paths stay, so no import changes:
   `packages/protocol/generated/client-registry.json`. Config keys are not
   compared: the registry lists `youtube_embed_enabled`, which `RcKeys` does
   not (18 keys), and the order differs.
-- **New names** «[новое имя — согласовать]»: `sporandAppConfig`,
+- **New names** (agreed by the owner on 2026-10-02, `docs/DEVELOPMENT.md` W8b-1): `sporandAppConfig`,
   `sporandKitOverrides`, `sporandFeatures`, `sporandInitSteps`,
   `SporandBootServices`, `SporandBootDependencies`, `SporandEnv`
   (`appBundleId`), `Flavor.registry`, `sporandRoutes`, `sporandKitPages`,
