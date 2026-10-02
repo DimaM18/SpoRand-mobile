@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile_kit/mobile_kit.dart' show KitL10nContext, SplashVisual;
 
 import 'package:sporand/app/bootstrap/application/boot_controller.dart';
 import 'package:sporand/app/bootstrap/domain/boot_models.dart';
@@ -16,7 +17,22 @@ import 'package:sporand/core/l10n/l10n.dart';
 import 'package:sporand/core/theme/tokens.dart';
 import 'package:sporand/core/ui/ui.dart';
 
-/// The animated loader shown while `AppInitializer` runs (R-BOOT).
+/// SpoRand's splash artwork for mobile_kit (`splashVisualProvider`): the
+/// vinyl ring and the two-glow backdrop. The kit's status screens
+/// (maintenance, the age block) draw [SplashVisual.backdrop]
+/// [новое имя — согласовать].
+final sporandSplashVisual = SplashVisual(
+  progress: (context, progress) => VinylProgress(
+    progress: progress.value,
+    animate: !MediaQuery.disableAnimationsOf(context),
+    size: math.min(220.0, MediaQuery.sizeOf(context).shortestSide * 0.56),
+  ),
+  backdrop: (context) =>
+      BootBackdrop(animate: !MediaQuery.disableAnimationsOf(context)),
+);
+
+/// The animated loader shown while `AppInitializer` runs (R-BOOT). It
+/// replaces mobile_kit's splash on `/boot` (`KitPagesSpec.boot`).
 ///
 /// Performance: the vinyl, ring, equalizer and glow animate inside their
 /// own painters and repaint boundaries. Riverpod `select`s rebuild only the
@@ -185,7 +201,7 @@ class _StepLabel extends ConsumerWidget {
       child: AnimatedSwitcher(
         duration: animate ? Motion.reducedCrossfade : Duration.zero,
         child: Text(
-          label.text(context.l10n),
+          label.text(context.kitL10n),
           key: ValueKey<BootLabel>(label),
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium,

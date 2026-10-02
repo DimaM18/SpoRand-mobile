@@ -1,5 +1,9 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile_kit/mobile_kit.dart' as kit;
 
+// Wave 8b: the static tokens (spacing, radii, icon sizes) are mobile_kit's,
+// with the same values; tap targets and motion add SpoRand's own.
+export 'package:mobile_kit/mobile_kit.dart' show IconSizes, Radii, Spacing;
 export 'package:sporand/core/theme/game_colors.dart';
 
 /// Brand palette: a dark-first "neon party" look (design system
@@ -23,46 +27,12 @@ abstract final class BrandColors {
   static const vinylEdge = Color(0xFF1E1B2E);
 }
 
-abstract final class Spacing {
-  static const xxs = 4.0;
-  static const xs = 8.0;
-  static const sm = 12.0;
-  static const md = 16.0;
-  static const lg = 24.0;
-  static const xl = 32.0;
-  static const xxl = 48.0;
-
-  /// Screen gutter: 16 below 400 dp of width, else 24.
-  static double gutter(double width) => width < 400 ? md : lg;
-}
-
-abstract final class Radii {
-  /// Chips, toasts, standings rows.
-  static const sm = 12.0;
-
-  /// Inputs, the QR tile.
-  static const md = 16.0;
-
-  /// Cards and answer tiles.
-  static const lg = 24.0;
-
-  /// Hero CTA, banner cards, the top of sheets.
-  static const xl = 32.0;
-}
-
-/// Icon sizes: inline, default, prominent, hero.
-abstract final class IconSizes {
-  static const sm = 20.0;
-  static const md = 24.0;
-  static const lg = 32.0;
-  static const xl = 48.0;
-}
-
 /// Minimum touch target heights (dp). Anything tappable is at least [min].
+/// The kit's targets (mobile_kit's `TapTargets`) plus the answer tiles.
 abstract final class TapTargets {
-  static const min = 48.0;
-  static const button = 56.0;
-  static const hero = 64.0;
+  static const min = kit.TapTargets.min;
+  static const button = kit.TapTargets.button;
+  static const hero = kit.TapTargets.hero;
 
   /// Answer tiles; [answerCompact] when the screen is under
   /// [compactHeight] dp tall, so four tiles stay above the fold.
@@ -71,46 +41,41 @@ abstract final class TapTargets {
   static const compactHeight = 700.0;
 }
 
+/// The kit's motion tokens (mobile_kit's `Motion`) plus the splash loops.
 abstract final class Motion {
   /// Pressed feedback (scale 1.0 -> 0.97 + overlay), within 100 ms.
-  static const press = Duration(milliseconds: 90);
+  static const press = kit.Motion.press;
 
   /// Chips, fades and all exits.
-  static const fast = Duration(milliseconds: 180);
+  static const fast = kit.Motion.fast;
 
   /// Enters: card swaps, standings reorder, the streak chip scale-in.
-  static const medium = Duration(milliseconds: 280);
+  static const medium = kit.Motion.medium;
 
   /// Reveal celebration, podium rise, points count-up.
-  static const slow = Duration(milliseconds: 600);
+  static const slow = kit.Motion.slow;
 
   /// Per-item delay of staggered entrances (at most [staggerMaxItems]).
-  static const stagger = Duration(milliseconds: 40);
-  static const staggerMaxItems = 6;
+  static const stagger = kit.Motion.stagger;
+  static const staggerMaxItems = kit.Motion.staggerMaxItems;
 
   /// Crossfade that replaces motion under reduce-motion.
-  static const reducedCrossfade = Duration(milliseconds: 150);
+  static const reducedCrossfade = kit.Motion.reducedCrossfade;
 
   /// One turn of the splash vinyl: 33⅓ rpm.
   static const vinylTurn = Duration(milliseconds: 1800);
   static const equalizerLoop = Duration(milliseconds: 2400);
   static const glowBreath = Duration(milliseconds: 3200);
 
-  static const emphasized = Cubic(0.2, 0, 0, 1);
-  static const emphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1);
+  static const emphasized = kit.Motion.emphasized;
+  static const emphasizedDecelerate = kit.Motion.emphasizedDecelerate;
 
   /// True when the platform asks for reduced motion: Android's «Remove
   /// animations» (`MediaQuery.disableAnimationsOf`) or iOS «Reduce Motion»
   /// (`AccessibilityFeatures.reduceMotion`, which never sets that flag).
   /// `ReduceMotionScope` folds the iOS flag into the app's `MediaQuery` and
   /// rebuilds on changes; the direct read covers widgets outside it.
-  static bool reduced(BuildContext context) =>
-      (MediaQuery.maybeDisableAnimationsOf(context) ?? false) ||
-      (View.maybeOf(context)
-              ?.platformDispatcher
-              .accessibilityFeatures
-              .reduceMotion ??
-          false);
+  static bool reduced(BuildContext context) => kit.Motion.reduced(context);
 }
 
 /// Colors the Material scheme has no slot for.
@@ -176,6 +141,20 @@ class PartyColors extends ThemeExtension<PartyColors> {
   /// The pre-wave-6 name of [neonGradient]. Decorative only: call sites
   /// that put text on it move to [ctaGradient] or [headlineGradient].
   List<Color> get gradient => neonGradient;
+
+  /// The same colors as mobile_kit's `KitBrand` (wave 8b), which the kit's
+  /// widgets and screens read from the theme: [ctaGradient], [onCta] (its
+  /// `onGradient`), [headlineGradient], [neonGradient] (its decorative
+  /// `accentGradient`), [glow] and [launchBackground]
+  /// [новое имя — согласовать].
+  kit.KitBrand get kitBrand => kit.KitBrand(
+    ctaGradient: ctaGradient,
+    headlineGradient: headlineGradient,
+    accentGradient: neonGradient,
+    glow: glow,
+    onGradient: onCta,
+    launchBackground: launchBackground,
+  );
 
   static PartyColors of(BuildContext context) =>
       Theme.of(context).extension<PartyColors>() ?? dark;

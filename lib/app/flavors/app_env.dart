@@ -1,154 +1,117 @@
+import 'package:mobile_kit/mobile_kit.dart' as kit;
+
 import 'package:sporand/app/flavors/flavor.dart';
-import 'package:sporand/core/ads/ads_service.dart';
 import 'package:sporand/core/net/protocol/json_read.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
-import 'package:sporand/core/platform/app_platform.dart';
 
-/// Everything that differs between builds. Values come from `--dart-define`
-/// so that there is exactly one entry point (`main()` -> `bootstrap()`).
-///
-/// Supported defines (all optional):
-/// - `FLAVOR`: dev | staging | prod | spotifyProto (default dev)
-/// - `API_BASE_URL`: e.g. `https://api.<domain>`. Empty -> offline fake backend.
-/// - `LINK_HOST`: the public link domain of `https://<domain>/j/{room_code}`.
-/// - `FIREBASE_ENABLED`: true/false. Defaults to false for dev (no
-///   GoogleService-Info.plist / google-services.json in the repo) and true for
-///   every other flavor.
-/// - `REVENUECAT_API_KEY_IOS`, `REVENUECAT_API_KEY_ANDROID`: public SDK keys.
-/// - `ADMOB_INTERSTITIAL_IOS|ANDROID`, `ADMOB_REWARDED_IOS|ANDROID`.
-/// - `STORE_URL_IOS`, `STORE_URL_ANDROID`, `TERMS_URL`, `PRIVACY_URL`.
+/// Everything that differs between builds (wave 8b: mobile_kit's `AppEnv`).
+/// Values come from `--dart-define` so that there is exactly one entry point
+/// (`main()` -> `bootstrap()`); `runKitApp` reads the kit defines (`FLAVOR`,
+/// `API_BASE_URL`, `LINK_HOST`, `FIREBASE_ENABLED`, `REVENUECAT_API_KEY_*`,
+/// `ADMOB_*`, `STORE_URL_*`, `TERMS_URL`, `PRIVACY_URL`, `APP_BUNDLE_ID`)
+/// with [Flavor.registry]. SpoRand's own defines are read by [SporandEnv]:
 /// - `ROOM_PROVIDER`: the provider new rooms request (a `MusicProviderId`
-///   wire value), for QA; defaults per flavor (see [roomProvider]).
+///   wire value), for QA; defaults per flavor (see [SporandEnv.roomProvider]).
 /// - `APP_BUNDLE_ID`: the iOS bundle id / Android application id; the
 ///   embedded YouTube player identifies the app as `https://<bundle id>`
-///   (see [youTubePlayerOrigin]). Defaults to the placeholder id of the
-///   native projects.
-final class AppEnv {
+///   (see [SporandEnv.youTubePlayerOrigin]). Defaults to the placeholder id
+///   of the native projects ([AppEnv.defaultBundleId]).
+///
+/// This adapter keeps the old const constructor (tests build the env with
+/// explicit values, `roomProvider` included).
+class AppEnv extends kit.AppEnv {
   const AppEnv({
-    required this.flavor,
-    required this.platform,
-    this.apiBaseUrl,
-    this.linkHosts = const {},
-    this.firebaseEnabled = false,
-    this.revenueCatApiKey,
-    this.adUnits = AdUnitIds.none,
-    this.storeUrl,
-    this.termsUrl,
-    this.privacyUrl,
+    required Flavor super.flavor,
+    required super.platform,
+    super.apiBaseUrl,
+    super.linkHosts,
+    super.firebaseEnabled,
+    super.revenueCatApiKey,
+    super.adUnits,
+    super.storeUrl,
+    super.termsUrl,
+    super.privacyUrl,
     this._roomProvider,
-    this.bundleId = defaultBundleId,
+    String super.bundleId = defaultBundleId,
   });
 
   /// The placeholder id of `android/app/build.gradle.kts` and the Xcode
   /// project (TODO(owner): the real one once the brand exists, Q3).
   static const defaultBundleId = 'dev.brandtbd.sporand';
 
-  factory AppEnv.fromEnvironment({required AppPlatform platform}) {
-    const flavorRaw = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
-    const apiBaseUrlRaw = String.fromEnvironment('API_BASE_URL');
-    // TODO(owner): set LINK_HOST to the public <domain> once chosen (Q3).
-    const linkHostRaw = String.fromEnvironment('LINK_HOST');
-    const firebaseRaw = String.fromEnvironment('FIREBASE_ENABLED');
-    // TODO(owner): RevenueCat public SDK keys (Project settings -> API keys).
-    const rcIos = String.fromEnvironment('REVENUECAT_API_KEY_IOS');
-    const rcAndroid = String.fromEnvironment('REVENUECAT_API_KEY_ANDROID');
-    // TODO(owner): real AdMob ad unit ids for staging/prod.
-    const interstitialIos = String.fromEnvironment('ADMOB_INTERSTITIAL_IOS');
-    const interstitialAndroid = String.fromEnvironment(
-      'ADMOB_INTERSTITIAL_ANDROID',
-    );
-    const rewardedIos = String.fromEnvironment('ADMOB_REWARDED_IOS');
-    const rewardedAndroid = String.fromEnvironment('ADMOB_REWARDED_ANDROID');
-    // TODO(owner): store listing URLs once the bundle ids exist (Q3).
-    const storeIos = String.fromEnvironment('STORE_URL_IOS');
-    const storeAndroid = String.fromEnvironment('STORE_URL_ANDROID');
-    const terms = String.fromEnvironment('TERMS_URL');
-    const privacy = String.fromEnvironment('PRIVACY_URL');
-    const roomProviderRaw = String.fromEnvironment('ROOM_PROVIDER');
-    const bundleIdRaw = String.fromEnvironment('APP_BUNDLE_ID');
-
-    final flavor = Flavor.parse(flavorRaw);
-    final firebaseEnabled = switch (firebaseRaw.toLowerCase()) {
-      'true' || '1' => true,
-      'false' || '0' => false,
-      _ => !flavor.isDev,
-    };
-
-    final isIos = platform == AppPlatform.ios;
-    final configuredUnits = AdUnitIds(
-      interstitial: _nonEmpty(isIos ? interstitialIos : interstitialAndroid),
-      rewarded: _nonEmpty(isIos ? rewardedIos : rewardedAndroid),
-    );
-    // Google's public test units are safe for dev/staging; production must
-    // never silently fall back to them.
-    final adUnits = configuredUnits.isComplete || flavor == Flavor.prod
-        ? configuredUnits
-        : AdUnitIds.googleTestUnits(platform);
-
+  /// The kit's env of this build plus SpoRand's defines (what `runKitApp`
+  /// builds, as this adapter).
+  factory AppEnv.fromEnvironment({required kit.AppPlatform platform}) {
+    final base = kit.AppEnv.fromEnvironment(Flavor.registry, platform: platform);
     return AppEnv(
-      flavor: flavor,
-      platform: platform,
-      apiBaseUrl: _parseUri(apiBaseUrlRaw),
-      linkHosts: {if (linkHostRaw.isNotEmpty) linkHostRaw.toLowerCase()},
-      firebaseEnabled: firebaseEnabled,
-      revenueCatApiKey: _nonEmpty(isIos ? rcIos : rcAndroid),
-      adUnits: adUnits,
-      storeUrl: _parseUri(isIos ? storeIos : storeAndroid),
-      termsUrl: _parseUri(terms),
-      privacyUrl: _parseUri(privacy),
-      roomProvider: roomProviderRaw.isEmpty
-          ? null
-          : parseWire(
-              MusicProviderId.values,
-              roomProviderRaw,
-              fallback: MusicProviderId.externalPlayer,
-            ),
-      bundleId: bundleIdRaw.isEmpty ? defaultBundleId : bundleIdRaw,
+      flavor: base.flavor as Flavor,
+      platform: base.platform,
+      apiBaseUrl: base.apiBaseUrl,
+      linkHosts: base.linkHosts,
+      firebaseEnabled: base.firebaseEnabled,
+      revenueCatApiKey: base.revenueCatApiKey,
+      adUnits: base.adUnits,
+      storeUrl: base.storeUrl,
+      termsUrl: base.termsUrl,
+      privacyUrl: base.privacyUrl,
+      roomProvider: _definedRoomProvider,
+      bundleId: base.bundleId ?? defaultBundleId,
     );
   }
 
-  final Flavor flavor;
-  final AppPlatform platform;
-
-  /// REST base (`https://api.<domain>`); null means the offline fake backend.
-  final Uri? apiBaseUrl;
-
-  /// Hosts accepted for absolute `https://<domain>/j/{room_code}` links.
-  final Set<String> linkHosts;
-  final bool firebaseEnabled;
-  final String? revenueCatApiKey;
-  final AdUnitIds adUnits;
-  final Uri? storeUrl;
-  final Uri? termsUrl;
-  final Uri? privacyUrl;
   final MusicProviderId? _roomProvider;
 
-  /// iOS bundle id / Android application id.
-  final String bundleId;
+  @override
+  Flavor get flavor => super.flavor as Flavor;
+
+  @override
+  String get bundleId => super.bundleId ?? defaultBundleId;
+}
+
+/// `ROOM_PROVIDER`, or null when the define is absent.
+MusicProviderId? get _definedRoomProvider {
+  const raw = String.fromEnvironment('ROOM_PROVIDER');
+  if (raw.isEmpty) return null;
+  return parseWire(
+    MusicProviderId.values,
+    raw,
+    fallback: MusicProviderId.externalPlayer,
+  );
+}
+
+/// SpoRand's game getters on any env: the kit's (production, built by
+/// `runKitApp`) and the [AppEnv] adapter (tests) [новое имя — согласовать].
+extension SporandEnv on kit.AppEnv {
+  /// iOS bundle id / Android application id ([AppEnv.defaultBundleId] when
+  /// `APP_BUNDLE_ID` is absent).
+  String get appBundleId => bundleId ?? AppEnv.defaultBundleId;
 
   /// The embedded YouTube player's `origin` and Referer: YouTube requires
   /// embeds in apps to identify themselves as `https://<bundle id>`
   /// (without it the player fails with error 153).
-  String get youTubePlayerOrigin => 'https://${bundleId.toLowerCase()}';
+  String get youTubePlayerOrigin => 'https://${appBundleId.toLowerCase()}';
 
   /// The provider `POST /v1/rooms` asks for; the server may still fall back
   /// to its `default_provider` when this one is not enabled for the host's
-  /// country (addendum A2.5). spotifyProto keeps the frozen Spotify
-  /// prototype, dev keeps the `test_catalog` clips, and staging/prod request
-  /// `youtube_embed` (wave 4 owner decision: the official embedded player on
-  /// the DJ's phone); the server falls back to its `default_provider`
-  /// (external_player, BYOP) where YouTube is not enabled.
-  MusicProviderId get roomProvider =>
-      _roomProvider ??
-      switch (flavor) {
-        Flavor.spotifyProto => MusicProviderId.spotifyAppRemote,
-        Flavor.dev => MusicProviderId.testCatalog,
-        Flavor.staging || Flavor.prod => MusicProviderId.youtubeEmbed,
-      };
+  /// country. spotifyProto keeps the frozen Spotify prototype, dev keeps the
+  /// `test_catalog` clips, and staging/prod request `youtube_embed` (wave 4
+  /// owner decision: the official embedded player on the DJ's phone); the
+  /// server falls back to its `default_provider` (external_player, BYOP)
+  /// where YouTube is not enabled.
+  MusicProviderId get roomProvider {
+    final self = this;
+    final explicit = self is AppEnv
+        ? self._roomProvider
+        : _definedRoomProvider;
+    if (explicit != null) return explicit;
+    if (flavor == Flavor.spotifyProto) return MusicProviderId.spotifyAppRemote;
+    if (flavor == Flavor.staging || flavor == Flavor.prod) {
+      return MusicProviderId.youtubeEmbed;
+    }
+    return MusicProviderId.testCatalog;
+  }
 
-  bool get monetizationAllowed => flavor.allowsMonetization;
-
-  /// `wss://api.<domain>/v1/ws` (brief §4.3), derived from [apiBaseUrl].
+  /// `wss://api.<domain>/v1/ws`, derived from [kit.AppEnv.apiBaseUrl].
   Uri? get realtimeEndpoint {
     final base = apiBaseUrl;
     if (base == null) return null;
@@ -157,8 +120,4 @@ final class AppEnv {
       path: '/v1/ws',
     );
   }
-
-  static String? _nonEmpty(String value) => value.isEmpty ? null : value;
-
-  static Uri? _parseUri(String raw) => raw.isEmpty ? null : Uri.tryParse(raw);
 }

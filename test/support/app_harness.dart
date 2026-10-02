@@ -13,6 +13,7 @@ import 'fake_services.dart';
 
 /// Every SDK-facing provider replaced by the shared fakes.
 List<Override> fakeOverrides(FakeServices s) => [
+  ...sporandKitOverrides,
   appEnvProvider.overrideWithValue(s.env),
   crashGateProvider.overrideWithValue(s.crashGate),
   crashReporterProvider.overrideWithValue(s.crashReporter),

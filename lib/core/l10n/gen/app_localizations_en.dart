@@ -474,9 +474,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
-  String get commonLoading => 'Loading…';
-
-  @override
   String get lobbyNoRoom => 'You are not in a room';
 
   @override
@@ -720,32 +717,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String resultsCorrect(int count) {
     return 'Correct: $count';
   }
-
-  @override
-  String get debugClockTitle => 'Clock calibration';
-
-  @override
-  String get debugClockHint =>
-      'Tap the area several times. The test checks that touch and frame times use the device input clock.';
-
-  @override
-  String get debugClockTapArea => 'Tap here';
-
-  @override
-  String debugClockPassed(int count) {
-    return 'Clocks match ($count samples)';
-  }
-
-  @override
-  String debugClockFailed(int count) {
-    return 'Clocks DO NOT match ($count samples)';
-  }
-
-  @override
-  String get debugClockCopy => 'Copy report';
-
-  @override
-  String get debugClockClear => 'Clear';
 
   @override
   String get settingsClockCalibration => 'Clock calibration (developers)';

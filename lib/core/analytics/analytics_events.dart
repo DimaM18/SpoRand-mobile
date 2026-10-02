@@ -1,9 +1,17 @@
+import 'package:mobile_kit/mobile_kit.dart'
+    show KitAnalyticsEvents, KitAnalyticsParams, KitAnalyticsUserProperties;
+
+export 'package:mobile_kit/mobile_kit.dart'
+    show KitAnalyticsEvents, KitAnalyticsParams, KitAnalyticsUserProperties;
+
 /// Canonical client analytics names (brief §4.5). Binding: do not rename.
+/// Wave 8b: the kit's events are mobile_kit's [KitAnalyticsEvents]; the
+/// game events are SpoRand's.
 abstract final class AnalyticsEvents {
-  static const appInitStep = 'app_init_step';
-  static const appInitCompleted = 'app_init_completed';
-  static const onboardingComplete = 'onboarding_complete';
-  static const consentUpdate = 'consent_update';
+  static const appInitStep = KitAnalyticsEvents.appInitStep;
+  static const appInitCompleted = KitAnalyticsEvents.appInitCompleted;
+  static const onboardingComplete = KitAnalyticsEvents.onboardingComplete;
+  static const consentUpdate = KitAnalyticsEvents.consentUpdate;
   static const musicLinkStart = 'music_link_start';
   static const musicLinkResult = 'music_link_result';
   static const musicLinkDisconnect = 'music_link_disconnect';
@@ -12,37 +20,38 @@ abstract final class AnalyticsEvents {
   static const roomCreate = 'room_create';
   static const roomJoin = 'room_join';
   static const roomShare = 'room_share';
-  static const paywallView = 'paywall_view';
-  static const purchaseStart = 'purchase_start';
-  static const purchaseResult = 'purchase_result';
-  static const restorePurchases = 'restore_purchases';
+  static const paywallView = KitAnalyticsEvents.paywallView;
+  static const purchaseStart = KitAnalyticsEvents.purchaseStart;
+  static const purchaseResult = KitAnalyticsEvents.purchaseResult;
+  static const restorePurchases = KitAnalyticsEvents.restorePurchases;
   static const removeAdsUpsellView = 'remove_ads_upsell_view';
   static const adRewardedOfferView = 'ad_rewarded_offer_view';
   static const adRewardedResult = 'ad_rewarded_result';
-  static const adInterstitialResult = 'ad_interstitial_result';
+  static const adInterstitialResult = KitAnalyticsEvents.adInterstitialResult;
   static const reportPlayer = 'report_player';
-  static const accountDelete = 'account_delete';
+  static const accountDelete = KitAnalyticsEvents.accountDelete;
 }
 
-/// Canonical parameter names used by the client (brief §4.5).
+/// Canonical parameter names used by the client (brief §4.5): the kit's
+/// ([KitAnalyticsParams]) and the game's.
 abstract final class AnalyticsParams {
-  static const step = 'step';
-  static const stage = 'stage';
-  static const durationMs = 'duration_ms';
-  static const result = 'result';
-  static const totalMs = 'total_ms';
-  static const coldStart = 'cold_start';
-  static const degradedSteps = 'degraded_steps';
-  static const ageBand = 'age_band';
-  static const consentAnalytics = 'consent_analytics';
-  static const consentAds = 'consent_ads';
-  static const analytics = 'analytics';
-  static const adsPersonalized = 'ads_personalized';
-  static const source = 'source';
-  static const placement = 'placement';
-  static const paywallVariant = 'paywall_variant';
-  static const productId = 'product_id';
-  static const waitMs = 'wait_ms';
+  static const step = KitAnalyticsParams.step;
+  static const stage = KitAnalyticsParams.stage;
+  static const durationMs = KitAnalyticsParams.durationMs;
+  static const result = KitAnalyticsParams.result;
+  static const totalMs = KitAnalyticsParams.totalMs;
+  static const coldStart = KitAnalyticsParams.coldStart;
+  static const degradedSteps = KitAnalyticsParams.degradedSteps;
+  static const ageBand = KitAnalyticsParams.ageBand;
+  static const consentAnalytics = KitAnalyticsParams.consentAnalytics;
+  static const consentAds = KitAnalyticsParams.consentAds;
+  static const analytics = KitAnalyticsParams.analytics;
+  static const adsPersonalized = KitAnalyticsParams.adsPersonalized;
+  static const source = KitAnalyticsParams.source;
+  static const placement = KitAnalyticsParams.placement;
+  static const paywallVariant = KitAnalyticsParams.paywallVariant;
+  static const productId = KitAnalyticsParams.productId;
+  static const waitMs = KitAnalyticsParams.waitMs;
   static const gameId = 'game_id';
   static const roomId = 'room_id';
   static const mode = 'mode';
@@ -55,10 +64,11 @@ abstract final class AnalyticsParams {
   static const reason = 'reason';
 }
 
-/// User properties (brief §4.5).
+/// User properties (brief §4.5): the kit's ([KitAnalyticsUserProperties])
+/// and the game's.
 abstract final class AnalyticsUserProperties {
-  static const tier = 'tier';
-  static const ageBand = 'age_band';
+  static const tier = KitAnalyticsUserProperties.tier;
+  static const ageBand = KitAnalyticsUserProperties.ageBand;
   static const hasMusicLink = 'has_music_link';
   static const gamesCompletedBucket = 'games_completed_bucket';
 }

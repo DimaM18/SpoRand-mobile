@@ -1,17 +1,21 @@
-/// Route paths. Kept in one place so that boot, guards and screens agree.
+import 'package:mobile_kit/mobile_kit.dart' show KitRoutes, KitRoutesConfig;
+
+/// Route paths. Kept in one place so that boot, guards and screens agree:
+/// mobile_kit's routes (wave 8b; the kit router owns them, their guard and
+/// redirects) plus the game's (`projectRoutesProvider`, app_router.dart).
 abstract final class Routes {
-  static const boot = '/boot';
-  static const onboarding = '/onboarding';
-  static const onboardingConsent = '/onboarding/consent';
-  static const onboardingBlocked = '/onboarding/blocked';
-  static const home = '/home';
-  static const paywall = '/paywall';
-  static const settings = '/settings';
+  static const boot = KitRoutes.boot;
+  static const onboarding = KitRoutes.onboarding;
+  static const onboardingConsent = KitRoutes.onboardingConsent;
+  static const onboardingBlocked = KitRoutes.onboardingBlocked;
+  static const home = KitRoutesConfig.defaultHome;
+  static const paywall = KitRoutes.paywall;
+  static const settings = KitRoutes.settings;
 
   /// «Мои песни» (addendum A2.3) [новое имя — согласовать].
   static const mySongs = '/my-songs';
-  static const forceUpdate = '/force-update';
-  static const maintenance = '/maintenance';
+  static const forceUpdate = KitRoutes.forceUpdate;
+  static const maintenance = KitRoutes.maintenance;
 
   /// Dev-only: the device timing calibration screen (brief §5/§9).
   static const debugClock = '/debug/clock';
@@ -35,13 +39,11 @@ abstract final class Routes {
     queryParameters: via == null ? null : {'via': via},
   ).toString();
   static String paywallFor(String placement) =>
-      Uri(path: paywall, queryParameters: {'placement': placement}).toString();
+      KitRoutes.paywallFor(placement);
 
   /// Screens that are reachable while onboarding is incomplete.
-  static bool isOnboarding(String path) =>
-      path == onboarding || path.startsWith('$onboarding/');
+  static bool isOnboarding(String path) => KitRoutes.isOnboarding(path);
 
   /// Screens that must stay reachable whatever the app state.
-  static bool isStatusScreen(String path) =>
-      path == forceUpdate || path == maintenance;
+  static bool isStatusScreen(String path) => KitRoutes.isStatusScreen(path);
 }

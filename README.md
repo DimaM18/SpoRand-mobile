@@ -32,7 +32,8 @@ report lists the degraded steps (visible in Settings).
 
 ## Boot pipeline (R-BOOT)
 
-`lib/app/bootstrap/`: `AppInitializer` (pure Dart) runs the stages
+`lib/app/bootstrap/` (since wave 8b mobile_kit's runner and kit steps, see
+"mobile_kit (wave 8b, step 7.2: app layer)"): `AppInitializer` (pure Dart) runs the stages
 `config -> warmup -> sdk_init -> enter_app` while `BootSplashPage` shows real,
 weighted progress. Steps are declared in `steps/boot_steps.dart`; timings come
 from Remote Config (`boot_config_timeout_ms`, `boot_min_splash_ms`,
@@ -63,7 +64,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   `lib/contracts/` once codegen lands.
 - **Clocks** (`lib/core/clock/`): `InputClock` holds the **process anchor**
   (`docs/DEVELOPMENT.md` §5): every `*_mono_us` on the wire is OS input-clock time minus
-  `anchor_us`, read once in `bootstrap()`, so raw uptime never leaves the
+  `anchor_us`, read once before the boot (`inputClockPreBootHook`), so raw uptime never leaves the
   device (Apple required-reason 35F9.1). Pointer and frame timestamps go
   through `InputClock.fromOs` (`tapMonoUsFromPointer`, `currentFrameMonoUs`),
   native stamps through `fromOsUs`, and only the clip player's schedule back
@@ -223,6 +224,127 @@ The Swift and Kotlin code has not been compiled in the sandbox that wrote it
 - `lib/contracts/` reserved for code generated from `packages/protocol`
 - `pigeons/` Pigeon definitions; `packages/sporand_native/` generated code +
   native implementations
+
+## mobile_kit (wave 8b, step 7.1: foundation and services)
+
+The base of `lib/core/` comes from the template packages `mobile_kit` and
+`mobile_kit_clock` (mobile-template, `docs/MIGRATION-SPORAND.md` §5.4). The
+old paths stay, so no import changes:
+
+- **Shims** (`export 'package:mobile_kit/…' show …`): `core/{ads,auth,crash,
+  firebase,links,platform,privacy,purchases,security}/**`,
+  `core/consent/{consent_service,ump_consent_service,consent_policy,
+  consent_sync}.dart`, `core/analytics/{analytics_backend,
+  firebase_analytics_backend,analytics_identity}.dart`,
+  `core/remote_config/*_backend.dart`, `core/net/{api_client,app_signals}.dart`,
+  `core/net/protocol/json_read.dart`, `core/clock/*`,
+  `core/ui/{timed_tap_target,reduce_motion_scope}.dart` and
+  `features/debug/**` (`mobile_kit_clock`). `app/di/providers.dart`
+  re-exports `mobile_kit_clock`'s `inputClockProvider` (one clock, one
+  anchor). `AppStateSignal` (`ws_enums.dart`) is the kit's `AppSignal`.
+- **Typedefs and forwarders** (pixel-identical: the themes carry the kit's
+  `KitBrand`/`KitShape` with the «Neon Night+» values): `PartyButton`,
+  `PartyCard`/`PartyCardTone`, `PartyChip`, `StatusChip`, `PartyBanner`/
+  `PartyBannerTone`, `PartyActionBar`; `showPartyToast` -> `KitToast.show`,
+  `showPartySheet` -> `KitSheet.show`. `ui.dart` = the kit components (also
+  under their kit names) + the game UI.
+- **Adapters** (subclasses with the old constructors): `AnalyticsService`
+  (`sporandContentGuard`; the static `isAllowedParamName`, `sanitizeParams`,
+  `isYouTubeContentValue`), `RemoteConfigService` (`keys: RcKeys.all`; the
+  game getters also as `extension SporandConfig` on the kit's class),
+  `UserPrefsRepository` (`KitUserPrefs` + the display name, also as
+  `extension SporandPrefs`), `SharedPreferencesStore` (the kit's store with
+  `PrefKeys.all`), `PartyLoader` (`KitLoader` with the equalizer).
+- **Composed:** `AnalyticsEvents`/`AnalyticsParams`/`AnalyticsUserProperties`,
+  `RcKeys`, `PrefKeys` = the kit's constants + the game's;
+  `rest_models.dart` re-exports the kit's shared DTOs, which keep
+  `games_completed` and `music_links` in `extras` (read as
+  `UserProfile.gamesCompleted`, `MeResponse.musicLinks`); `TapTargets` and
+  `Motion` = the kit's values + the answer tiles and splash loops;
+  `Spacing`, `Radii`, `IconSizes` are the kit's.
+- **Stays SpoRand's:** `AppTheme` (the full `ThemeData` builder, plus
+  `KitBrand`/`KitShape`), `AppFonts`, `game_colors.dart`, the game widgets,
+  `core/consent/youtube_consent.dart`, `core/playback/**`, `core/share/**`,
+  the WebSocket client, clock sync and the WS DTOs.
+- **Strings:** the kit's screens read `MobileKitLocalizations`;
+  `SporandKitStrings` (`core/l10n/kit_strings.dart`) keeps SpoRand's copy of
+  the 9 keys whose kit text differs (8 in Polish), taken from the app's ARB.
+  `commonLoading` and the `debugClock*` keys left the app's ARB (the kit's
+  and `mobile_kit_clock`'s have the same texts).
+- **Behaviour notes:** the content guard compares name words (`_` segments
+  and camelCase parts, like the server) instead of substrings, and drops
+  Spotify references in values too (`spotify_ref`, packages/protocol);
+  `paywall_variant` longer than 64 characters falls back to the default
+  (the registry's `max_length`); RevenueCat packages report the catalogue
+  product id; the calibration page marks a pass with `colorScheme.primary`.
+- **New names** «[новое имя — согласовать]»: `sporandContentGuard`,
+  `sporandThemeSpec`, `PartyColors.kitBrand`, `SporandKitStrings`
+  (`SporandKitStringsRu`/`En`/`Pl`), `sporandKitStrings`, `SporandConfig`,
+  `SporandPrefs`, `SporandUserProfile`, `SporandMeResponse`,
+  `SharedPreferencesStore.allowList`.
+
+## mobile_kit (wave 8b, step 7.2: app layer)
+
+`bootstrap()` is `runKitApp(sporandAppConfig)` and `SporandApp` is
+`KitApp(config: sporandAppConfig)` (mobile-template,
+`docs/MIGRATION-SPORAND.md` §5.4). `main()` is unchanged.
+
+- **Config** (`app/bootstrap/bootstrap.dart`): title, `sporandThemeSpec`, the
+  full `AppTheme` through `themeBuilder`, `sporandContentGuard`, the
+  `AppLocalizations` and `MobileKitClockLocalizations` delegates,
+  `KitStringsDelegate(sporandKitStrings)`, `Flavor.registry`,
+  `sporandFeatures` (all on), `inputClockPreBootHook` (a failure is recorded
+  as `pre-boot hook 0`), and the overrides: `sporandKitOverrides` plus
+  SpoRand's own `FlutterResourceWarmer`.
+- **Shims:** `application/boot_controller.dart`,
+  `domain/{app_initializer,boot_models,boot_telemetry,init_step,version_gate}.dart`,
+  `warmup/resource_warmer.dart`, `presentation/boot_labels.dart`,
+  `presentation/widgets/boot_status_view.dart`, `MaintenancePage` and
+  `maintenanceLiftedProvider` (`gate_pages.dart`), `router/route_guard.dart`,
+  `widgets/placeholder_page.dart`. `app/di/providers.dart` re-exports the kit
+  providers (and `SporandEnv`, `SporandConfig`, `SporandPrefs`) and keeps the
+  game ones.
+- **Adapters:** `Flavor` (a `FlavorSpec` subclass with static constants,
+  `values`, `registry`, `parse`; spotifyProto: no monetization, its config
+  defaults), `AppEnv` (the kit's env under the old const constructor,
+  `roomProvider` and `bundleId` default included; the game getters are
+  `extension SporandEnv` on the kit's env, which `runKitApp` builds),
+  `BootDependencies` (old constructor; `playback`/`realtime` go to the kit
+  as `SporandBootServices`), `DeepLinkParser` (the kit's parser with
+  `sporandLinkMatchers`, static `normalizeRoomCode`), `PaywallPlacement`
+  (an extension type over the wire string).
+- **Composition:** `buildBootSteps()` = the kit steps with `music_provider`
+  and `realtime` after `ads` (`mergeInitSteps`; same 21 steps in the same
+  order). The `ads` step stays SpoRand's: the kit's step reports missing ad
+  unit ids as degraded, which SpoRand never did. Game routes go to
+  `projectRoutesProvider` (`sporandRoutes()`); `routerProvider` is the
+  kit's `kitRouterProvider`, whose guard reads the preferences, so the
+  onboarding controller reloads `onboardingStatusProvider` after it writes
+  them.
+- **Replaced through `kitPagesProvider`** (`sporandKitPages`): the splash
+  (`BootSplashPage`; `sporandSplashVisual` gives the kit's status screens the
+  two-glow backdrop), onboarding (age gate, consent, blocked), settings
+  (calibration tile still `kDebugMode || env.flavor != Flavor.prod`), the
+  paywall (perks and placements from `sporandPaywallConfig`) and force
+  update. Maintenance is the kit's screen (same texts and icon).
+- **Intended change:** `app_init_completed.degraded_steps` is a count again,
+  `degraded_step_ids` lists them (two named test edits).
+- **Kit behaviour now in the app:** `API_BASE_URL` must be https outside a
+  dev flavor on a local host; a missing ad unit falls back to Google's test
+  unit per format outside prod, and one configured format loads on its own;
+  a link with an invalid `room_code` in a push falls through to its `link`
+  key; the «not found» page is the kit's.
+- **Drift:** `test/app/client_registry_test.dart` checks the config's content
+  guard, the boot steps, features, paywall placements and products against
+  `packages/protocol/generated/client-registry.json`. Config keys are not
+  compared: the registry lists `youtube_embed_enabled`, which `RcKeys` does
+  not (18 keys), and the order differs.
+- **New names** «[новое имя — согласовать]»: `sporandAppConfig`,
+  `sporandKitOverrides`, `sporandFeatures`, `sporandInitSteps`,
+  `SporandBootServices`, `SporandBootDependencies`, `SporandEnv`
+  (`appBundleId`), `Flavor.registry`, `sporandRoutes`, `sporandKitPages`,
+  `sporandSplashVisual`, `sporandPaywallConfig`, `JoinRoomLinkMatcher`,
+  `sporandLinkMatchers`.
 
 ## Design system (wave 6, "Neon Night+")
 

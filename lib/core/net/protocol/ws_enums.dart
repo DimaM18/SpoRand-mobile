@@ -2,6 +2,8 @@
 /// binding; Dart names are camelCase.
 library;
 
+import 'package:mobile_kit/mobile_kit.dart' show AppSignal;
+
 import 'package:sporand/core/net/protocol/json_read.dart';
 
 /// Music provider ids (brief §1.3, addendum A2.1).
@@ -197,17 +199,9 @@ enum OutputRoute implements WireEnum {
   final String wire;
 }
 
-/// `app.state.state`.
-enum AppStateSignal implements WireEnum {
-  foreground('foreground'),
-  background('background'),
-  networkChanged('network_changed');
-
-  const AppStateSignal(this.wire);
-
-  @override
-  final String wire;
-}
+/// `app.state.state`: the kit's app signals (wave 8b), whose wire values are
+/// exactly this enum's (`foreground`, `background`, `network_changed`).
+typedef AppStateSignal = AppSignal;
 
 enum ClockQuality implements WireEnum {
   good('good'),

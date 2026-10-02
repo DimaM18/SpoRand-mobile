@@ -1,138 +1,72 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile_kit/mobile_kit.dart' as kit;
+import 'package:mobile_kit/mobile_kit.dart' show KitPrefKeys, PreferencesStore;
 
-/// Non-secret local preferences (onboarding state, consent choices).
-/// Secrets go to [SecureStore] instead.
-abstract interface class PreferencesStore {
-  Future<void> open();
-
-  bool get isOpen;
-
-  bool? getBool(String key);
-
-  String? getString(String key);
-
-  int? getInt(String key);
-
-  Future<void> setBool(String key, bool value);
-
-  Future<void> setString(String key, String value);
-
-  Future<void> setInt(String key, int value);
-
-  Future<void> remove(String key);
-}
+// Wave 8b: the preferences store lives in mobile_kit (mobile-template); this
+// path keeps SpoRand's keys and the store's old constructor.
+export 'package:mobile_kit/mobile_kit.dart'
+    show InMemoryPreferencesStore, KitPrefKeys, PreferencesStore;
 
 /// Every key the app stores; SharedPreferencesWithCache requires the list.
+/// The kit's keys ([KitPrefKeys], a persistent format) plus SpoRand's;
+/// [all] is the allow list (`prefKeysProvider` of mobile_kit).
 abstract final class PrefKeys {
-  static const ageBand = 'age_band';
-  static const ageGateBlocked = 'age_gate_blocked';
-  static const onboardingCompleted = 'onboarding_completed';
-  static const analyticsConsent = 'analytics_consent';
+  static const ageBand = KitPrefKeys.ageBand;
+  static const ageGateBlocked = KitPrefKeys.ageGateBlocked;
+  static const onboardingCompleted = KitPrefKeys.onboardingCompleted;
+  static const analyticsConsent = KitPrefKeys.analyticsConsent;
 
   /// Last display name typed at create/join [новое имя — согласовать].
   static const displayName = 'display_name';
 
   /// The `user_id` whose server profile already has [ageBand]
-  /// (`PATCH /v1/me`, see `AgeBandSync`) [новое имя — согласовать].
-  static const ageBandSyncedFor = 'age_band_synced_for';
+  /// (`PATCH /v1/me`, see `AgeBandSync`).
+  static const ageBandSyncedFor = KitPrefKeys.ageBandSyncedFor;
 
   /// The DJ allowed the embedded YouTube player to load (EU/EEA consent,
   /// wave 4) [новое имя — согласовать].
   static const youtubePlayerConsent = 'youtube_player_consent';
 
-  static const all = {
-    ageBand,
-    ageGateBlocked,
-    onboardingCompleted,
-    analyticsConsent,
-    displayName,
-    ageBandSyncedFor,
-    youtubePlayerConsent,
-  };
+  static const all = {...KitPrefKeys.all, displayName, youtubePlayerConsent};
 }
 
+/// The kit's `SharedPreferencesStore` with SpoRand's allow list by default
+/// ([PrefKeys.all]), so `SharedPreferencesStore()` keeps reading and
+/// writing the game's keys. Reads before [open] return null so that early
+/// UI never crashes.
 final class SharedPreferencesStore implements PreferencesStore {
-  SharedPreferencesWithCache? _prefs;
+  SharedPreferencesStore({Set<String> allowList = PrefKeys.all})
+    : _store = kit.SharedPreferencesStore(allowList: allowList);
 
-  SharedPreferencesWithCache get _require {
-    final prefs = _prefs;
-    if (prefs == null) throw StateError('PreferencesStore is not open');
-    return prefs;
-  }
+  final kit.SharedPreferencesStore _store;
 
-  @override
-  bool get isOpen => _prefs != null;
+  /// Every key the app reads or writes.
+  Set<String> get allowList => _store.allowList;
 
   @override
-  Future<void> open() async {
-    _prefs ??= await SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: PrefKeys.all,
-      ),
-    );
-  }
-
-  // Reads before open() return null so that early UI never crashes.
-  @override
-  bool? getBool(String key) => _prefs?.getBool(key);
+  bool get isOpen => _store.isOpen;
 
   @override
-  String? getString(String key) => _prefs?.getString(key);
+  Future<void> open() => _store.open();
 
   @override
-  int? getInt(String key) => _prefs?.getInt(key);
+  bool? getBool(String key) => _store.getBool(key);
 
   @override
-  Future<void> setBool(String key, bool value) => _require.setBool(key, value);
+  String? getString(String key) => _store.getString(key);
+
+  @override
+  int? getInt(String key) => _store.getInt(key);
+
+  @override
+  Future<void> setBool(String key, bool value) => _store.setBool(key, value);
 
   @override
   Future<void> setString(String key, String value) =>
-      _require.setString(key, value);
+      _store.setString(key, value);
 
   @override
-  Future<void> setInt(String key, int value) => _require.setInt(key, value);
+  Future<void> setInt(String key, int value) => _store.setInt(key, value);
 
   @override
-  Future<void> remove(String key) => _require.remove(key);
-}
-
-final class InMemoryPreferencesStore implements PreferencesStore {
-  InMemoryPreferencesStore({
-    Map<String, Object>? initial,
-    this.failOpen = false,
-  }) : values = {...?initial};
-
-  final Map<String, Object> values;
-  bool failOpen;
-  bool _open = false;
-
-  @override
-  bool get isOpen => _open;
-
-  @override
-  Future<void> open() async {
-    if (failOpen) throw StateError('preferences unavailable');
-    _open = true;
-  }
-
-  @override
-  bool? getBool(String key) => values[key] as bool?;
-
-  @override
-  String? getString(String key) => values[key] as String?;
-
-  @override
-  int? getInt(String key) => values[key] as int?;
-
-  @override
-  Future<void> setBool(String key, bool value) async => values[key] = value;
-
-  @override
-  Future<void> setString(String key, String value) async => values[key] = value;
-
-  @override
-  Future<void> setInt(String key, int value) async => values[key] = value;
-
-  @override
-  Future<void> remove(String key) async => values.remove(key);
+  Future<void> remove(String key) => _store.remove(key);
 }

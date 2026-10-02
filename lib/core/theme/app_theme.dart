@@ -1,4 +1,6 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile_kit/mobile_kit.dart'
+    show FontSpec, KitPalette, KitShape, KitThemeSpec;
 
 import 'package:sporand/core/theme/app_fonts.dart';
 import 'package:sporand/core/theme/tokens.dart';
@@ -7,6 +9,11 @@ import 'package:sporand/core/theme/tokens.dart';
 /// app keeps a distinct identity in both modes. Design system
 /// "Neon Night+": the schemes are unchanged from wave 5; wave 6 adds the
 /// bundled fonts, the type scale, component themes and [GameColors].
+///
+/// Wave 8b: mobile_kit builds the app's `ThemeData` with these
+/// (`KitAppConfig.themeBuilder`); besides [PartyColors] and [GameColors]
+/// they carry the kit's `KitBrand` and `KitShape` with SpoRand's values,
+/// which the kit's widgets and screens read.
 abstract final class AppTheme {
   static const darkScheme = ColorScheme(
     brightness: Brightness.dark,
@@ -169,7 +176,7 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       canvasColor: scheme.surface,
       textTheme: text,
-      extensions: [party, game],
+      extensions: [party, game, party.kitBrand, KitShape.standard],
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       splashFactory: InkSparkle.splashFactory,
@@ -353,6 +360,29 @@ abstract final class AppTheme {
     );
   }
 }
+
+/// The «Neon Night+» look as mobile_kit's theme spec (wave 8b): the hand-tuned
+/// schemes of [AppTheme], the brand of [PartyColors] in each mode, the
+/// standard radii ([Radii]) and the bundled fonts ([AppFonts]). It is
+/// `KitAppConfig.theme` (the kit's default warm-up and contrast check read
+/// it); the `ThemeData` itself comes from [AppTheme] (`themeBuilder`)
+/// [новое имя — согласовать].
+final sporandThemeSpec = KitThemeSpec(
+  light: const KitPalette(
+    seed: BrandColors.violet,
+    scheme: AppTheme.lightScheme,
+  ),
+  dark: const KitPalette(seed: BrandColors.violet, scheme: AppTheme.darkScheme),
+  brand: PartyColors.light.kitBrand,
+  darkBrand: PartyColors.dark.kitBrand,
+  fonts: FontSpec(
+    display: AppFonts.display,
+    body: AppFonts.body,
+    displayWeights: AppFonts.displayWeights,
+    bodyWeights: AppFonts.bodyWeights,
+    licenceAssets: AppFonts.licenses.values.toList(growable: false),
+  ),
+);
 
 /// Style helpers on top of the theme's [TextTheme].
 extension PartyTextStyles on TextStyle {

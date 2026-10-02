@@ -1,9 +1,25 @@
-/// Shared UI components of the design system "Neon Night+" (wave 6).
+/// Shared UI components of the design system "Neon Night+" (wave 6): since
+/// wave 8b mobile_kit's components (under their kit and their old names)
+/// plus the game UI.
 ///
 /// Timed input (answers, the DJ tap) only through [TimedTapTarget] and the
 /// widgets built on it ([AnswerTile], [TimedCtaButton]).
 library;
 
+export 'package:mobile_kit/mobile_kit.dart'
+    show
+        KitActionBar,
+        KitBanner,
+        KitBannerTone,
+        KitButton,
+        KitCard,
+        KitCardTone,
+        KitChip,
+        KitLoader,
+        KitLoaderIndicator,
+        KitSheet,
+        KitStatusChip,
+        KitToast;
 export 'package:sporand/core/ui/answer_marker.dart';
 export 'package:sporand/core/ui/answer_tile.dart';
 export 'package:sporand/core/ui/answer_timer_ring.dart';

@@ -1,32 +1,14 @@
+import 'package:mobile_kit/mobile_kit.dart' as kit;
+
 import 'package:sporand/app/router/routes.dart';
 
-/// Something that asked to open a screen: a URL (universal link / app link /
-/// go_router initial location) or a push notification payload.
-sealed class IncomingLink {
-  const IncomingLink();
-}
+// Wave 8b: incoming links, the queue and the parser are mobile_kit's
+// (mobile-template); SpoRand's join link reaches the kit parser as a
+// `LinkMatcher` (`linkMatchersProvider`).
+export 'package:mobile_kit/mobile_kit.dart'
+    show AppLink, DeepLinkQueue, IncomingLink, LinkMatcher, PushLink, UriLink;
 
-final class UriLink extends IncomingLink {
-  const UriLink(this.uri);
-
-  final Uri uri;
-}
-
-final class PushLink extends IncomingLink {
-  const PushLink(this.payload);
-
-  /// Expected keys: `room_code`, or `link` with an absolute URL.
-  final Map<String, Object?> payload;
-}
-
-/// A link the app knows how to open.
-sealed class AppLink {
-  const AppLink();
-
-  String get location;
-}
-
-/// `room_join.via` (brief §4.5).
+/// `room_join.via`.
 enum JoinVia {
   code('code'),
   link('link'),
@@ -43,7 +25,7 @@ enum JoinVia {
   };
 }
 
-final class JoinRoomLink extends AppLink {
+final class JoinRoomLink extends kit.AppLink {
   const JoinRoomLink(this.roomCode, {this.via = JoinVia.link});
 
   final String roomCode;
@@ -61,32 +43,16 @@ final class JoinRoomLink extends AppLink {
   int get hashCode => Object.hash(roomCode, via);
 }
 
-/// Parses incoming links into [AppLink]s. Only the join link exists in the
-/// MVP: `https://<domain>/j/{room_code}` (brief §2 "Rooms").
-final class DeepLinkParser {
-  const DeepLinkParser({required this.allowedHosts});
+/// The join link `https://<domain>/j/{room_code}` (relative `/j/{code}`
+/// too), and a push payload's `room_code` [новое имя — согласовать].
+final class JoinRoomLinkMatcher implements kit.LinkMatcher {
+  const JoinRoomLinkMatcher();
 
-  /// Hosts accepted for absolute https links. Relative locations (what
-  /// go_router receives from the platform) are always accepted.
-  final Set<String> allowedHosts;
-
-  /// Crockford base32 alphabet used by room codes (brief §7): no I, L, O, U.
-  static const _alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-  static const roomCodeLength = 6;
-
-  AppLink? parse(IncomingLink link) => switch (link) {
-    UriLink(:final uri) => parseUri(uri),
-    PushLink(:final payload) => _parsePush(payload),
-  };
-
-  AppLink? parseUri(Uri uri) {
-    if (uri.hasScheme) {
-      if (uri.scheme != 'https') return null;
-      if (!allowedHosts.contains(uri.host.toLowerCase())) return null;
-    }
+  @override
+  kit.AppLink? matchUri(Uri uri) {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.length == 2 && segments[0] == 'j') {
-      final code = normalizeRoomCode(segments[1]);
+      final code = DeepLinkParser.normalizeRoomCode(segments[1]);
       if (code != null) {
         return JoinRoomLink(
           code,
@@ -97,19 +63,28 @@ final class DeepLinkParser {
     return null;
   }
 
-  AppLink? _parsePush(Map<String, Object?> payload) {
-    final code = payload['room_code'];
-    if (code is String) {
-      final normalized = normalizeRoomCode(code);
-      return normalized == null ? null : JoinRoomLink(normalized);
-    }
-    final link = payload['link'];
-    if (link is String) {
-      final uri = Uri.tryParse(link);
-      return uri == null ? null : parseUri(uri);
-    }
-    return null;
+  @override
+  kit.AppLink? matchPush(Map<String, Object?> data) {
+    final code = data['room_code'];
+    if (code is! String) return null;
+    final normalized = DeepLinkParser.normalizeRoomCode(code);
+    return normalized == null ? null : JoinRoomLink(normalized);
   }
+}
+
+/// SpoRand's deep-link matchers (`linkMatchersProvider`)
+/// [новое имя — согласовать].
+const sporandLinkMatchers = <kit.LinkMatcher>[JoinRoomLinkMatcher()];
+
+/// Parses incoming links into [kit.AppLink]s: mobile_kit's parser with
+/// [sporandLinkMatchers]. Only the join link exists in the MVP.
+class DeepLinkParser extends kit.DeepLinkParser {
+  const DeepLinkParser({required super.allowedHosts})
+    : super(matchers: sporandLinkMatchers);
+
+  /// Crockford base32 alphabet used by room codes: no I, L, O, U.
+  static const _alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  static const roomCodeLength = 6;
 
   /// Normalizes user or link input to the canonical code, or null if it is
   /// not a valid room code. Crockford decoding maps I/L to 1 and O to 0.
@@ -127,34 +102,5 @@ final class DeepLinkParser {
       if (!_alphabet.contains(char)) return null;
     }
     return cleaned;
-  }
-}
-
-/// Links received before the app can show them (during boot, or before
-/// onboarding is done). The boot `route` step drains the queue; a link that
-/// must wait for onboarding is parked in [deferred].
-final class DeepLinkQueue {
-  final List<IncomingLink> _pending = [];
-  AppLink? _deferred;
-
-  bool get isEmpty => _pending.isEmpty;
-  int get length => _pending.length;
-
-  void enqueue(IncomingLink link) => _pending.add(link);
-
-  List<IncomingLink> drain() {
-    final items = List<IncomingLink>.of(_pending);
-    _pending.clear();
-    return items;
-  }
-
-  AppLink? get deferred => _deferred;
-
-  void defer(AppLink link) => _deferred = link;
-
-  AppLink? takeDeferred() {
-    final link = _deferred;
-    _deferred = null;
-    return link;
   }
 }

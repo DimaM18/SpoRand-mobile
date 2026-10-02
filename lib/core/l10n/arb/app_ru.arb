@@ -260,10 +260,6 @@
   "lobbyLeaveConfirmTitle": "Выйти из комнаты?",
   "lobbyLeaveConfirmBody": "Вернуться можно по тому же коду, пока игра не началась.",
   "commonCancel": "Отмена",
-  "commonLoading": "Загрузка…",
-  "@commonLoading": {
-    "description": "Screen-reader value of a button that is busy (spinner) [новое имя — согласовать]."
-  },
   "lobbyNoRoom": "Ты не в комнате",
   "lobbyBackHome": "На главную",
   "roomEndedKicked": "Ведущий удалил тебя из комнаты",
@@ -434,27 +430,6 @@
       }
     }
   },
-  "debugClockTitle": "Калибровка часов",
-  "debugClockHint": "Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.",
-  "debugClockTapArea": "Нажми здесь",
-  "debugClockPassed": "Часы совпадают ({count} замеров)",
-  "@debugClockPassed": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "debugClockFailed": "Часы НЕ совпадают ({count} замеров)",
-  "@debugClockFailed": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "debugClockCopy": "Скопировать отчёт",
-  "debugClockClear": "Очистить",
   "settingsClockCalibration": "Калибровка часов (для разработчиков)",
   "gameDjStarting": "Ведущий включает песню…",
   "@gameDjStarting": {

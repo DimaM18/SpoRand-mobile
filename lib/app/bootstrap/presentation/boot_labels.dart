@@ -1,11 +1,3 @@
-import 'package:sporand/app/bootstrap/domain/init_step.dart';
-import 'package:sporand/core/l10n/l10n.dart';
-
-extension BootLabelText on BootLabel {
-  String text(AppLocalizations l10n) => switch (this) {
-    BootLabel.loadingConfig => l10n.bootLabelConfig,
-    BootLabel.warmingUp => l10n.bootLabelWarmup,
-    BootLabel.connectingServices => l10n.bootLabelSdk,
-    BootLabel.entering => l10n.bootLabelEnter,
-  };
-}
+// Wave 8b: the loader labels are mobile_kit's strings (same texts; read
+// with `context.kitL10n`).
+export 'package:mobile_kit/mobile_kit.dart' show BootLabelText;

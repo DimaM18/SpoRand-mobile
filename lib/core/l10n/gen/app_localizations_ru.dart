@@ -481,9 +481,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonCancel => 'Отмена';
 
   @override
-  String get commonLoading => 'Загрузка…';
-
-  @override
   String get lobbyNoRoom => 'Ты не в комнате';
 
   @override
@@ -735,32 +732,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String resultsCorrect(int count) {
     return 'Верно: $count';
   }
-
-  @override
-  String get debugClockTitle => 'Калибровка часов';
-
-  @override
-  String get debugClockHint =>
-      'Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.';
-
-  @override
-  String get debugClockTapArea => 'Нажми здесь';
-
-  @override
-  String debugClockPassed(int count) {
-    return 'Часы совпадают ($count замеров)';
-  }
-
-  @override
-  String debugClockFailed(int count) {
-    return 'Часы НЕ совпадают ($count замеров)';
-  }
-
-  @override
-  String get debugClockCopy => 'Скопировать отчёт';
-
-  @override
-  String get debugClockClear => 'Очистить';
 
   @override
   String get settingsClockCalibration => 'Калибровка часов (для разработчиков)';

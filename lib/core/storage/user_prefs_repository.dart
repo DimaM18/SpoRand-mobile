@@ -1,44 +1,31 @@
-import 'package:sporand/core/privacy/age_band.dart';
+import 'package:mobile_kit/mobile_kit.dart' show KitUserPrefs;
+
 import 'package:sporand/core/storage/preferences_store.dart';
 
-/// Typed access to the user's local privacy/onboarding state.
-class UserPrefsRepository {
-  UserPrefsRepository(this._store);
+// Wave 8b: the privacy and onboarding state lives in mobile_kit's
+// `KitUserPrefs` (mobile-template); SpoRand adds the last display name.
+export 'package:mobile_kit/mobile_kit.dart' show KitUserPrefs;
 
-  final PreferencesStore _store;
+/// Typed access to the user's local privacy/onboarding state: mobile_kit's
+/// [KitUserPrefs] (standard age policy) plus SpoRand's display name, under
+/// the old constructor.
+class UserPrefsRepository extends KitUserPrefs {
+  UserPrefsRepository(super.store, {super.policy});
 
-  AgeBand? get ageBand => AgeBand.fromWire(_store.getString(PrefKeys.ageBand));
-
-  /// Once an under-13 answer is given the gate stays closed, so the age
-  /// cannot be retried with another year (neutral age gate practice).
-  bool get ageGateBlocked => _store.getBool(PrefKeys.ageGateBlocked) ?? false;
-
-  bool get onboardingCompleted =>
-      _store.getBool(PrefKeys.onboardingCompleted) ?? false;
-
-  /// The user's own analytics choice; null when never asked.
-  bool? get analyticsConsent => _store.getBool(PrefKeys.analyticsConsent);
-
-  String? get displayName => _store.getString(PrefKeys.displayName);
-
-  /// The account (`user_id`) whose server profile already has [ageBand];
-  /// null until the first `PATCH /v1/me` succeeds.
-  String? get ageBandSyncedFor => _store.getString(PrefKeys.ageBandSyncedFor);
-
-  Future<void> markAgeBandSynced(String userId) =>
-      _store.setString(PrefKeys.ageBandSyncedFor, userId);
+  /// The last display name typed at create/join.
+  String? get displayName => SporandPrefs(this).displayName;
 
   Future<void> saveDisplayName(String name) =>
-      _store.setString(PrefKeys.displayName, name);
+      SporandPrefs(this).saveDisplayName(name);
+}
 
-  Future<void> saveAgeBand(AgeBand band) async {
-    await _store.setString(PrefKeys.ageBand, band.wireName);
-    if (band.isBlocked) await _store.setBool(PrefKeys.ageGateBlocked, true);
-  }
+/// SpoRand's own preferences on the kit's user prefs (any [KitUserPrefs],
+/// e.g. the one mobile_kit's `userPrefsProvider` builds); the keys are in
+/// [PrefKeys.all] [новое имя — согласовать].
+extension SporandPrefs on KitUserPrefs {
+  /// The last display name typed at create/join.
+  String? get displayName => store.getString(PrefKeys.displayName);
 
-  Future<void> saveAnalyticsConsent(bool granted) =>
-      _store.setBool(PrefKeys.analyticsConsent, granted);
-
-  Future<void> markOnboardingCompleted() =>
-      _store.setBool(PrefKeys.onboardingCompleted, true);
+  Future<void> saveDisplayName(String name) =>
+      store.setString(PrefKeys.displayName, name);
 }

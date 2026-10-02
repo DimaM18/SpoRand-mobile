@@ -481,9 +481,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get commonCancel => 'Anuluj';
 
   @override
-  String get commonLoading => 'Ładowanie…';
-
-  @override
   String get lobbyNoRoom => 'Nie jesteś w pokoju';
 
   @override
@@ -736,32 +733,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String resultsCorrect(int count) {
     return 'Trafione: $count';
   }
-
-  @override
-  String get debugClockTitle => 'Kalibracja zegara';
-
-  @override
-  String get debugClockHint =>
-      'Stuknij obszar kilka razy. Test sprawdza, czy czasy dotyku i klatek są na zegarze urządzenia.';
-
-  @override
-  String get debugClockTapArea => 'Stuknij tutaj';
-
-  @override
-  String debugClockPassed(int count) {
-    return 'Zegary zgodne ($count pomiarów)';
-  }
-
-  @override
-  String debugClockFailed(int count) {
-    return 'Zegary NIE są zgodne ($count pomiarów)';
-  }
-
-  @override
-  String get debugClockCopy => 'Kopiuj raport';
-
-  @override
-  String get debugClockClear => 'Wyczyść';
 
   @override
   String get settingsClockCalibration => 'Kalibracja zegara (dla programistów)';

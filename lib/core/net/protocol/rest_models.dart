@@ -2,6 +2,12 @@
 /// packages/protocol `src/rest/*`, replaced later by the generated
 /// lib/contracts/ code. Field names are canonical.
 ///
+/// Wave 8b: the shared bodies (auth, `/v1/me`, consent, RFC 9457 problems)
+/// are the kit DTOs of mobile_kit, re-exported here. They keep SpoRand's
+/// account fields (`games_completed`, `music_links`) in `extras` and write
+/// them back; [SporandUserProfile] and [SporandMeResponse] read them under
+/// the old names. The game bodies below stay SpoRand's.
+///
 /// Conventions (packages/protocol "Wire policies"):
 /// - request bodies are strict: [JsonRead.expectOnly] rejects unknown fields
 ///   and explicit nulls when a body is parsed (tests, tools);
@@ -11,362 +17,45 @@
 ///   forwards them).
 library;
 
+import 'package:mobile_kit/mobile_kit.dart' show MeResponse, UserProfile;
+
 import 'package:sporand/core/net/protocol/json_read.dart';
 import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
-import 'package:sporand/core/platform/app_platform.dart';
-import 'package:sporand/core/privacy/age_band.dart';
+
+export 'package:mobile_kit/mobile_kit.dart'
+    show
+        AuthTokensResponse,
+        ConsentSource,
+        ConsentState,
+        ConsentUpdateRequest,
+        EntitlementRecord,
+        EntitlementsState,
+        GuestAuthRequest,
+        MePatchRequest,
+        MeResponse,
+        Problem,
+        ProblemFieldError,
+        RefreshTokenRequest,
+        UserProfile;
 
 // ---------------------------------------------------------------------------
-// Auth
+// Account fields of SpoRand (`profileExtra`, `meExtra`)
 // ---------------------------------------------------------------------------
 
-/// `POST /v1/auth/guest` body.
-final class GuestAuthRequest {
-  const GuestAuthRequest({
-    required this.platform,
-    required this.appVersion,
-    required this.osVersion,
-    required this.locale,
-  });
-
-  factory GuestAuthRequest.fromJson(JsonMap json) => GuestAuthRequest(
-    platform: (json..expectOnly(_keys)).wire('platform', AppPlatform.values),
-    appVersion: json.str('app_version'),
-    osVersion: json.str('os_version'),
-    locale: json.str('locale'),
-  );
-
-  static const _keys = {'platform', 'app_version', 'os_version', 'locale'};
-
-  final AppPlatform platform;
-  final String appVersion;
-  final String osVersion;
-
-  /// BCP 47 tag, e.g. `pl-PL`.
-  final String locale;
-
-  JsonMap toJson() => {
-    'platform': platform.wire,
-    'app_version': appVersion,
-    'os_version': osVersion,
-    'locale': locale,
-  };
+/// `UserProfile.games_completed` (SpoRand's `profileExtra`), read from the
+/// kit DTO's `extras` [новое имя — согласовать].
+extension SporandUserProfile on UserProfile {
+  /// Games this account finished; 0 when the field is absent.
+  int get gamesCompleted => extras.readInt('games_completed') ?? 0;
 }
 
-/// `POST /v1/auth/refresh` and `POST /v1/auth/logout` body.
-final class RefreshTokenRequest {
-  const RefreshTokenRequest(this.refreshToken);
-
-  factory RefreshTokenRequest.fromJson(JsonMap json) => RefreshTokenRequest(
-    (json..expectOnly(const {'refresh_token'})).str('refresh_token'),
-  );
-
-  final String refreshToken;
-
-  JsonMap toJson() => {'refresh_token': refreshToken};
-}
-
-/// `UserProfile` inside auth and `/v1/me` responses.
-final class UserProfile {
-  const UserProfile({
-    required this.userId,
-    required this.createdAt,
-    required this.locale,
-    required this.consentAnalytics,
-    required this.consentAdsPersonalized,
-    required this.gamesCompleted,
-    this.displayName,
-    this.ageBand,
-    this.countryCode,
-    this.consentUpdatedAt,
-    this.analyticsUid,
-  });
-
-  factory UserProfile.fromJson(JsonMap json) => UserProfile(
-    userId: json.str('user_id'),
-    createdAt: json.str('created_at'),
-    displayName: json.optStr('display_name'),
-    locale: json.str('locale'),
-    ageBand: json.optStr('age_band'),
-    countryCode: json.optStr('country_code'),
-    consentAnalytics: json.boolean('consent_analytics'),
-    consentAdsPersonalized: json.boolean('consent_ads_personalized'),
-    consentUpdatedAt: json.optStr('consent_updated_at'),
-    gamesCompleted: json.integer('games_completed'),
-    analyticsUid: json.optStr('analytics_uid'),
-  );
-
-  final String userId;
-  final String createdAt;
-  final String? displayName;
-  final String locale;
-
-  /// `AgeBand` wire value (see `core/privacy/age_band.dart`).
-  final String? ageBand;
-  final String? countryCode;
-  final bool consentAnalytics;
-  final bool consentAdsPersonalized;
-  final String? consentUpdatedAt;
-  final int gamesCompleted;
-
-  /// HMAC of `user_id` computed by the server (S8.6): the analytics user id
-  /// (GA4 `setUserId`, only with analytics consent), never the raw
-  /// `user_id`. Required by packages/protocol since wave 3; parsed leniently
-  /// so an older server still works (the app then sets no analytics user).
-  final String? analyticsUid;
-
-  JsonMap toJson() => {
-    'user_id': userId,
-    'created_at': createdAt,
-    'display_name': ?displayName,
-    'locale': locale,
-    'age_band': ?ageBand,
-    'country_code': ?countryCode,
-    'consent_analytics': consentAnalytics,
-    'consent_ads_personalized': consentAdsPersonalized,
-    'consent_updated_at': ?consentUpdatedAt,
-    'games_completed': gamesCompleted,
-    'analytics_uid': ?analyticsUid,
-  };
-}
-
-/// `POST /v1/auth/guest` (`GuestAuthResponse`) and `POST /v1/auth/refresh`
-/// (`RefreshResponse`: the token pair plus the current profile) responses.
-/// Parsing is lenient where the app has fallbacks: the TTL may come from the
-/// JWT, and an older server's refresh response has no user.
-final class AuthTokensResponse {
-  const AuthTokensResponse({
-    required this.accessToken,
-    required this.refreshToken,
-    this.accessTokenTtlMs,
-    this.installationId,
-    this.user,
-  });
-
-  factory AuthTokensResponse.fromJson(JsonMap json) {
-    final user = json.optObj('user');
-    return AuthTokensResponse(
-      accessToken: json.str('access_token'),
-      refreshToken: json.str('refresh_token'),
-      accessTokenTtlMs: json.optInt('access_token_ttl_ms'),
-      installationId: json.optStr('installation_id'),
-      user: user == null ? null : UserProfile.fromJson(user),
-    );
-  }
-
-  final String accessToken;
-  final String refreshToken;
-  final int? accessTokenTtlMs;
-  final String? installationId;
-
-  /// The current profile (with `analytics_uid`); absent only from an older
-  /// server's refresh response.
-  final UserProfile? user;
-
-  JsonMap toJson() => {
-    'access_token': accessToken,
-    'refresh_token': refreshToken,
-    'access_token_ttl_ms': ?accessTokenTtlMs,
-    'installation_id': ?installationId,
-    'user': ?user?.toJson(),
-  };
-}
-
-/// `PATCH /v1/me` body; at least one field. The server accepts `age_band`
-/// only while the account has none (409 `conflict` afterwards), so a band
-/// can never be raised past the age gate (brief §7).
-final class MePatchRequest {
-  const MePatchRequest({this.displayName, this.locale, this.ageBand});
-
-  factory MePatchRequest.fromJson(JsonMap json) {
-    json.expectOnly(const {'display_name', 'locale', 'age_band'});
-    if (json.isEmpty) {
-      throw const ProtocolFormatException('PATCH /v1/me needs a field');
-    }
-    final band = json.optStr('age_band');
-    final ageBand = AgeBand.fromWire(band);
-    if (band != null && ageBand == null) {
-      throw ProtocolFormatException('unknown age_band "$band"');
-    }
-    return MePatchRequest(
-      displayName: json.optStr('display_name'),
-      locale: json.optStr('locale'),
-      ageBand: ageBand,
-    );
-  }
-
-  final String? displayName;
-  final String? locale;
-  final AgeBand? ageBand;
-
-  JsonMap toJson() => {
-    'display_name': ?displayName,
-    'locale': ?locale,
-    'age_band': ?ageBand?.wireName,
-  };
-}
-
-/// `ConsentUpdateRequest.source`: where the choice was made. `onboarding`
-/// is our onboarding consent screen (S7.11.2) [новое имя — согласовать].
-enum ConsentSource implements WireEnum {
-  ump('ump'),
-  settings('settings'),
-  onboarding('onboarding');
-
-  const ConsentSource(this.wire);
-
-  @override
-  final String wire;
-}
-
-/// `PUT /v1/me/consent` body (brief §4.2, §7; S7.11.2): the analytics choice
-/// from our own screens and the ads-personalization signal from UMP.
-final class ConsentUpdateRequest {
-  const ConsentUpdateRequest({
-    required this.consentAnalytics,
-    required this.consentAdsPersonalized,
-    required this.source,
-  });
-
-  factory ConsentUpdateRequest.fromJson(JsonMap json) => ConsentUpdateRequest(
-    consentAnalytics: (json..expectOnly(_keys)).boolean('consent_analytics'),
-    consentAdsPersonalized: json.boolean('consent_ads_personalized'),
-    source: json.wire('source', ConsentSource.values),
-  );
-
-  static const _keys = {
-    'consent_analytics',
-    'consent_ads_personalized',
-    'source',
-  };
-
-  final bool consentAnalytics;
-  final bool consentAdsPersonalized;
-  final ConsentSource source;
-
-  JsonMap toJson() => {
-    'consent_analytics': consentAnalytics,
-    'consent_ads_personalized': consentAdsPersonalized,
-    'source': source.wire,
-  };
-}
-
-/// `PUT /v1/me/consent` response: the stored flags.
-final class ConsentState {
-  const ConsentState({
-    required this.consentAnalytics,
-    required this.consentAdsPersonalized,
-    required this.consentUpdatedAt,
-  });
-
-  factory ConsentState.fromJson(JsonMap json) => ConsentState(
-    consentAnalytics: json.boolean('consent_analytics'),
-    consentAdsPersonalized: json.boolean('consent_ads_personalized'),
-    consentUpdatedAt: json.str('consent_updated_at'),
-  );
-
-  final bool consentAnalytics;
-  final bool consentAdsPersonalized;
-  final String consentUpdatedAt;
-
-  JsonMap toJson() => {
-    'consent_analytics': consentAnalytics,
-    'consent_ads_personalized': consentAdsPersonalized,
-    'consent_updated_at': consentUpdatedAt,
-  };
-}
-
-/// `GET /v1/me` response. The app reads only [user] (for `analytics_uid`);
-/// entitlements come from RevenueCat, so the other parts are kept as they
-/// arrived.
-final class MeResponse {
-  const MeResponse({
-    required this.user,
-    required this.entitlements,
-    required this.musicLinks,
-  });
-
-  factory MeResponse.fromJson(JsonMap json) => MeResponse(
-    user: UserProfile.fromJson(json.obj('user')),
-    entitlements: json.obj('entitlements'),
-    musicLinks: json.list('music_links', (item) => item),
-  );
-
-  final UserProfile user;
-  final JsonMap entitlements;
-  final List<Object?> musicLinks;
-
-  JsonMap toJson() => {
-    'user': user.toJson(),
-    'entitlements': entitlements,
-    'music_links': musicLinks,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Problems (RFC 9457)
-// ---------------------------------------------------------------------------
-
-final class ProblemFieldError {
-  const ProblemFieldError({required this.path, required this.message});
-
-  factory ProblemFieldError.fromJson(JsonMap json) =>
-      ProblemFieldError(path: json.str('path'), message: json.str('message'));
-
-  /// JSON Pointer into the request body, e.g. `/room_code`.
-  final String path;
-  final String message;
-
-  JsonMap toJson() => {'path': path, 'message': message};
-}
-
-/// `application/problem+json` error body.
-final class Problem {
-  const Problem({
-    required this.type,
-    required this.title,
-    required this.status,
-    required this.code,
-    this.detail,
-    this.instance,
-    this.errors,
-  });
-
-  factory Problem.fromJson(JsonMap json) => Problem(
-    type: json.str('type'),
-    title: json.str('title'),
-    status: json.integer('status'),
-    code: json.str('code'),
-    detail: json.optStr('detail'),
-    instance: json.optStr('instance'),
-    errors: json.optList(
-      'errors',
-      (item) => ProblemFieldError.fromJson(asObject(item)),
-    ),
-  );
-
-  final String type;
-  final String title;
-  final int status;
-
-  /// See `ErrorCodes`; the set is open-ended.
-  final String code;
-  final String? detail;
-  final String? instance;
-
-  /// Present for `validation_failed`.
-  final List<ProblemFieldError>? errors;
-
-  JsonMap toJson() => {
-    'type': type,
-    'title': title,
-    'status': status,
-    'code': code,
-    'detail': ?detail,
-    'instance': ?instance,
-    'errors': ?errors?.map((e) => e.toJson()).toList(),
-  };
+/// `MeResponse.music_links` (SpoRand's `meExtra`), read from the kit DTO's
+/// `extras` [новое имя — согласовать].
+extension SporandMeResponse on MeResponse {
+  /// The account's music links, as they arrived; empty when absent.
+  List<Object?> get musicLinks =>
+      extras.readList('music_links') ?? const <Object?>[];
 }
 
 // ---------------------------------------------------------------------------

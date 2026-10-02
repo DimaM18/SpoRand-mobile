@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_kit/mobile_kit.dart' as kit show RemoteConfigService;
 
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/core/ads/ads_policy.dart';
@@ -16,7 +17,6 @@ import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/net/protocol/ws_models.dart';
 import 'package:sporand/core/net/ws_client.dart';
 import 'package:sporand/core/playback/youtube/youtube_player.dart';
-import 'package:sporand/core/remote_config/remote_config_service.dart';
 import 'package:sporand/features/game/domain/game_state.dart';
 import 'package:sporand/features/game/domain/host_playback_coordinator.dart';
 import 'package:sporand/features/lobby/domain/room_session.dart';
@@ -139,7 +139,7 @@ class GameController extends Notifier<GameUiState> {
   InputClock get _clock => ref.read(inputClockProvider);
   InputClock get inputClock => _clock;
   AdsService get _ads => ref.read(adsServiceProvider);
-  RemoteConfigService get _config => ref.read(remoteConfigProvider);
+  kit.RemoteConfigService get _config => ref.read(remoteConfigProvider);
 
   bool get isHost => _session?.isHost ?? false;
 

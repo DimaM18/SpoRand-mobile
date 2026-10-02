@@ -910,12 +910,6 @@ abstract class AppLocalizations {
   /// **'Отмена'**
   String get commonCancel;
 
-  /// Screen-reader value of a button that is busy (spinner) [новое имя — согласовать].
-  ///
-  /// In ru, this message translates to:
-  /// **'Загрузка…'**
-  String get commonLoading;
-
   /// No description provided for @lobbyNoRoom.
   ///
   /// In ru, this message translates to:
@@ -1311,48 +1305,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Верно: {count}'**
   String resultsCorrect(int count);
-
-  /// No description provided for @debugClockTitle.
-  ///
-  /// In ru, this message translates to:
-  /// **'Калибровка часов'**
-  String get debugClockTitle;
-
-  /// No description provided for @debugClockHint.
-  ///
-  /// In ru, this message translates to:
-  /// **'Нажимай на область несколько раз. Тест проверяет, что время касаний и кадров идёт по часам устройства.'**
-  String get debugClockHint;
-
-  /// No description provided for @debugClockTapArea.
-  ///
-  /// In ru, this message translates to:
-  /// **'Нажми здесь'**
-  String get debugClockTapArea;
-
-  /// No description provided for @debugClockPassed.
-  ///
-  /// In ru, this message translates to:
-  /// **'Часы совпадают ({count} замеров)'**
-  String debugClockPassed(int count);
-
-  /// No description provided for @debugClockFailed.
-  ///
-  /// In ru, this message translates to:
-  /// **'Часы НЕ совпадают ({count} замеров)'**
-  String debugClockFailed(int count);
-
-  /// No description provided for @debugClockCopy.
-  ///
-  /// In ru, this message translates to:
-  /// **'Скопировать отчёт'**
-  String get debugClockCopy;
-
-  /// No description provided for @debugClockClear.
-  ///
-  /// In ru, this message translates to:
-  /// **'Очистить'**
-  String get debugClockClear;
 
   /// No description provided for @settingsClockCalibration.
   ///

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_kit/mobile_kit.dart' show onboardingStatusProvider;
 
 import 'package:sporand/app/bootstrap/application/boot_controller.dart';
 import 'package:sporand/app/bootstrap/domain/boot_models.dart';
@@ -83,6 +84,10 @@ class OnboardingController extends Notifier<OnboardingState> {
         await prefs.saveAgeBand(band);
         state = state.copyWith(ageBand: band);
     }
+    // The kit router reads the preferences; this re-runs its redirects.
+    if (result is! AgeGateInvalid && ref.mounted) {
+      ref.read(onboardingStatusProvider.notifier).reload();
+    }
     return result;
   }
 
@@ -144,6 +149,7 @@ class OnboardingController extends Notifier<OnboardingState> {
     );
 
     state = state.copyWith(completed: true, busy: false);
+    ref.read(onboardingStatusProvider.notifier).reload();
     return ref.read(deepLinkQueueProvider).takeDeferred()?.location ??
         Routes.home;
   }

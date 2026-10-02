@@ -114,7 +114,7 @@ void main() {
           .single;
       // Booleans are converted to 1/0 for GA4.
       expect(completed.params['cold_start'], 1);
-      expect(completed.params['degraded_steps'], '');
+      expect(completed.params['degraded_steps'], 0);
     },
   );
 

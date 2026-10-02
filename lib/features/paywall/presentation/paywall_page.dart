@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobile_kit/mobile_kit.dart'
+    show PaywallConfig, PaywallPerk, paywallConfigProvider;
 
 import 'package:sporand/app/di/providers.dart';
 import 'package:sporand/core/l10n/l10n.dart';
@@ -10,6 +12,21 @@ import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 import 'package:sporand/features/paywall/presentation/paywall_controller.dart';
 import 'package:sporand/features/settings/presentation/settings_controller.dart';
+
+/// SpoRand's paywall for mobile_kit (`paywallConfigProvider`): the
+/// placements of `paywall_view.placement` and the perks [PaywallPage] lists
+/// [новое имя — согласовать].
+final sporandPaywallConfig = PaywallConfig(
+  placements: [for (final p in PaywallPlacement.values) p.wireName],
+  perks: [
+    PaywallPerk(id: 'no_ads', label: (context) => context.l10n.paywallPerkNoAds),
+    PaywallPerk(id: 'rounds', label: (context) => context.l10n.paywallPerkRounds),
+    PaywallPerk(
+      id: 'players',
+      label: (context) => context.l10n.paywallPerkPlayers,
+    ),
+  ],
+);
 
 /// Paywall with the disclosures Apple 3.1.2(c) requires: price, period,
 /// trial, auto-renewal terms, Terms and Privacy links, Restore Purchases.
@@ -84,11 +101,7 @@ class PaywallPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: Spacing.lg),
-          for (final perk in [
-            l10n.paywallPerkNoAds,
-            l10n.paywallPerkRounds,
-            l10n.paywallPerkPlayers,
-          ])
+          for (final perk in ref.watch(paywallConfigProvider).perks)
             Padding(
               padding: const EdgeInsets.only(bottom: Spacing.sm),
               child: Row(
@@ -101,7 +114,10 @@ class PaywallPage extends ConsumerWidget {
                   ),
                   const SizedBox(width: Spacing.sm),
                   Expanded(
-                    child: Text(perk, style: theme.textTheme.titleMedium),
+                    child: Text(
+                      perk.label(context),
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
                 ],
               ),
@@ -175,6 +191,12 @@ class _PackageTile extends StatelessWidget {
       PaywallProduct.premiumYearly => (
         l10n.paywallPremiumYearly,
         l10n.paywallPerYear(package.priceLabel),
+      ),
+      // Wave 8b: mobile_kit's catalog type knows products outside the
+      // default catalog; SpoRand sells none, so this is never shown.
+      PaywallProduct.other => (
+        package.title ?? package.productId,
+        package.priceLabel,
       ),
     };
     final trialDays = package.trialDays;

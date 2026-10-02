@@ -201,7 +201,8 @@ void main() {
         });
         final completed = telemetry.events.last;
         expect(completed.$1, AnalyticsEvents.appInitCompleted);
-        expect(completed.$2['degraded_steps'], 'slow,broken');
+        expect(completed.$2['degraded_steps'], 2);
+        expect(completed.$2['degraded_step_ids'], 'slow,broken');
       });
     });
 
