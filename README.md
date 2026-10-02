@@ -69,7 +69,7 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
   through `InputClock.fromOs` (`tapMonoUsFromPointer`, `currentFrameMonoUs`),
   native stamps through `fromOsUs`, and only the clip player's schedule back
   through `toOsUs`. The raw source is `InputClockSource` (Pigeon
-  `InputClockApi`). Also: the unlock/tap sanity rules in `MonoTimestamps`
+  `InputClockApi` of the template plugin `mobile_kit_clock` since wave 8b). Also: the unlock/tap sanity rules in `MonoTimestamps`
   and `ClockCalibrationRecorder`. The calibration screen (`/debug/clock`,
   Settings -> "Калибровка часов" in non-prod builds) is the device calibration test
   (`docs/DEVELOPMENT.md` §12): tap it a few times on a real iPhone and Android phone and
@@ -191,15 +191,22 @@ opened by the `route` step. The `boot_min_splash_ms` hold happens before
 
 ### Native bridges
 
-`packages/sporand_native/` is a local Flutter plugin with the Pigeon host
-APIs (`InputClockApi`, `ClipPlayerApi`, `MusicAppApi`). Clock values crossing
-a bridge are raw OS time (`*_os_us`); only the Dart `InputClock` knows the
-anchor. It registers itself through
-`GeneratedPluginRegistrant`, so neither the Xcode project nor `MainActivity`
-needs edits. Regenerate after changing `pigeons/*.dart`:
+Two plugins carry the native code, both registered through
+`GeneratedPluginRegistrant` from their pubspec entries, so neither the Xcode
+project nor `MainActivity` needs edits:
+
+| API | Plugin | Pigeon definition |
+|---|---|---|
+| `InputClockApi` (device input clock) | `mobile_kit_clock` (template, wave 8b) | the template's `flutter/mobile_kit_clock/pigeons/input_clock.dart` |
+| `ClipPlayerApi` (scheduled clip player) | `packages/sporand_native/` | `pigeons/clip_player.dart` (owns `NativeBridgeError`) |
+| `MusicAppApi` (BYOP music-app hand-off) | `packages/sporand_native/` | `pigeons/music_app.dart` |
+
+Clock values crossing a bridge are raw OS time (`*_os_us`) on the
+`mobile_kit_clock` base; only the Dart `InputClock` knows the anchor. Both
+plugins ship a privacy manifest with the 35F9.1 reason. Regenerate after
+changing `pigeons/*.dart`:
 
 ```sh
-dart run pigeon --input pigeons/input_clock.dart
 dart run pigeon --input pigeons/clip_player.dart
 dart run pigeon --input pigeons/music_app.dart
 ```

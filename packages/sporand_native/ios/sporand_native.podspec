@@ -5,9 +5,10 @@
 Pod::Spec.new do |s|
   s.name             = 'sporand_native'
   s.version          = '0.0.1'
-  s.summary          = 'SpoRand native bridges: input clock and scheduled clip player.'
+  s.summary          = 'SpoRand native bridges: scheduled clip player and music-app hand-off.'
   s.description      = <<-DESC
-Pigeon host APIs InputClockApi and ClipPlayerApi (see apps/mobile/pigeons).
+Pigeon host APIs ClipPlayerApi and MusicAppApi (see apps/mobile/pigeons). The
+input clock lives in the mobile_kit_clock plugin.
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }
@@ -26,6 +27,7 @@ Pigeon host APIs InputClockApi and ClipPlayerApi (see apps/mobile/pigeons).
   # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
   # plugin's privacy impact, and then uncomment this line. For more information,
   # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # Declares ProcessInfo.systemUptime (required-reason API, 35F9.1).
+  # Declares ProcessInfo.systemUptime (required-reason API, 35F9.1): the
+  # ClipPlayerHost schedules and reports playback on the input clock.
   s.resource_bundles = {'sporand_native_privacy' => ['sporand_native/Sources/sporand_native/PrivacyInfo.xcprivacy']}
 end

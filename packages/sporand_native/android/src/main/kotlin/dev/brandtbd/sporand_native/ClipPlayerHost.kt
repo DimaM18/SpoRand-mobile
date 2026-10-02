@@ -117,7 +117,8 @@ class ClipPlayerHost(private val context: Context) : ClipPlayerApi {
             pendingStart = start
             pendingContinuation = cont
             // postAtTime is scheduled on SystemClock.uptimeMillis(), the same
-            // clock as InputClockApi; a time in the past runs immediately.
+            // clock as mobile_kit_clock's input clock; a time in the past runs
+            // immediately.
             mainHandler.postAtTime(start, startAtOsUs / 1000L)
             cont.invokeOnCancellation { mainHandler.removeCallbacks(start) }
         }

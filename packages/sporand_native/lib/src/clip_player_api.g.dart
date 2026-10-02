@@ -233,9 +233,10 @@ class PlaybackStartedMessage {
     required this.outputRoute,
   });
 
-  /// When the audio started: a raw OS input-clock value (InputClockApi
-  /// base). Native code never knows the process anchor; the Dart side
-  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  /// When the audio started: a raw OS input-clock value (the base of the
+  /// mobile_kit_clock plugin's clock). Native code never knows the process
+  /// anchor; the Dart side converts it with `InputClock.fromOsUs` (brief §5
+  /// "process anchor").
   int audioStartOsUs;
 
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.

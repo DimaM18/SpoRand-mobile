@@ -188,6 +188,18 @@ private object ClipPlayerApiPigeonUtils {
 
 }
 
+/**
+ * Error class for passing custom error details to Flutter via a thrown PlatformException.
+ * @property code The error code.
+ * @property message The error message.
+ * @property details The error details. Must be a datatype supported by the api codec.
+ */
+class NativeBridgeError (
+  val code: String,
+  override val message: String? = null,
+  val details: Any? = null
+) : RuntimeException()
+
 /** `round.playback_started.output_route`. */
 enum class OutputRouteMessage(val raw: Int) {
   SPEAKER(0),
@@ -306,9 +318,10 @@ data class PreloadResultMessage (
 /** Generated class from Pigeon that represents data sent in messages. */
 data class PlaybackStartedMessage (
   /**
-   * When the audio started: a raw OS input-clock value (InputClockApi
-   * base). Native code never knows the process anchor; the Dart side
-   * converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+   * When the audio started: a raw OS input-clock value (the base of the
+   * mobile_kit_clock plugin's clock). Native code never knows the process
+   * anchor; the Dart side converts it with `InputClock.fromOsUs` (brief §5
+   * "process anchor").
    */
   val audioStartOsUs: Long,
   /** iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0. */

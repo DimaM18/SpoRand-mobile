@@ -13,6 +13,24 @@ import Foundation
   #error("Unsupported platform.")
 #endif
 
+/// Error class for passing custom error details to Dart side.
+final class NativeBridgeError: Error {
+  let code: String
+  let message: String?
+  let details: Sendable?
+
+  init(code: String, message: String?, details: Sendable?) {
+    self.code = code
+    self.message = message
+    self.details = details
+  }
+
+  var localizedDescription: String {
+    return
+      "NativeBridgeError(code: \(code), message: \(message ?? "<nil>"), details: \(details ?? "<nil>"))"
+  }
+}
+
 private func wrapResult(_ result: Any?) -> [Any?] {
   return [result]
 }
@@ -278,9 +296,10 @@ struct PreloadResultMessage: Hashable, CustomStringConvertible {
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct PlaybackStartedMessage: Hashable, CustomStringConvertible {
-  /// When the audio started: a raw OS input-clock value (InputClockApi
-  /// base). Native code never knows the process anchor; the Dart side
-  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  /// When the audio started: a raw OS input-clock value (the base of the
+  /// mobile_kit_clock plugin's clock). Native code never knows the process
+  /// anchor; the Dart side converts it with `InputClock.fromOsUs` (brief §5
+  /// "process anchor").
   var audioStartOsUs: Int64
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.
   var outputLatencyMs: Int64

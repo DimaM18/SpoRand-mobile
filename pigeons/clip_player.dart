@@ -13,13 +13,15 @@ import 'package:pigeon/pigeon.dart';
     kotlinOut: 'packages/sporand_native/android/src/main/kotlin/dev/brandtbd/sporand_native/ClipPlayerApi.g.kt',
     kotlinOptions: KotlinOptions(
       package: 'dev.brandtbd.sporand_native',
+      // The one error class of the Kotlin package; music_app.dart reuses it
+      // with includeErrorClass: false.
       errorClassName: 'NativeBridgeError',
-      includeErrorClass: false,
+      includeErrorClass: true,
     ),
     swiftOut: 'packages/sporand_native/ios/sporand_native/Sources/sporand_native/ClipPlayerApi.g.swift',
     swiftOptions: SwiftOptions(
       errorClassName: 'NativeBridgeError',
-      includeErrorClass: false,
+      includeErrorClass: true,
     ),
   ),
 )
@@ -64,9 +66,10 @@ class PlaybackStartedMessage {
     required this.outputRoute,
   });
 
-  /// When the audio started: a raw OS input-clock value (InputClockApi
-  /// base). Native code never knows the process anchor; the Dart side
-  /// converts it with `InputClock.fromOsUs` (brief §5 "process anchor").
+  /// When the audio started: a raw OS input-clock value (the base of the
+  /// mobile_kit_clock plugin's clock). Native code never knows the process
+  /// anchor; the Dart side converts it with `InputClock.fromOsUs` (brief §5
+  /// "process anchor").
   int audioStartOsUs;
 
   /// iOS: `AVAudioSession.outputLatency`; Android: best estimate or 0.

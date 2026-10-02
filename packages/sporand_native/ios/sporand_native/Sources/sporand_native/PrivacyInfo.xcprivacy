@@ -7,7 +7,7 @@
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
-			<!-- ProcessInfo.systemUptime (input clock for tap timing). -->
+			<!-- ProcessInfo.systemUptime (ClipPlayerHost: clip start on the input clock). -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>

@@ -41,7 +41,8 @@ dependencies:
   # wrapped in lib/core/playback/youtube/ behind YouTubePlayerHost. Exact pin.
   youtube_player_iframe: 6.0.2
 
-  # Native bridges (Pigeon: InputClockApi, ClipPlayerApi); see pigeons/.
+  # Native bridges (Pigeon: ClipPlayerApi, MusicAppApi); see pigeons/. The
+  # input clock is the mobile_kit_clock plugin below.
   sporand_native:
     path: packages/sporand_native
 
