@@ -368,10 +368,10 @@ old paths stay, so no import changes:
   a link with an invalid `room_code` in a push falls through to its `link`
   key; the «not found» page is the kit's.
 - **Drift:** `test/app/client_registry_test.dart` checks the config's content
-  guard, the boot steps, features, paywall placements and products against
-  `packages/protocol/generated/client-registry.json`. Config keys are not
-  compared: the registry lists `youtube_embed_enabled`, which `RcKeys` does
-  not (18 keys), and the order differs.
+  guard, the config keys (`RcKeys.all`, 19 keys in the registry's order,
+  `youtube_embed_enabled` included), the boot steps, features, paywall
+  placements and products against
+  `packages/protocol/generated/client-registry.json`.
 - **New names** (agreed by the owner on 2026-10-02, `docs/DEVELOPMENT.md` W8b-1): `sporandAppConfig`,
   `sporandKitOverrides`, `sporandFeatures`, `sporandInitSteps`,
   `SporandBootServices`, `SporandBootDependencies`, `SporandEnv`
@@ -641,10 +641,10 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
 3.47.5) when the server, the packages or the app change.
 
 `.github/workflows/mobile.yml` runs on pushes and pull requests that touch
-`apps/mobile/` or `packages/protocol/fixtures/`: Flutter 3.47.5, read access to the template
+`apps/mobile/`, `packages/protocol/fixtures/` or `packages/protocol/generated/`: Flutter 3.47.5, read access to the template
 repository (`TEMPLATE_READ_TOKEN`), `flutter pub get`, `flutter analyze --no-fatal-infos`
 (errors and warnings fail; infos are reported) and `flutter test --coverage` (the lcov report is
-uploaded as an artifact). It does not run on `packages/protocol/generated/` changes, although
+uploaded as an artifact). The generated files are in the filter because
 `test/app/client_registry_test.dart` and `test/core/content_guard_test.dart` read
-`generated/client-registry.json`: run `flutter test` yourself after a registry change. Both
-workflows ran green on GitHub on the wave 8b branch (2026-10-02).
+`generated/client-registry.json`. Both workflows ran green on GitHub on the wave 8b branch
+(2026-10-02).

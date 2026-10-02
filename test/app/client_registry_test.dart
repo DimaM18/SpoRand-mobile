@@ -7,13 +7,13 @@ import 'package:mobile_kit/testing.dart';
 import 'package:sporand/app/bootstrap/bootstrap.dart';
 import 'package:sporand/app/bootstrap/steps/boot_steps.dart';
 import 'package:sporand/core/analytics/analytics_service.dart';
+import 'package:sporand/core/remote_config/remote_config_keys.dart';
 import 'package:sporand/features/paywall/domain/paywall_placement.dart';
 import 'package:sporand/features/paywall/presentation/paywall_page.dart';
 
 // Wave 8b: the app's Dart mirrors against packages/protocol's generated
-// client-registry.json (mobile_kit's `expectClientRegistryMatches`). The
-// config keys are not compared yet: the registry also lists
-// `youtube_embed_enabled`, which the app does not read (RcKeys pins 18 keys).
+// client-registry.json (mobile_kit's `expectClientRegistryMatches`), config
+// keys included (names in the registry's order, reader, type, default, range).
 final _registry = File(
   '../../packages/protocol/generated/client-registry.json',
 );
@@ -29,9 +29,10 @@ void main() {
     );
   }, skip: _skip);
 
-  test('boot steps, features, paywall placements and products match', () {
+  test('config keys, boot steps, features, placements and products match', () {
     expectClientRegistryMatches(
       readClientRegistry(_registry.path),
+      rcKeys: RcKeys.all,
       initSteps: buildBootSteps(),
       features: sporandAppConfig.features,
       placements: sporandPaywallConfig.placements,

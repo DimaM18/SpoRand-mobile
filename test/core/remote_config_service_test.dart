@@ -25,6 +25,7 @@ void main() {
         'remove_ads_upsell_enabled',
         'spotify_proto_enabled',
         'licensed_provider_enabled',
+        'youtube_embed_enabled',
         'max_ad_wait_ms',
         'rewarded_preload_enabled',
         'paywall_variant',
