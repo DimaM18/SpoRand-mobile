@@ -84,13 +84,13 @@ jobs:
           flutter-version: 3.47.5
           cache: true
 
-      # See mobile.yml (including the note on mobile-template-flutter).
-      - name: Read access to the template repository
+      # See mobile.yml.
+      - name: Read access to the template Flutter repository
         env:
           TEMPLATE_READ_TOKEN: ${{ secrets.TEMPLATE_READ_TOKEN }}
         run: |
-          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (mobile-template docs/CONSUMING.md)"; exit 1; }
-          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template".insteadOf "https://github.com/DimaM18/mobile-template"
+          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (Contents: Read on DimaM18/mobile-template-flutter)"; exit 1; }
+          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template-flutter".insteadOf "https://github.com/DimaM18/mobile-template-flutter"
 
       - name: Install (Flutter)
         working-directory: app

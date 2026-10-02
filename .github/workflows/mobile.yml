@@ -36,18 +36,16 @@ jobs:
       - name: Template packages pinned
         run: node tool/template-check.mjs
 
-      # mobile_kit and mobile_kit_clock are git dependencies on the private template repository;
-      # GITHUB_TOKEN cannot read it. TEMPLATE_READ_TOKEN: a fine-grained PAT with Contents: Read on
-      # the template repository only (mobile-template docs/CONSUMING.md, section 4). After every
-      # third-party action, so the token sits in ~/.gitconfig only for the steps that need it.
-      # From v0.1.4 the kits live in DimaM18/mobile-template-flutter: change both pubspec urls,
-      # the token scope and this insteadOf rule in one commit (mobile-template docs/CONSUMING.md 3.3, 4).
-      - name: Read access to the template repository
+      # mobile_kit and mobile_kit_clock are git dependencies on the private repository
+      # DimaM18/mobile-template-flutter; GITHUB_TOKEN cannot read it. TEMPLATE_READ_TOKEN: a
+      # fine-grained PAT with Contents: Read on that repository only. After every third-party
+      # action, so the token sits in ~/.gitconfig only for the steps that need it.
+      - name: Read access to the template Flutter repository
         env:
           TEMPLATE_READ_TOKEN: ${{ secrets.TEMPLATE_READ_TOKEN }}
         run: |
-          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (mobile-template docs/CONSUMING.md)"; exit 1; }
-          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template".insteadOf "https://github.com/DimaM18/mobile-template"
+          test -n "$TEMPLATE_READ_TOKEN" || { echo "::error::set the TEMPLATE_READ_TOKEN secret (Contents: Read on DimaM18/mobile-template-flutter)"; exit 1; }
+          git config --global url."https://x-access-token:${TEMPLATE_READ_TOKEN}@github.com/DimaM18/mobile-template-flutter".insteadOf "https://github.com/DimaM18/mobile-template-flutter"
 
       - name: Install dependencies
         run: flutter pub get --suppress-analytics
