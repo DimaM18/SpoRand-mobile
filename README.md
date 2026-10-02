@@ -237,7 +237,7 @@ sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --d
 ## Template packages (wave 8b)
 
 Since wave 8b the app's base is the template's Flutter packages, git dependencies on the private
-repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.2`; `pubspec.lock` pins the commit):
+repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.3`; `pubspec.lock` pins the commit):
 
 - `mobile_kit`: boot pipeline and runner (`runKitApp`), env and flavors, router and route guard,
   services (analytics, consent, auth, security, Remote Config, ads, purchases, links, crash),
