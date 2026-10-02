@@ -271,10 +271,12 @@ repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.4`; `pu
 
 `flutter pub get` needs read access to that repository (`TEMPLATE_READ_TOKEN` there: Contents: Read): `gh auth setup-git` on a Mac, the
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
-the same release tag `v<template version>`, the version the backend pins for `@dimam18/*`
-(`node tool/template-check.mjs` checks the tag format only; keep both repositories in lockstep by
-hand on a bump; the backend's `@dimam18/*` packages must be bumped to 0.1.4 in a separate PR in
-`DimaM18/SpoRand`). For local
+the same release tag `v<template version>`, the same version as the backend's `@dimam18/*`
+(bump the backend first; `node tool/template-check.mjs` checks the tag format only, so keep both
+repositories in lockstep by hand). Order for 0.1.4: (1) the server packages `@dimam18/*` 0.1.4 are
+published and the `DimaM18/SpoRand` PR bumping them merges; (2) here, run
+`tool/contract.sh sync <SpoRand checkout at that commit>` so `contract/SOURCE` pins a backend
+commit on 0.1.4, and commit; (3) merge this branch. For local
 co-development with the template use `pubspec_overrides.yaml` (git-ignored, never
 committed; the template's `docs/CONSUMING.md` §5.5).
 
