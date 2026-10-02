@@ -12,7 +12,9 @@
 //   `ref: v<that version>` (a path dependency or dependency_overrides is local co-development);
 // - pubspec_overrides.yaml is tracked by git, the root package.json has pnpm.overrides for
 //   @dimam18/*, or pnpm-lock.yaml resolves a @dimam18/* package from file: or link: (a forgotten
-//   tarball / injected co-development setup, docs/CONSUMING.md "Совместная разработка").
+//   tarball / injected co-development setup, docs/CONSUMING.md "Совместная разработка");
+// - the project has no @dimam18/* npm version (a Flutter-only repository) and its mobile_kit /
+//   mobile_kit_clock refs, across all pubspec.yaml files, are not all the same release tag.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -71,6 +73,25 @@ export function pubspecProblems(file, text, tag) {
   return problems;
 }
 
+/** The git `ref` of each mobile_kit / mobile_kit_clock dependency in a pubspec.yaml text. */
+export function pubspecRefs(file, text) {
+  const refs = [];
+  const dependencies = yamlBlock(text, 'dependencies', 0);
+  if (dependencies === null) return refs;
+  for (const name of FLUTTER_PACKAGES) {
+    const spec = yamlBlock(dependencies.split('\n').slice(1).join('\n'), name, 2);
+    const ref = spec === null ? null : /\bref\s*:\s*['"]?([^\s,'"}]+)/.exec(spec)?.[1] ?? null;
+    if (ref !== null) refs.push({ file, name, ref });
+  }
+  return refs;
+}
+
+/** One problem when the refs are not all the same (used when there is no npm version to compare with). */
+export function refsDifferProblems(refs) {
+  if (new Set(refs.map((r) => r.ref)).size <= 1) return [];
+  return [`template refs differ: ${refs.map((r) => `${r.file} ${r.name}@${r.ref}`).join(', ')}; pin one release tag`];
+}
+
 function trackedByGit(root, file) {
   try {
     execFileSync('git', ['ls-files', '--error-unmatch', file], { cwd: root, stdio: 'ignore' });
@@ -127,7 +148,13 @@ export function templateCheck(root) {
   if (distinct.length > 1) problems.push(`@dimam18/* versions differ: ${[...versions].map(([where, v]) => `${where}@${v}`).join(', ')}`);
   const tag = distinct.length === 1 ? `v${distinct[0]}` : null;
 
-  for (const file of findFiles(root, 'pubspec.yaml')) problems.push(...pubspecProblems(file, readFileSync(join(root, file), 'utf8'), tag));
+  const refs = [];
+  for (const file of findFiles(root, 'pubspec.yaml')) {
+    const text = readFileSync(join(root, file), 'utf8');
+    problems.push(...pubspecProblems(file, text, tag));
+    refs.push(...pubspecRefs(file, text));
+  }
+  if (tag === null) problems.push(...refsDifferProblems(refs));
   for (const file of findFiles(root, 'pubspec_overrides.yaml')) {
     if (trackedByGit(root, file)) problems.push(`${file} is tracked by git; it is local only (add it to .gitignore)`);
   }

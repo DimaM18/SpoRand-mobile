@@ -40,7 +40,7 @@ flutter run --dart-define=FLAVOR=staging --dart-define=API_BASE_URL=https://api.
 flutter pub get
 flutter analyze
 flutter test                         # в том числе тесты дрейфа против contract/
-node tool/template-check.mjs         # каждая ссылка на шаблон — тег vX.Y.Z, нет локальных подмен (равенство ссылок смотри руками)
+node tool/template-check.mjs         # каждая ссылка на шаблон — тег vX.Y.Z, нет локальных подмен (обе ссылки равны; совпадение с версией бэкенда смотри руками)
 flutter gen-l10n                     # после правки ARB (ru — шаблон, плюс en и pl)
 dart run pigeon --input pigeons/<name>.dart   # после правки определения Pigeon
 ```
