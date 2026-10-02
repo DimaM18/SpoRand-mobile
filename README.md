@@ -17,7 +17,7 @@ flutter run --dart-define=FLAVOR=spotifyProto # no ads, no purchases, no paywall
 | Define | Meaning |
 |---|---|
 | `FLAVOR` | `dev` (default), `staging`, `prod`, `spotifyProto` |
-| `API_BASE_URL` | REST base (`https://api.<domain>`, or `http://localhost:<port>` for a local server); the WebSocket is `wss://…/v1/ws` on the same host. Empty = offline fake auth, and rooms cannot be opened |
+| `API_BASE_URL` | REST base (`https://api.<domain>`, or `http://localhost:<port>` for a local server); the WebSocket is `wss://…/v1/ws` on the same host. Empty = offline fake auth, and rooms cannot be opened. Since wave 8b (`mobile_kit`) it must be https, except in a dev flavor towards a local or private-network host (`localhost`, `10.0.2.2`, `192.168.x.x`, `*.local`); anything else throws when the env is read |
 | `LINK_HOST` | domain of `https://<domain>/j/{room_code}` join links |
 | `FIREBASE_ENABLED` | default `false` for dev, `true` otherwise |
 | `REVENUECAT_API_KEY_IOS` / `_ANDROID` | RevenueCat public SDK keys (dev without a key shows a demo paywall) |
@@ -211,8 +211,10 @@ dart run pigeon --input pigeons/clip_player.dart
 dart run pigeon --input pigeons/music_app.dart
 ```
 
-The Swift and Kotlin code has not been compiled in the sandbox that wrote it
-(no Xcode or Android SDK); build it once on a Mac and with the Android SDK.
+`sporand_native` compiled on the owner's Mac on 2026-09-30 (before wave 8b, with
+`InputClockHost`). The wave 8b tree has not been built natively yet: neither the reduced
+`sporand_native` nor the Swift and Kotlin of `mobile_kit_clock` (no Xcode or Android SDK in the
+sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --debug` on a Mac.
 
 ## Layout
 
@@ -231,6 +233,30 @@ The Swift and Kotlin code has not been compiled in the sandbox that wrote it
 - `lib/contracts/` reserved for code generated from `packages/protocol`
 - `pigeons/` Pigeon definitions; `packages/sporand_native/` generated code +
   native implementations
+
+## Template packages (wave 8b)
+
+Since wave 8b the app's base is the template's Flutter packages, git dependencies on the private
+repository `DimaM18/mobile-template` (`pubspec.yaml`, `ref: v0.1.2`; `pubspec.lock` pins the commit):
+
+- `mobile_kit`: boot pipeline and runner (`runKitApp`), env and flavors, router and route guard,
+  services (analytics, consent, auth, security, Remote Config, ads, purchases, links, crash),
+  REST client, preferences, shared UI components, the onboarding/settings/paywall/maintenance
+  screens SpoRand replaces or keeps, and its strings;
+- `mobile_kit_clock`: the anchored `InputClock`, pointer and frame timestamps, the timed tap
+  target, the clock calibration page and the native input clock plugin (`InputClockApi`).
+
+`flutter pub get` needs read access to that repository: `gh auth setup-git` on a Mac, the
+`TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
+`v<the npm version of @dimam18/*>` (`pnpm run template:check` from the repository root). For local
+co-development with the template use `apps/mobile/pubspec_overrides.yaml` (git-ignored, never
+committed; the template's `docs/CONSUMING.md` §5.5).
+
+The old paths under `lib/` stay as shims, typedefs and adapters, so imports and tests did not
+change (the two sections below list them); removing them is wave 8c. New code imports
+`package:mobile_kit/…` / `package:mobile_kit_clock/…` or SpoRand's compositions (`sporandAppConfig`,
+`sporandKitOverrides`, `RcKeys`, …) directly, never a shim. A change to the base goes to the
+template first.
 
 ## mobile_kit (wave 8b, step 7.1: foundation and services)
 
@@ -579,6 +605,11 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
 
 ## TODO(owner) before a store build
 
+- Wave 8b: `flutter build ios --simulator --debug` and `flutter build apk --debug` on the Mac (the
+  first native build of `mobile_kit_clock` and of the reduced `sporand_native`), then a run on the
+  simulator and on one iPhone and one Android phone. Check the kit behaviour now in effect: an
+  https `API_BASE_URL` outside dev, Google's test ad units when ad unit ids are missing outside
+  prod, RevenueCat packages that report the catalogue product id.
 - YouTube (wave 4): run a youtube_embed round on a real iPhone and Android
   phone: the player loads with `https://<bundle id>` (no error 153), the
   raw error channel works, nothing overlays the player, audio stops on
@@ -610,6 +641,10 @@ SKIP_BUILD=1 E2E_TESTS=test_e2e/byop_game_test.dart scripts/e2e.sh
 3.47.5) when the server, the packages or the app change.
 
 `.github/workflows/mobile.yml` runs on pushes and pull requests that touch
-`apps/mobile/`: Flutter 3.47.5, `flutter pub get`, `flutter analyze
---no-fatal-infos` (errors and warnings fail; infos are reported) and
-`flutter test --coverage` (the lcov report is uploaded as an artifact).
+`apps/mobile/` or `packages/protocol/fixtures/`: Flutter 3.47.5, read access to the template
+repository (`TEMPLATE_READ_TOKEN`), `flutter pub get`, `flutter analyze --no-fatal-infos`
+(errors and warnings fail; infos are reported) and `flutter test --coverage` (the lcov report is
+uploaded as an artifact). It does not run on `packages/protocol/generated/` changes, although
+`test/app/client_registry_test.dart` and `test/core/content_guard_test.dart` read
+`generated/client-registry.json`: run `flutter test` yourself after a registry change. Both
+workflows ran green on GitHub on the wave 8b branch (2026-10-02).
