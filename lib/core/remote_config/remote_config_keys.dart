@@ -41,6 +41,15 @@ abstract final class RcKeys {
     RcReader.both,
   );
 
+  /// Kill switch of the `youtube_embed` provider. The server acts on it (rooms
+  /// fall back to `default_provider`); the app lists it so the key set matches
+  /// `client-registry.json` and does not branch on it.
+  static const youtubeEmbedEnabled = BoolRcKey(
+    'youtube_embed_enabled',
+    true,
+    RcReader.both,
+  );
+
   /// Game modes the lobby offers (wave 4): the mode picker shows only these,
   /// and the server rejects the others. Default: whose_song and emoji_quiz
   /// («Угадай песню»); guess_track is hidden [новое имя — согласовать].
@@ -77,14 +86,17 @@ abstract final class RcKeys {
   );
   static const bootMaxTotalMs = KitRcKeys.bootMaxTotalMs;
 
+  /// Same order as `rc_keys` of `client-registry.json` (the drift test in
+  /// test/app/client_registry_test.dart compares names in order).
   static const List<RcKey<Object>> all = [
+    modesEnabled,
     monetizationEnabled,
     rewardedEnabled,
     interstitialEnabled,
     removeAdsUpsellEnabled,
     spotifyProtoEnabled,
     licensedProviderEnabled,
-    modesEnabled,
+    youtubeEmbedEnabled,
     maxAdWaitMs,
     rewardedPreloadEnabled,
     paywallVariant,
@@ -94,7 +106,7 @@ abstract final class RcKeys {
     killSwitchPurchases,
     bootConfigTimeoutMs,
     bootMinSplashMs,
-    bootMaxTotalMs,
     youtubePlayerMinWidthDp,
+    bootMaxTotalMs,
   ];
 }
