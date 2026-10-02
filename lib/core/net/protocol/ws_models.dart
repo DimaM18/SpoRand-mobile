@@ -38,6 +38,7 @@ final class RoomSettings {
     this.packId,
     this.emojiMarkets,
     this.emojiMaxDifficulty,
+    this.emojiRetro,
   });
 
   factory RoomSettings.fromJson(JsonMap json) => RoomSettings(
@@ -56,6 +57,7 @@ final class RoomSettings {
       (item) => parseWire(EmojiMarket.values, item),
     ),
     emojiMaxDifficulty: json.optInt('emoji_max_difficulty'),
+    emojiRetro: json.optBool('emoji_retro'),
   );
 
   final GameMode mode;
@@ -75,6 +77,11 @@ final class RoomSettings {
   /// default) [новое имя — согласовать].
   final int? emojiMaxDifficulty;
 
+  /// emoji_quiz «Ретро» (wave 9): true also plays songs released before the
+  /// server's `emoji_min_year`; false or omitted plays only newer ones
+  /// [новое имя — согласовать].
+  final bool? emojiRetro;
+
   JsonMap toJson() => {
     'mode': mode.wire,
     'rounds_total': roundsTotal,
@@ -85,6 +92,7 @@ final class RoomSettings {
     'pack_id': ?packId,
     'emoji_markets': ?emojiMarkets?.map((m) => m.wire).toList(),
     'emoji_max_difficulty': ?emojiMaxDifficulty,
+    'emoji_retro': ?emojiRetro,
   };
 }
 
@@ -896,6 +904,10 @@ final class RoomConfig {
 
   /// The server picks each round's DJ among players with `can_dj`.
   bool get byopDjRotation => _bool('byop_dj_rotation', false);
+
+  /// emoji_quiz (wave 9): songs released before this year play only with
+  /// «Ретро» (`RoomSettings.emoji_retro`) [новое имя — согласовать].
+  int get emojiMinYear => _int('emoji_min_year', 1980);
 
   /// The pause between `round.voided` and the spare's `round.prepare`; the
   /// app keeps the void notice visible this long [новое имя — согласовать].

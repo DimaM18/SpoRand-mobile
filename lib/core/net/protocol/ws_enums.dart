@@ -84,16 +84,23 @@ enum RoundPrompt implements WireEnum {
 }
 
 /// Markets of the curated emoji catalogue (`lobby.update_settings` and
-/// `RoomSettings.emoji_markets`). Owner decision: no Russian or CIS content,
-/// so there is no such market [новое имя — согласовать].
+/// `RoomSettings.emoji_markets`) [новое имя — согласовать]. Wave 9: `cis`
+/// («СНГ») is opt-in: only the host turns it on in the lobby.
 enum EmojiMarket implements WireEnum {
   /// International hits.
   intl('intl'),
 
   /// Polish songs.
-  pl('pl');
+  pl('pl'),
+
+  /// Songs of the CIS (opt-in; never a locale default).
+  cis('cis');
 
   const EmojiMarket(this.wire);
+
+  /// The markets a room gets without a host choice (protocol
+  /// `EMOJI_LOCALE_MARKETS`): every market except the opt-in [cis].
+  static const localeDefaults = [EmojiMarket.intl, EmojiMarket.pl];
 
   @override
   final String wire;

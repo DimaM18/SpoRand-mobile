@@ -128,8 +128,10 @@ final class LobbyView {
     this.isDjHost = false,
     this.showsDj = false,
     this.meCanDj = false,
-    this.emojiMarkets = EmojiMarket.values,
+    this.emojiMarkets = EmojiMarket.localeDefaults,
     this.emojiMaxDifficulty = EmojiDifficulty.defaultMax,
+    this.emojiRetro = false,
+    this.emojiMinYear = 1980,
     this.modeChoices = const [GameMode.whoseSong, GameMode.emojiQuiz],
   });
 
@@ -172,11 +174,18 @@ final class LobbyView {
   final bool meCanDj;
 
   /// emoji_quiz: the markets the room draws from (the server's effective
-  /// choice; both when it sent none).
+  /// choice; intl and pl when it sent none, never the opt-in cis).
   final List<EmojiMarket> emojiMarkets;
 
   /// emoji_quiz: `emoji_max_difficulty` (1-3).
   final int emojiMaxDifficulty;
+
+  /// emoji_quiz «Ретро» (wave 9): the room also plays songs released before
+  /// [emojiMinYear].
+  final bool emojiRetro;
+
+  /// emoji_quiz: the room's `emoji_min_year` (for the «Ретро» label).
+  final int emojiMinYear;
 
   /// The modes the picker offers: `modes_enabled` (plus the current mode,
   /// so a room already in a hidden mode still shows it).
@@ -327,9 +336,11 @@ class LobbyController extends Notifier<LobbyUiState> {
         isDjHost: session.isHost && byop && !config.byopDjRotation,
         showsDj: byop,
         meCanDj: room.player(me)?.canDj ?? session.isHost,
-        emojiMarkets: room.settings.emojiMarkets ?? EmojiMarket.values,
+        emojiMarkets: room.settings.emojiMarkets ?? EmojiMarket.localeDefaults,
         emojiMaxDifficulty:
             room.settings.emojiMaxDifficulty ?? EmojiDifficulty.defaultMax,
+        emojiRetro: room.settings.emojiRetro ?? false,
+        emojiMinYear: config.emojiMinYear,
         modeChoices: selectableModes(
           enabled:
               config.modesEnabled ??
@@ -405,6 +416,15 @@ class LobbyController extends Notifier<LobbyUiState> {
     _sendSettings(room.settings, emojiMaxDifficulty: difficulty);
   }
 
+  /// emoji_quiz «Ретро» (wave 9): also play songs released before the
+  /// room's `emoji_min_year`.
+  void setEmojiRetro(bool retro) {
+    final view = _view;
+    final room = _session?.room;
+    if (view == null || room == null || !view.isHost) return;
+    _sendSettings(room.settings, emojiRetro: retro);
+  }
+
   /// «Могу включать музыку» (`lobby.set_can_dj`); the server echoes it in
   /// `room.player_updated`.
   void setCanDj(bool canDj) {
@@ -419,6 +439,7 @@ class LobbyController extends Notifier<LobbyUiState> {
     List<PoolSource>? poolSources,
     List<EmojiMarket>? emojiMarkets,
     int? emojiMaxDifficulty,
+    bool? emojiRetro,
   }) {
     final nextMode = mode ?? current.mode;
     // The emoji settings only mean something in emoji_quiz; there they are
@@ -436,6 +457,7 @@ class LobbyController extends Notifier<LobbyUiState> {
         emojiMaxDifficulty: emoji
             ? emojiMaxDifficulty ?? current.emojiMaxDifficulty
             : null,
+        emojiRetro: emoji ? emojiRetro ?? current.emojiRetro : null,
       ),
     );
   }

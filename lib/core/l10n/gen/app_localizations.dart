@@ -1660,6 +1660,18 @@ abstract class AppLocalizations {
   /// **'Польские'**
   String get lobbyEmojiMarketPl;
 
+  /// emoji_quiz opt-in market cis (owner decision 2026-09-30: the UI name is «СНГ»). Off by default.
+  ///
+  /// In ru, this message translates to:
+  /// **'СНГ'**
+  String get lobbyEmojiMarketCis;
+
+  /// emoji_quiz lobby emoji_retro: also play songs released before the server's emoji_min_year. Off by default.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ретро (до {year})'**
+  String lobbyEmojiRetro(String year);
+
   /// emoji_quiz emoji_max_difficulty.
   ///
   /// In ru, this message translates to:

@@ -36,7 +36,13 @@ String emojiMarketLabel(AppLocalizations l10n, EmojiMarket market) =>
     switch (market) {
       EmojiMarket.intl => l10n.lobbyEmojiMarketIntl,
       EmojiMarket.pl => l10n.lobbyEmojiMarketPl,
+      EmojiMarket.cis => l10n.lobbyEmojiMarketCis,
     };
+
+/// The market chips the lobby offers. Wave 9: the opt-in `cis` («СНГ») stays
+/// hidden until the catalogue has cis songs (a room with only cis could not
+/// start); the protocol, the server and [emojiMarketLabel] already handle it.
+const lobbyEmojiMarkets = EmojiMarket.localeDefaults;
 
 String emojiDifficultyLabel(AppLocalizations l10n, int difficulty) =>
     switch (difficulty) {
@@ -605,7 +611,7 @@ class _SettingsCard extends ConsumerWidget {
               spacing: Spacing.xs,
               runSpacing: Spacing.xs,
               children: [
-                for (final market in EmojiMarket.values)
+                for (final market in lobbyEmojiMarkets)
                   PartyChip(
                     key: ValueKey('lobby-emoji-market-${market.wire}'),
                     label: emojiMarketLabel(l10n, market),
@@ -614,6 +620,16 @@ class _SettingsCard extends ConsumerWidget {
                         ? (_) => controller.toggleEmojiMarket(market)
                         : null,
                   ),
+                // Wave 9: songs before the room's emoji_min_year, off by
+                // default.
+                PartyChip(
+                  key: const ValueKey('lobby-emoji-retro'),
+                  label: l10n.lobbyEmojiRetro('${view.emojiMinYear}'),
+                  selected: view.emojiRetro,
+                  onSelected: view.isHost
+                      ? (_) => controller.setEmojiRetro(!view.emojiRetro)
+                      : null,
+                ),
               ],
             ),
             label(l10n.lobbyEmojiDifficulty),

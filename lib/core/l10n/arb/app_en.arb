@@ -260,6 +260,8 @@
   "lobbyEmojiMarkets": "Songs",
   "lobbyEmojiMarketIntl": "International",
   "lobbyEmojiMarketPl": "Polish",
+  "lobbyEmojiMarketCis": "CIS",
+  "lobbyEmojiRetro": "Retro (before {year})",
   "lobbyEmojiDifficulty": "Difficulty",
   "lobbyEmojiDifficultyEasy": "Easy",
   "lobbyEmojiDifficultyMedium": "Up to medium",

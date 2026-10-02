@@ -94,6 +94,7 @@ abstract final class Samples {
     ProviderCapabilities? capabilities,
     List<EmojiMarket>? emojiMarkets,
     int? emojiMaxDifficulty,
+    bool? emojiRetro,
   }) => RoomSnapshot(
     roomId: roomId,
     roomCode: '7KQ2MX',
@@ -109,6 +110,7 @@ abstract final class Samples {
       poolSources: const [PoolSource.catalogPicks],
       emojiMarkets: emojiMarkets,
       emojiMaxDifficulty: emojiMaxDifficulty,
+      emojiRetro: emojiRetro,
     ),
     mode: mode,
     provider: provider,

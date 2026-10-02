@@ -643,6 +643,63 @@ void main() {
     });
   });
 
+  test('wave 9: «СНГ» is an opt-in market, «Ретро» is off by default and '
+      'labelled with the room\'s emoji_min_year', () {
+    fakeAsync((async) {
+      final t = _Lobby(async)..join();
+      t.send(
+        Samples.welcome(
+          me: Samples.hostId,
+          room: Samples.room(mode: GameMode.emojiQuiz),
+          config: const {'emoji_min_year': 1985},
+        ),
+      );
+      var view = t.view;
+      // No markets from the server: the locale defaults, never cis.
+      expect(view.emojiMarkets, [EmojiMarket.intl, EmojiMarket.pl]);
+      expect(view.emojiRetro, isFalse);
+      expect(view.emojiMinYear, 1985);
+
+      t.lobby.toggleEmojiMarket(EmojiMarket.cis);
+      t.lobby.setEmojiRetro(true);
+      async.flushMicrotasks();
+      final sent = t.server.current.sent<LobbyUpdateSettings>();
+      expect(sent, hasLength(2));
+      expect(sent.first.emojiMarkets, [
+        EmojiMarket.intl,
+        EmojiMarket.pl,
+        EmojiMarket.cis,
+      ]);
+      expect(sent.last.emojiRetro, isTrue);
+      expect(sent.last.toJson()['emoji_retro'], isTrue);
+      for (final settings in sent) {
+        expect(
+          LobbyUpdateSettings.fromJson(settings.toJson()).toJson(),
+          settings.toJson(),
+        );
+      }
+
+      t.send(
+        RoomStateMessage(
+          Samples.room(
+            mode: GameMode.emojiQuiz,
+            emojiMarkets: const [EmojiMarket.cis],
+            emojiRetro: true,
+          ),
+        ),
+      );
+      view = t.view;
+      expect(view.emojiMarkets, [EmojiMarket.cis]);
+      expect(view.emojiRetro, isTrue);
+      // Leaving emoji_quiz drops «Ретро» like the other emoji fields.
+      t.lobby.setMode(GameMode.whoseSong);
+      async.flushMicrotasks();
+      final back = t.server.current.sent<LobbyUpdateSettings>().last;
+      expect(back.toJson().containsKey('emoji_retro'), isFalse);
+      t.container.dispose();
+    });
+  });
+
   test('switching to emoji_quiz sends the mode; switching away drops the '
       'emoji fields', () {
     fakeAsync((async) {

@@ -1095,6 +1095,7 @@ final class LobbyUpdateSettings extends ClientMessage {
     this.packId,
     this.emojiMarkets,
     this.emojiMaxDifficulty,
+    this.emojiRetro,
   });
 
   factory LobbyUpdateSettings.fromJson(JsonMap json) {
@@ -1105,7 +1106,7 @@ final class LobbyUpdateSettings extends ClientMessage {
     if (markets != null &&
         (markets.isEmpty || markets.toSet().length != markets.length)) {
       throw const ProtocolFormatException(
-        'emoji_markets needs 1-2 distinct markets',
+        'emoji_markets needs 1-3 distinct markets',
       );
     }
     final difficulty = json.optInt('emoji_max_difficulty');
@@ -1126,6 +1127,7 @@ final class LobbyUpdateSettings extends ClientMessage {
       packId: json.optStr('pack_id'),
       emojiMarkets: markets,
       emojiMaxDifficulty: difficulty,
+      emojiRetro: json.optBool('emoji_retro'),
     );
   }
 
@@ -1143,6 +1145,10 @@ final class LobbyUpdateSettings extends ClientMessage {
   /// emoji_quiz: the hardest puzzles to play (1-3) [новое имя — согласовать].
   final int? emojiMaxDifficulty;
 
+  /// emoji_quiz «Ретро» (wave 9): also play songs released before the
+  /// server's `emoji_min_year`; omitted = false [новое имя — согласовать].
+  final bool? emojiRetro;
+
   static const _keys = {
     'mode',
     'rounds_total',
@@ -1152,6 +1158,7 @@ final class LobbyUpdateSettings extends ClientMessage {
     'pack_id',
     'emoji_markets',
     'emoji_max_difficulty',
+    'emoji_retro',
   };
 
   @override
@@ -1167,6 +1174,7 @@ final class LobbyUpdateSettings extends ClientMessage {
     'pack_id': ?packId,
     'emoji_markets': ?emojiMarkets?.map((m) => m.wire).toList(),
     'emoji_max_difficulty': ?emojiMaxDifficulty,
+    'emoji_retro': ?emojiRetro,
   };
 }
 

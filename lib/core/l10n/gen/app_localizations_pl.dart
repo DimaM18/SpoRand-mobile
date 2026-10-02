@@ -959,6 +959,14 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lobbyEmojiMarketPl => 'Polskie';
 
   @override
+  String get lobbyEmojiMarketCis => 'WNP';
+
+  @override
+  String lobbyEmojiRetro(String year) {
+    return 'Retro (przed $year)';
+  }
+
+  @override
   String get lobbyEmojiDifficulty => 'Trudność';
 
   @override

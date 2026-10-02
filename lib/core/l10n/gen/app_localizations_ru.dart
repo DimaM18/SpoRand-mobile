@@ -958,6 +958,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lobbyEmojiMarketPl => 'Польские';
 
   @override
+  String get lobbyEmojiMarketCis => 'СНГ';
+
+  @override
+  String lobbyEmojiRetro(String year) {
+    return 'Ретро (до $year)';
+  }
+
+  @override
   String get lobbyEmojiDifficulty => 'Сложность';
 
   @override

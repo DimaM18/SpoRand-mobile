@@ -638,6 +638,20 @@
   },
   "lobbyEmojiMarketIntl": "Международные",
   "lobbyEmojiMarketPl": "Польские",
+  "lobbyEmojiMarketCis": "СНГ",
+  "@lobbyEmojiMarketCis": {
+    "description": "emoji_quiz opt-in market cis (owner decision 2026-09-30: the UI name is «СНГ»). Off by default."
+  },
+  "lobbyEmojiRetro": "Ретро (до {year})",
+  "@lobbyEmojiRetro": {
+    "description": "emoji_quiz lobby emoji_retro: also play songs released before the server's emoji_min_year. Off by default.",
+    "placeholders": {
+      "year": {
+        "type": "String",
+        "example": "1980"
+      }
+    }
+  },
   "lobbyEmojiDifficulty": "Сложность",
   "@lobbyEmojiDifficulty": {
     "description": "emoji_quiz emoji_max_difficulty."

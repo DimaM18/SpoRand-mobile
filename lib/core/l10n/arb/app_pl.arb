@@ -260,6 +260,8 @@
   "lobbyEmojiMarkets": "Piosenki",
   "lobbyEmojiMarketIntl": "Międzynarodowe",
   "lobbyEmojiMarketPl": "Polskie",
+  "lobbyEmojiMarketCis": "WNP",
+  "lobbyEmojiRetro": "Retro (przed {year})",
   "lobbyEmojiDifficulty": "Trudność",
   "lobbyEmojiDifficultyEasy": "Łatwe",
   "lobbyEmojiDifficultyMedium": "Do średnich",

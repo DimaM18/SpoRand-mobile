@@ -11,6 +11,7 @@ import 'package:sporand/core/net/protocol/ws_enums.dart';
 import 'package:sporand/core/net/protocol/ws_messages.dart';
 import 'package:sporand/core/playback/playback_adapter.dart';
 import 'package:sporand/core/share/share_service.dart';
+import 'package:sporand/core/ui/ui.dart';
 import 'package:sporand/features/lobby/data/rooms_api.dart';
 import 'package:sporand/features/lobby/presentation/active_room_controller.dart';
 import 'package:sporand/features/my_songs/data/my_songs_api.dart';
@@ -315,6 +316,16 @@ void main() {
     expect(find.text('Без музыки: хватит телефонов'), findsOneWidget);
     expect(find.text('Международные'), findsOneWidget);
     expect(find.text('Польские'), findsOneWidget);
+    // Wave 9: «Ретро» is off by default; the «СНГ» chip stays hidden until
+    // the catalogue has cis songs.
+    expect(find.text('СНГ'), findsNothing);
+    expect(find.text('Ретро (до 1980)'), findsOneWidget);
+    expect(
+      tester
+          .widget<PartyChip>(find.byKey(const ValueKey('lobby-emoji-retro')))
+          .selected,
+      isFalse,
+    );
     expect(find.byKey(const ValueKey('lobby-add-my-songs')), findsNothing);
     expect(find.byKey(const ValueKey('lobby-can-dj')), findsNothing);
 

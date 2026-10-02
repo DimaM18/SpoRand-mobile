@@ -216,6 +216,13 @@ dart run pigeon --input pigeons/music_app.dart
 `sporand_native` nor the Swift and Kotlin of `mobile_kit_clock` (no Xcode or Android SDK in the
 sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --debug` on a Mac.
 
+## Wave 9 (emoji content): «СНГ» and «Ретро»
+
+- `EmojiMarket.cis` and `EmojiMarket.localeDefaults` (`intl`, `pl`); `RoomSettings.emojiRetro`, `LobbyUpdateSettings.emojiRetro` (`emoji_retro`); `RoomConfig.emojiMinYear` (`emoji_min_year`, default 1980). [новое имя — согласовать]
+- Lobby: the «Ретро (до {year})» chip (`lobby-emoji-retro`, off by default, the year from the room's config snapshot) and `LobbyController.setEmojiRetro`. Leaving emoji_quiz drops it like the other emoji fields.
+- `lobbyEmojiMarkets` [новое имя — согласовать]: the market chips the lobby shows, today `EmojiMarket.localeDefaults`. The «СНГ» chip (`lobbyEmojiMarketCis`) stays hidden until the catalogue has `cis` songs (a room with only `cis` could not start); the controller and the wire already handle `cis`.
+- ARB: `lobbyEmojiMarketCis` («СНГ» / «CIS» / «WNP»), `lobbyEmojiRetro` («Ретро (до {year})» / «Retro (before {year})» / «Retro (przed {year})»; `year` is a String so it is never number-formatted).
+
 ## Layout
 
 - `lib/app/` bootstrap, router, flavors, DI (`di/providers.dart`);
