@@ -601,20 +601,20 @@ packages:
     dependency: "direct main"
     description:
       path: "flutter/mobile_kit"
-      ref: "v0.1.4"
-      resolved-ref: ce3fb5200af6620390a39fd639ead99553d0e51a
+      ref: "v0.1.6"
+      resolved-ref: "9da1d8a7a4939ae45a7b95a525a2787bb6895506"
       url: "https://github.com/DimaM18/mobile-template-flutter.git"
     source: git
-    version: "0.1.4"
+    version: "0.1.6"
   mobile_kit_clock:
     dependency: "direct main"
     description:
       path: "flutter/mobile_kit_clock"
-      ref: "v0.1.4"
-      resolved-ref: ce3fb5200af6620390a39fd639ead99553d0e51a
+      ref: "v0.1.6"
+      resolved-ref: "9da1d8a7a4939ae45a7b95a525a2787bb6895506"
       url: "https://github.com/DimaM18/mobile-template-flutter.git"
     source: git
-    version: "0.1.4"
+    version: "0.1.6"
   nm:
     dependency: transitive
     description:
