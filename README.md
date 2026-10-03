@@ -260,7 +260,7 @@ sandbox). Run `flutter build ios --simulator --debug` and `flutter build apk --d
 ## Template packages (wave 8b)
 
 Since wave 8b the app's base is the template's Flutter packages, git dependencies on the private
-repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.4`; `pubspec.lock` pins the commit):
+repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.6`; `pubspec.lock` pins the commit):
 
 - `mobile_kit`: boot pipeline and runner (`runKitApp`), env and flavors, router and route guard,
   services (analytics, consent, auth, security, Remote Config, ads, purchases, links, crash),
@@ -273,10 +273,10 @@ repository `DimaM18/mobile-template-flutter` (`pubspec.yaml`, `ref: v0.1.4`; `pu
 `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session. Both refs must be
 the same release tag `v<template version>`, the same version as the backend's `@dimam18/*`
 (bump the backend first; `node tool/template-check.mjs` checks the tag format and that the two refs are equal, but not the
-backend's version, so keep both repositories in lockstep by hand). Order for 0.1.4: (1) the server packages `@dimam18/*` 0.1.4 are
+backend's version, so keep both repositories in lockstep by hand). Order for 0.1.6: (1) the server packages `@dimam18/*` 0.1.6 are
 published and the `DimaM18/SpoRand` PR bumping them merges; (2) here, run
 `tool/contract.sh sync <SpoRand checkout at that commit>` so `contract/SOURCE` pins a backend
-commit on 0.1.4, and commit; (3) merge this branch. For local
+commit on 0.1.6, and commit; (3) merge this branch. For local
 co-development with the template use `pubspec_overrides.yaml` (git-ignored, never
 committed; the template's `docs/CONSUMING.md` §5.5).
 

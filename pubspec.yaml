@@ -50,9 +50,9 @@ dependencies:
   # the release tag (`node tool/template-check.mjs`). Both refs are the same tag, in lockstep with
   # the backend's @dimam18/* version.
   mobile_kit:
-    git: { url: https://github.com/DimaM18/mobile-template-flutter.git, path: flutter/mobile_kit, ref: v0.1.4 }
+    git: { url: https://github.com/DimaM18/mobile-template-flutter.git, path: flutter/mobile_kit, ref: v0.1.6 }
   mobile_kit_clock:
-    git: { url: https://github.com/DimaM18/mobile-template-flutter.git, path: flutter/mobile_kit_clock, ref: v0.1.4 }
+    git: { url: https://github.com/DimaM18/mobile-template-flutter.git, path: flutter/mobile_kit_clock, ref: v0.1.6 }
 
   # Pure Dart helpers.
   # Grapheme clusters of emoji prompts (already in the lockfile via Flutter).

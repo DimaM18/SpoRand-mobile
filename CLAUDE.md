@@ -38,9 +38,9 @@ The app is a thin client: the server builds the randomized plan, validates answe
 
 ## Template packages
 
-The base code (boot, services, screens, the input clock plugin) comes from the private template's Flutter half, repository `mobile-template-flutter`, version **0.1.4**: `mobile_kit` and `mobile_kit_clock`, git dependencies in `pubspec.yaml` on `https://github.com/DimaM18/mobile-template-flutter.git` (`path: flutter/mobile_kit` / `flutter/mobile_kit_clock`, `ref: v0.1.4`; `pubspec.lock` pins the commit).
+The base code (boot, services, screens, the input clock plugin) comes from the private template's Flutter half, repository `mobile-template-flutter`, version **0.1.6**: `mobile_kit` and `mobile_kit_clock`, git dependencies in `pubspec.yaml` on `https://github.com/DimaM18/mobile-template-flutter.git` (`path: flutter/mobile_kit` / `flutter/mobile_kit_clock`, `ref: v0.1.6`; `pubspec.lock` pins the commit).
 - `node tool/template-check.mjs` (a copy of the template's `scripts/template-check.mjs`) checks that each ref is a release tag `vX.Y.Z` and that no co-development overrides are committed; CI runs it. It also fails when the two refs differ from each other, but it cannot compare them with the backend's `@dimam18/*` version (there is no `package.json` here), so lockstep with the backend stays manual on a bump. A template bump is a PR in each repository.
-- Versions move in lockstep: kit `vX.Y.Z` needs the server packages `@dimam18/*` at `X.Y.Z`. Order for 0.1.4: first the server packages `@dimam18/*` 0.1.4 are published and the `DimaM18/SpoRand` PR bumping them merges; then here `tool/contract.sh sync <SpoRand checkout at that commit>` re-pins `contract/SOURCE` (commit it); only then merge the kit bump. `TEMPLATE_READ_TOKEN` needs Contents: Read on `DimaM18/mobile-template-flutter`. Co-development uses `../mobile-template-flutter`.
+- Versions move in lockstep: kit `vX.Y.Z` needs the server packages `@dimam18/*` at `X.Y.Z`. Order for 0.1.6: first the server packages `@dimam18/*` 0.1.6 are published and the `DimaM18/SpoRand` PR bumping them merges; then here `tool/contract.sh sync <SpoRand checkout at that commit>` re-pins `contract/SOURCE` (commit it); only then merge the kit bump. `TEMPLATE_READ_TOKEN` needs Contents: Read on `DimaM18/mobile-template-flutter`. Co-development uses `../mobile-template-flutter`.
 - `flutter pub get` needs read access to `DimaM18/mobile-template-flutter`: `gh auth setup-git` on a Mac, the `TEMPLATE_READ_TOKEN` secret in CI, the attached repository in a cloud session.
 - Shims (old base files kept as re-exports and adapters) are the 8b compatibility layer and go away in wave 8c. New code imports `package:mobile_kit/…` or SpoRand's own `sporand*` code directly.
 - A change to the base goes to the template first, then this repository bumps the refs. Never edit `~/.pub-cache` or a copy of a kit file here. Co-development uses `pubspec_overrides.yaml` (git-ignored); never commit it.
@@ -48,7 +48,7 @@ The base code (boot, services, screens, the input clock plugin) comes from the p
 ## Commands
 
 ```sh
-flutter pub get                                   # mobile_kit and mobile_kit_clock from the template Flutter repository (git, ref v0.1.4)
+flutter pub get                                   # mobile_kit and mobile_kit_clock from the template Flutter repository (git, ref v0.1.6)
 flutter analyze
 flutter test                                      # incl. the drift tests against contract/
 node tool/template-check.mjs
